@@ -5,26 +5,49 @@ const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!)
 
 const SITE_URL = 'https://saturdaydynasty.ctoolis.workers.dev'
 
+// Live Stripe products. We resolve each product's active default one-time price
+// server-side so prices are never trusted from the browser.
 const PRODUCTS = {
   commissioner_mode: {
-    price: 'price_1U30kyIMu9M3pHeG7aYHt7Jl',
+    product: 'prod_V38lMKhJzLqz7k',
+    amount: 999,
     label: 'Commissioner Mode',
   },
   remove_ads: {
-    price: 'price_1U30j1IMu9M3pHeG5PszPx43',
+    product: 'prod_V38lGM8eiBLvpT',
+    amount: 499,
     label: 'Remove Ads',
   },
   team_editor: {
-    price: 'price_1U30jhIMu9M3pHeGBjkjyzjV',
+    product: 'prod_V38lbb1CoxdLd0',
+    amount: 499,
     label: 'Team Editor',
   },
   player_editor: {
-    price: 'price_1U30jSIMu9M3pHeGX1zQ1cJ4',
+    product: 'prod_V38ljupbIpFxAF',
+    amount: 499,
     label: 'Player Editor',
   },
 } as const
 
 type ProductKey = keyof typeof PRODUCTS
+
+async function getCheckoutPrice(productKey: ProductKey) {
+  const config = PRODUCTS[productKey]
+  const stripeProduct = await stripe.products.retrieve(config.product, {
+    expand: ['default_price'],
+  })
+  const price = stripeProduct.default_price
+
+  if (!price || typeof price === 'string') {
+    throw new Error(`${config.label} is missing an expanded default price`)
+  }
+  if (!price.active || price.currency !== 'usd' || price.unit_amount !== config.amount || price.recurring) {
+    throw new Error(`${config.label} default price is not the expected one-time USD price`)
+  }
+
+  return price
+}
 
 export default {
   fetch: withSupabase({ auth: 'user' }, async (req, ctx) => {
@@ -69,20 +92,27 @@ export default {
       return Response.json({ error: 'This account already owns that upgrade' }, { status: 409 })
     }
 
-    const session = await stripe.checkout.sessions.create({
-      mode: 'payment',
-      line_items: [{ price: product.price, quantity: 1 }],
-      success_url: `${SITE_URL}/?purchase=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${SITE_URL}/?purchase=cancelled`,
-      client_reference_id: userId,
-      customer_email: email,
-      metadata: {
-        supabase_user_id: userId,
-        product_key: productKey,
-        product_label: product.label,
-      },
-    })
+    try {
+      const price = await getCheckoutPrice(productKey)
+      const session = await stripe.checkout.sessions.create({
+        mode: 'payment',
+        line_items: [{ price: price.id, quantity: 1 }],
+        success_url: `${SITE_URL}/?purchase=success&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${SITE_URL}/?purchase=cancelled`,
+        client_reference_id: userId,
+        customer_email: email,
+        metadata: {
+          supabase_user_id: userId,
+          product_key: productKey,
+          product_label: product.label,
+          stripe_product_id: product.product,
+        },
+      })
 
-    return Response.json({ url: session.url })
+      return Response.json({ url: session.url })
+    } catch (err) {
+      console.error('Could not create live Stripe checkout', err)
+      return Response.json({ error: 'Could not create checkout session' }, { status: 500 })
+    }
   }),
 }
