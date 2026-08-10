@@ -151,13 +151,13 @@ window.SDF_CLOUD_CONFIG={
  const init=()=>{make();ret();refresh(true)};document.readyState==='loading'?document.addEventListener('DOMContentLoaded',init):init();
 })();
 
-// Paid browser editors. Version-pinned so the currently tested implementation is stable.
+// Paid browser editors. Version-pinned so the current implementation is stable.
 (()=>{
  const load=()=>{
   if(document.querySelector('script[data-sdf-paid-editors]'))return;
   const s=document.createElement('script');
   s.dataset.sdfPaidEditors='1';
-  s.src='https://cdn.jsdelivr.net/gh/Snake3ite/SaturdayDynasty@c2079cca56ae733c7a5bb2327d620196ce01dcbf/browser-editors.js';
+  s.src='https://cdn.jsdelivr.net/gh/Snake3ite/SaturdayDynasty@f873d9c1b4d7296acb3da0378c120c9a38ae4c06/browser-editors.js';
   s.async=true;
   s.onerror=()=>console.error('Saturday Dynasty paid editor bundle failed to load');
   document.head.appendChild(s);
