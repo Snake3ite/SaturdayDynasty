@@ -5,10 +5,10 @@ const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!)
 const cryptoProvider = Stripe.createSubtleCryptoProvider()
 
 const PRODUCTS = {
-  commissioner_mode: 'price_1U30kyIMu9M3pHeG7aYHt7Jl',
-  remove_ads: 'price_1U30j1IMu9M3pHeG5PszPx43',
-  team_editor: 'price_1U30jhIMu9M3pHeGBjkjyzjV',
-  player_editor: 'price_1U30jSIMu9M3pHeGX1zQ1cJ4',
+  commissioner_mode: { product: 'prod_V38lMKhJzLqz7k', amount: 999 },
+  remove_ads: { product: 'prod_V38lGM8eiBLvpT', amount: 499 },
+  team_editor: { product: 'prod_V38lbb1CoxdLd0', amount: 499 },
+  player_editor: { product: 'prod_V38ljupbIpFxAF', amount: 499 },
 } as const
 
 type ProductKey = keyof typeof PRODUCTS
@@ -22,16 +22,26 @@ async function fulfillSession(session: Stripe.Checkout.Session, supabaseAdmin: a
     throw new Error('Checkout session is missing valid Saturday Dynasty purchase metadata')
   }
 
-  // Verify the purchased Stripe Price matches the server-side allowlist.
+  // Verify the purchased live Stripe product and expected one-time USD amount.
+  // This prevents browser metadata from granting the wrong entitlement.
   const lineItems = await stripe.checkout.sessions.listLineItems(session.id, { limit: 10 })
-  const purchasedPriceIds = lineItems.data
-    .map((item) => typeof item.price === 'string' ? item.price : item.price?.id)
-    .filter(Boolean)
+  const expected = PRODUCTS[productKey]
+  const matched = lineItems.data.find((item) => {
+    const price = item.price
+    if (!price) return false
+    const purchasedProduct = typeof price.product === 'string' ? price.product : price.product?.id
+    return purchasedProduct === expected.product &&
+      price.currency === 'usd' &&
+      price.unit_amount === expected.amount &&
+      !price.recurring &&
+      item.quantity === 1
+  })
 
-  const expectedPrice = PRODUCTS[productKey]
-  if (!purchasedPriceIds.includes(expectedPrice)) {
-    throw new Error(`Price mismatch for ${productKey}`)
+  if (!matched?.price) {
+    throw new Error(`Product/price mismatch for ${productKey}`)
   }
+
+  const purchasedPriceId = matched.price.id
 
   // The unique Stripe session id makes fulfillment idempotent if Stripe retries the webhook.
   const { data: existing, error: existingError } = await supabaseAdmin
@@ -53,7 +63,7 @@ async function fulfillSession(session: Stripe.Checkout.Session, supabaseAdmin: a
     stripe_session_id: session.id,
     user_id: userId,
     product_key: productKey,
-    price_id: expectedPrice,
+    price_id: purchasedPriceId,
     amount_total: session.amount_total,
     currency: session.currency,
   })
