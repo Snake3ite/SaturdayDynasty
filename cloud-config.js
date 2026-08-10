@@ -6,6 +6,61 @@ window.SDF_CLOUD_CONFIG={
   publishableKey:"sb_publishable_MeNnZ-PoF0cKlhfcvcL6Rg_xIJajlhW"
 };
 
+// Browser account isolation. The original web shell uses shared local save keys and one
+// IndexedDB database. Scope the IndexedDB mirror to the current Supabase account and clear
+// the shared local slot keys before a DIFFERENT account is allowed to sync.
+(()=>{
+ const SESSION_KEY='SDF_SUPABASE_SESSION';
+ const OWNER_KEY='SDF_LOCAL_SAVE_OWNER';
+ const PREFIX='SaturdayDynastyFootballAndroidV1';
+ const DB_NAME='SaturdayDynastyWeb';
+ const rawGet=Storage.prototype.getItem;
+ const rawSet=Storage.prototype.setItem;
+ const rawRemove=Storage.prototype.removeItem;
+ const uidFrom=raw=>{try{return JSON.parse(raw||'null')?.user?.id||null}catch{return null}};
+ const get=k=>rawGet.call(localStorage,k);
+ const set=(k,v)=>rawSet.call(localStorage,k,v);
+ const remove=k=>rawRemove.call(localStorage,k);
+ const initialUid=uidFrom(get(SESSION_KEY));
+ let owner=get(OWNER_KEY);
+ if(initialUid&&!owner){owner=initialUid;set(OWNER_KEY,owner)}
+ const accountKey=()=>uidFrom(get(SESSION_KEY))||get(OWNER_KEY)||'guest';
+ const idbProto=typeof indexedDB!=='undefined'?Object.getPrototypeOf(indexedDB):null;
+ const rawOpen=idbProto?.open;
+ if(rawOpen){
+  idbProto.open=function(name,version){
+   const scoped=name===DB_NAME?`${DB_NAME}:${accountKey()}`:name;
+   return version===undefined?rawOpen.call(this,scoped):rawOpen.call(this,scoped,version);
+  };
+ }
+ // Seed the account-scoped mirror from currently visible slots for existing users.
+ if(owner&&rawOpen){
+  try{
+   const req=rawOpen.call(indexedDB,`${DB_NAME}:${owner}`,1);
+   req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains('saves'))db.createObjectStore('saves',{keyPath:'slot'})};
+   req.onsuccess=()=>{try{const db=req.result,tx=db.transaction('saves','readwrite'),store=tx.objectStore('saves');for(const slot of ['1','2','3']){const raw=get(`${PREFIX}_slot${slot}`);if(raw)store.put({slot,raw,updatedAt:Date.now()})}tx.oncomplete=()=>db.close();tx.onerror=()=>db.close()}catch{try{req.result.close()}catch{}}};
+  }catch{}
+ }
+ Storage.prototype.setItem=function(key,value){
+  if(this===localStorage&&key===SESSION_KEY){
+   const nextUid=uidFrom(value),prevOwner=get(OWNER_KEY);
+   if(nextUid){
+    if(prevOwner&&prevOwner!==nextUid){
+     for(const slot of ['1','2','3'])remove(`${PREFIX}_slot${slot}`);
+     set(OWNER_KEY,nextUid);
+     rawSet.call(this,key,value);
+     // web-shell immediately starts a cloud sync. Reload before its first network read
+     // completes, then restore only the newly signed-in account's scoped mirror/cloud slots.
+     setTimeout(()=>location.reload(),0);
+     return;
+    }
+    if(!prevOwner)set(OWNER_KEY,nextUid);
+   }
+  }
+  return rawSet.call(this,key,value);
+ };
+})();
+
 // Browser-only UI. This file is overlaid by build_web.py and is not used by Android.
 (()=>{
   document.documentElement.classList.add('sdf-browser-build');
@@ -80,7 +135,7 @@ window.SDF_CLOUD_CONFIG={
    const s=await liveSession(false);
    if(!s?.user?.id)return status('Sign in before purchasing an account upgrade.','bad');
    if(own(E,k))return status('Your account already owns that upgrade.','good');
-   b.disabled=true;b.textContent='OPENING STRIPE…';status('Opening secure Stripe Sandbox checkout…');
+   b.disabled=true;b.textContent='OPENING STRIPE…';status('Opening secure Stripe checkout…');
    const r=await authedFetch('/functions/v1/create-checkout-session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({productKey:k})});
    let data=null;try{data=await r.json()}catch{}
    if(!r.ok)throw new Error(data?.error||data?.message||`Checkout request failed (${r.status})`);
@@ -102,7 +157,7 @@ window.SDF_CLOUD_CONFIG={
   if(document.querySelector('script[data-sdf-paid-editors]'))return;
   const s=document.createElement('script');
   s.dataset.sdfPaidEditors='1';
-  s.src='https://cdn.jsdelivr.net/gh/Snake3ite/SaturdayDynasty@af3218a2ccaa6f40d42e570deb5eef6c6120fcd3/browser-editors.js';
+  s.src='https://cdn.jsdelivr.net/gh/Snake3ite/SaturdayDynasty@c2079cca56ae733c7a5bb2327d620196ce01dcbf/browser-editors.js';
   s.async=true;
   s.onerror=()=>console.error('Saturday Dynasty paid editor bundle failed to load');
   document.head.appendChild(s);
