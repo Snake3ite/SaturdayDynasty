@@ -95,3 +95,17 @@ window.SDF_CLOUD_CONFIG={
  window.SDF_COMMERCE={openShop:open,closeShop:close,refreshEntitlements:refresh,getEntitlements:()=>E,owns:k=>own(E,k)};
  const init=()=>{make();ret();refresh(true)};document.readyState==='loading'?document.addEventListener('DOMContentLoaded',init):init();
 })();
+
+// Paid browser editors. Version-pinned so the currently tested implementation is stable.
+(()=>{
+ const load=()=>{
+  if(document.querySelector('script[data-sdf-paid-editors]'))return;
+  const s=document.createElement('script');
+  s.dataset.sdfPaidEditors='1';
+  s.src='https://cdn.jsdelivr.net/gh/Snake3ite/SaturdayDynasty@af3218a2ccaa6f40d42e570deb5eef6c6120fcd3/browser-editors.js';
+  s.async=true;
+  s.onerror=()=>console.error('Saturday Dynasty paid editor bundle failed to load');
+  document.head.appendChild(s);
+ };
+ document.readyState==='loading'?document.addEventListener('DOMContentLoaded',load):load();
+})();
