@@ -56,4 +56,15 @@ missing = [name for name in required if not (OUTPUT / name).exists()]
 if missing:
     raise SystemExit("Web build is missing: " + ", ".join(missing))
 
+# Do not allow another deployment that silently loses all team artwork.
+logo_dir = OUTPUT / "assets" / "logos"
+logos = sorted(logo_dir.glob("team-*.svg")) if logo_dir.exists() else []
+if len(logos) != 128:
+    raise SystemExit(
+        f"Browser build image validation failed: expected 128 team logo SVGs in assets/logos, found {len(logos)}."
+    )
+if not (OUTPUT / "icon-192.png").exists():
+    raise SystemExit("Browser build image validation failed: missing icon-192.png")
+
+print(f"Validated {len(logos)} team logos + browser icon assets")
 print(f"Saturday Dynasty web build ready in {OUTPUT.resolve()}")
