@@ -38,6 +38,19 @@ repo_cloud_config = Path("cloud-config.js")
 if repo_cloud_config.exists():
     shutil.copy2(repo_cloud_config, OUTPUT / "cloud-config.js")
 
+# Cloudflare Workers static-assets mode rejects our old SPA catch-all redirect:
+#   /* /index.html 200
+# It is unnecessary for Saturday Dynasty because the game boots from index.html and
+# does not use pathname-based client routes. Remove it from the deployed output.
+redirects = OUTPUT / "_redirects"
+if redirects.exists():
+    redirects.unlink()
+
+# Database setup belongs in the repository/admin workflow, not in public web assets.
+public_sql = OUTPUT / "supabase.sql"
+if public_sql.exists():
+    public_sql.unlink()
+
 required = ["index.html", "app-bundle.js", "styles.css", "web-shell.js", "cloud-config.js"]
 missing = [name for name in required if not (OUTPUT / name).exists()]
 if missing:
