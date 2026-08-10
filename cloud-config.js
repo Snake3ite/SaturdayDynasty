@@ -109,3 +109,26 @@ window.SDF_CLOUD_CONFIG={
  };
  document.readyState==='loading'?document.addEventListener('DOMContentLoaded',load):load();
 })();
+
+// Monetization guardrails: paid users skip forced ads, but voluntary rewarded ads remain available.
+// Team Editor may customize the program, but never creates spendable program funds or recruiting NIL.
+(()=>{
+ const apply=()=>{
+  const p=window.SDF_AD_POLICY||{};
+  p.mayOfferRewardedAds=()=>true;
+  p.canUseRewardedAds=()=>true;
+  window.SDF_AD_POLICY=p;
+  ['teBudget','teNilBudget'].forEach(id=>{
+   const input=document.getElementById(id);
+   if(!input)return;
+   input.readOnly=true;
+   input.disabled=true;
+   const label=input.closest('label');
+   if(label){label.hidden=true;label.setAttribute('aria-hidden','true')}
+  });
+ };
+ const watch=new MutationObserver(apply);
+ const start=()=>{apply();watch.observe(document.body,{childList:true,subtree:true})};
+ document.readyState==='loading'?document.addEventListener('DOMContentLoaded',start):start();
+ window.addEventListener('sdf:entitlements',apply);
+})();
