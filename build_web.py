@@ -33,6 +33,11 @@ for item in source.iterdir():
     else:
         shutil.copy2(item, destination)
 
+# Keep the browser-safe Supabase config editable in GitHub without rebuilding the ZIP.
+repo_cloud_config = Path("cloud-config.js")
+if repo_cloud_config.exists():
+    shutil.copy2(repo_cloud_config, OUTPUT / "cloud-config.js")
+
 required = ["index.html", "app-bundle.js", "styles.css", "web-shell.js", "cloud-config.js"]
 missing = [name for name in required if not (OUTPUT / name).exists()]
 if missing:
