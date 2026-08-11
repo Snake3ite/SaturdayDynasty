@@ -194,7 +194,7 @@ window.SDF_CLOUD_CONFIG={
   if(document.querySelector('script[data-sdf-feedback]'))return;
   const s=document.createElement('script');
   s.dataset.sdfFeedback='1';
-  s.src='https://cdn.jsdelivr.net/gh/Snake3ite/SaturdayDynasty@703513aac364834953324d4b09cd78b12df095bb/browser-feedback.js';
+  s.src='https://cdn.jsdelivr.net/gh/Snake3ite/SaturdayDynasty@5554cc8620d5f63353671f655a4a67daf9640636/browser-feedback.js';
   s.async=true;
   s.onerror=()=>console.error('Saturday Dynasty feedback widget failed to load');
   document.head.appendChild(s);
