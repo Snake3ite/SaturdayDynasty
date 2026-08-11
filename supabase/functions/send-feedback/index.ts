@@ -1,6 +1,6 @@
 import { withSupabase } from 'npm:@supabase/server@^1'
 
-const DESTINATION = 'dynastysportsstudio@gmail.com'
+const DESTINATION = 'ctoolis@gmail.com'
 const FROM = 'Saturday Dynasty Feedback <onboarding@resend.dev>'
 const SITE_URL = 'https://saturdaydynasty.ctoolis.workers.dev'
 const MAX_FILE_BYTES = 4 * 1024 * 1024
