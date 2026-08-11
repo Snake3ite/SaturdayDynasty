@@ -1,5 +1,6 @@
 from pathlib import Path
 import base64
+import hashlib
 import json
 import shutil
 import zipfile
@@ -8,10 +9,32 @@ import zlib
 ZIP_NAME = "SaturdayDynasty_Web_Beta_Configured.zip"
 ARCHIVE_ROOT = "SaturdayDynasty_Web_Beta"
 OUTPUT = Path("dist")
+PATCH_DIR = Path(".web184")
+APP_SHA256 = "11975405175198f82dad118d631032f3ba4df8298702f2a08fea9f7c0f7a0a14"
+CSS_SHA256 = "d488b5fd9f59f32519768a144e8de104bd1789e13cc971ed0439683d927a39e3"
 
-# Compressed copy of the 128 team SVGs. This makes browser builds self-healing even
-# if an older web package without assets/logos is uploaded to the repository.
-LOGO_ARCHIVE_B64 = "eNrtXW1z2ki2/itdmdqte6uGiV6R2M2mSgiwk0DsMt6kpipf2tCGLjfdTEsycbbuf7/d2EkGot4BR7RlcWZi3kygW9KT8/ac5/znRU7wouW5nd+y29mLf7x4pe7Q5wXj2b8+vZjn+fIfL1+uVqvfVv5vQs5eeo7jvFRv+fQC3VKy6orP6m0OcpAXtvWPel0KRtSLdKHfhCXFLYavCFMvpYIxMiNonOOcCo4uMJ8RmSEh6YxyzJBeC1pgefPpxetP/NWUXGevX11TlhOJ6FR9QqY+Un9jy3P+ph7efX+4otN8rp66wfrpnNDZPP/2XH0K6UmxHM/xVKzQdL1q9bap/oRIPcjyaY/c0vW6Hl66ZkJMW2KJJzTXb/vNiz+9ePn61cv7BakH6/WpdS5xPkd6eSPXi5EbY9d1kP5Rt2h9cLz75/evrf9vqde+6G+hTB+aX/wwdCJnvRIpbvQB/KWfJGnc/fZS69sWnfu/pxahnhWS/c8v2f/qpW0sJfCQG4QTL275AQrVrYtiv9VBXoQ89UKgb+O4FbVcXz1rhS6KOq2Ot36r03LDVhC33E4rUn8DqUcBUi+pv+u0guDP6x6s/1Mv/OlAxeHDaiZUThhBE324XX340ES/wfU9fZ2oR+sL5hGHINz8wo7/8IU5+Zyj79+2/rLQVY/0L1qYT+ZCf+2CTqeM6K8WPG9d4wVl+q2JuljZr6eE3ZKcTvCvGeZZKyOSXn99a0a/6HWFwdcXVl+vs47j/GkrW+su2d23rehDscRUfZaQ0/UZvX+DumjTi1cv9cL1zjToXr/49StcfQtwPft8rZaERnjGBaMYcHoYnIYoCuZuu33rhadB+GXhoMD7L8//jL14kAzSTShEHmCvCuydjQzYc93IAvZGZLGc0wx1WUGaBDzfQX48dzvtW9dxJg4KlZ0JUcdtdRQgnbgV+i03Uk/0A3WrXqot+AaDqN8D8B0CfKOu0fA5FsA3EDJHH9XNXLmolC0Ib5rpU96fugvi20iDsO23tLfohApvyvh57TTSttBHayvpru/c+EOwgUUvCXp+f/Oi7aRBO3kkFheBj9zI1/8i6K+MkB+qP60wQuqP6/h/Zfge6XTusY3aY29z3SW72wV7gwuj4QssYG8oMpSosJAps5cSnhdSXe5NsoBtjam56zks9LSj2bq/O23HQ7etwHdQkI0CDWV34ndaMWp3Wp6yve2WNsIqHFRBHwoCHS62XeQrk4xCT7m/KIpaga/DRF/9soPaXiv2dLDodlRg6MdIg7SlNhGrz/Tb+uXQUZ/ScvWv1Kep4NJptf8yaPQAv1Xgd5iabGdsI2gc44nEymLmAp0INj1W4Fbtqe5lHUs8U0jJVOOZjk9M6PI8C+jqFXKuYDRWB43h5mVO6+iW6oWpMNHTkSAK2qitTZrvoY560gpcdeLVrVqWsoXqBd9v+fptO9i7GOxdFfauNzYhMohtJGoKPqEEqZBxRsBLfYJQsLr6A0BrOw0zMEHLtwGtlCpoca4uZXRBb4lsVh4G4kCIAw8JXnPxMLBRwOiKFaN8hk4kUbBNNF5EoxxW7RAGc89t37rtmClPVf2r2Gq3UahvdflCuYuef9jqRdNADOHmFoi7iQnE7bYVwg5f4Ts0UqHmHGJNiDWP3qaOjNkf1wIcLzDTu0MXZJpjyoAXUItsazdy4xCyrYcwfxcmH9YGW/VMMsynAiW5uleH42hLGYmTJv7GqQzStDNwHuu2usqyBdrpRK7fmQce0+5oFGoX1nXac+WfbuAr7PSd7tbl/jh47b6RusNra90lu9uJ42b0LkMbxYyEXRV/FESqHzQWDOilkOgBp3R/pzQZGwk7Nshy74VcYK57OhZLMiWAYggMjw+D700YtEGZS5ZLzPBkThUML8lkDmHhw7l1Ym8QdDa9pLjbG8TPu1djj23VHX1b6y7Z3U4W0GQAbdi/FKvfKbShVOAsxwzQ93Buo4Hbc3sb5/YbCJ5V3LjHRuqOt611l+xupzSokWJqg2F6gtV61g5nfrSMmyB1e51w85Ls9Z0geppGqB/8ykdatj22VXukba67ZHe7IM3INo1sOJbd4voaM4G6jH75olAHsV2DMzQl5hIyNNVEh11jO2Nkw0MdiSuqzl4X301wDq1UQFJtFknVCC7Pho1M51gykecku1XbImhcLBY0B7LMwckyP+Wylhi7CIxdNRwZYznCRmwoCc7REN+QrHEB4v6E0yBxgmDz2hw4SffxGZjGFRP3OEK1Dzg3112yu50CzqGRNW7HVZUzzHOx4mhEebO04Z644aMWpQuwltveq5FR6gQWFRnPFa7QSYHllGLeuLZibRf13f2PFwQKiLUGXH+Q9mMA3EHcU2NKNfastEV9IWu6zM0dFAobz3n7UYYDUFxNRtXY9G9FnXGA70iek/uMz9kXhdwMhG4qar2ohOpW1pMRQ09GFT0ZgzNjhGijJfEd4Tka6v1x3V58zOmd6u2mJcnw6jqmwDBuofPd0MiFs5G/SThHibwSEr2Rgk8YnoJGlY1SCDR5NL3J442xVctGXWWIpToy5H5iBwSuhxL02JPhWoK3Dji5VTi5Q6N4TtsGxfW0mGaCow9YxZd393lZiC9BNAfAuxN4T80araEVBfOCPpCB1rJ1c7y6gdk5dbCXJWUVsJcHtpeejaTQ+E7iSZERNOZi1TCS6xNWMCEd9NzDxrG5ThLboRcUiyuK0aXElF0x/IWAaHndZukAN/1wZINLI/ysCOwUV4Xk6AzfgEG0j6qqZnAAqrZzocYKZGjDqL0nK3QmGdFEuVSSbKIrklCHhElwjRO1Mbb5hzbyKAOFLQ5TpOpHrqlORwryKNvkGmPq0g1txmvnmC1Inouj9BufVE24rA0f1IQrAVd6bgCXDa+xi+9Egf7NdUUgU8cZsiA/ZEGC0EmcTa9lkCZhEj63cvoeG6l9V+Hmukt2txNd26gXZcOqnReM6Z4LZdSELhKAM9moSnpJVQ8q6dVYzPNzI5vUBg0myeeEZ6jL8OQGdUkDB57Wo4wOlJimAznpGjXCrfRs3GW54KRxkhyPx3DlAo5P5uuCZONWB4Yxg2NHjF/ZTKl8XaZWB6X2H4NMJ/T6bntLJqXXj526s2TK3NzHJYb2OAS1n4Ozue6S3e1U6Dg3sr2tyKxSuaB8NlcI1V1TKyGBL1rjMRrV9RZDxXE7T2TqcvKt9DjdENSXlDQ4S/s4X7VqGbkn81VB7W2Ltt03ChPbmLA4xhwNC5qhsyuaLcX9BA2AXG0L/2W1SSj8V5KgGafGBI0Npmi/mBGurJ8yezNJSKMix2dGaAM69sHcy77R3Hk2KACXZLEkaDwRslEz2p5Y1xSkLxqO2ktjD1NoQ9JmIGSOtE6qzqcOpNoubVYTE9hHQNoD+3Rg5OnYKF5ofg5KWC7QG87FLc7FkePsSYmo1eEMgr1tWo0pzWmDDXdSsOuHTEvyd7xY/nN0rL6oG3nh+ox/P5ltJwkHtW+Yr67naY9DUHdobq27ZHc7zb8w6vHbaL8gPJcKhmdzKo6y8cL1+rFb4cTgmgSHZRXDRxLbdj9Cz3AU8dbudurpMPYCxzaCwx6+pRk6xfKWZDD0zYKwRUUNjD/25kMFv5IQsndqqmP4VoYxqmMwE+iSHG+G1e37SbzVfNSJ/DJK1LPsGd5jf7U3gZvrLtndTibQWMO3Abm3gpPsSkiBLugUtIGhdf9YkzpvjRKIvg0JxHMpbgU6J83SeqrXYCnwPmvufRr7FT3HBp/tI54I9FFiPmMN1Dl8CumMn5qiWGLsIugnrMTYffxoBJqN+WsjzOc4zzFHA0Y5JF5+TLxAjzBgek9MjwZGCmrHXrN/IyXzofQPIHtoxDdGiaENkF0WLMOov7hSyAF4gXkE5O5OQzWSx61MVhxRzgleCkYztO7yz3IsIdNzMFr5T8WdPyR4IuCCV5LgGb03ClLZIOgMKZ8IxtG5xFQ3CgMJvELI7dkVXEKq6QDIqgDZ0JhFDWyA7PdlRhnmOUUDdtesPGrNyhmgs18LvP1ubLtoW4kJpbhDlzTHoBdlI5EKM37rEtBdGvOdVgTBxVoRsVgsaA7dwDUI20rULSBsq0jXydjC6zlWaKF4SRg6VXtC55QTsHPPhakNWmuHm01ojPIiG1HeSHApCLofiwF5lNqkLquizADetlOXxiEYbSuzQDl/qB4k0wWVmGXgdD6zOdmgfHG4kaKJKRa0IQB8ISY3d2gkCp6r5TVOJX9/m+jE3iDobAb4cbc3iJ95eb4sifo487rHEao7grfWXbK7XRB8YWzctwJhhVl5c6t2RNYa3jBuG6TdwOz+terpG2Ol0Ybg1CVeLDG6lDQXHMqMTefGVWd8oZSyaynFC220g5wKLljBCnRJpwR449CA1XzEnRoR5wdWBoXLW8x0NumSHj2ZHBxfcHz3Lb6Y4etbGbzBcrSedzMmPKecMBg4dRjr+ewUIcHSbseoZu5CZIW7QLKcF/k9e2Gsjh1r1hzkJ55hDu5tHUGXmjX/rRRkCBdoTNXRkEAVOjhVCPzdxvu7F2Mj19a1Up1Ru1lhjdSzImd4BUkiEBdooKtqFENuR3ZqoPmDFmTTWLZ1q6g8O8YRYHUbq+fGTubISumTMTzHWUYIGlBJrqicQlT5FPawbKgqYKyasqSxsTKy0eH1nqzQ70LeoP5iqSAGnKD6KLBWpYIMgd4W5N4bVXLasRUROa0cgNH5XBBOPwPk7OtylNgz0OWohqRu7NhybSiMD8lnyme54OhSHTZRzOZXkkwzwNizaiH5UXscWkiqUc0xlvQ9GyX9LsOTm+yqkDM0EAWfyjvQH4f6YFMju65Rq9iK0H8q9JjGE3zFSIbGuZALSJ3UAHAlagEAuEMX5B0bQ4vPaTbBOV7hO2Xd5IxAVd6C4v9PILGEjwZIrGh4uDmpaaOUPsTX+I7kOUHp3VKSDMbcQAG9MdgaGmcphm0rtGyO3opMQUudxgJk4SCF2biGXyPAAhtJkneY4QX+IgR6R9SaCIOSdz0SJVUJ5oNF2wLcu3dGb9EGzeR8ThmeEracU3yflwRBb5hCA3iuPvqzgebhWrFYz51pmkTVzpFflHo919ucPp+kqRvaifyqqt7tsY2642pr3SW72ynyM+Y3AxsFhR5RrukVzJV56txKf5D2Y8itHMJy9cyEZxsVhHdcfL7XZ7ug0xmBrCWMsmhQlGeaKurakfLOhUSpOsTo31yP7830wyNNrLiRF67P+vcT2naScJA87zLcHtuqO+S21l2yu53kvI2ZTMdGqSBZkAx9pHwqacNSKk/XW7CPo1g2mAKIlNXQnD+ajFloJRJTW8/RB6xcxbujDsSqTnXUpEQAqY/twOyDMfURWPEeC56jc0awOhA5GhYN0xN8wqYCmGFdy0EwQ6P2n2dl7mDB1IrQOcE3UIoD8B3ZJEJzFtJGf2rKyCITHJ0INgUbZ5/ZVVkKEoC13SBwYsyHxFZoyStJ+ISggSRkLhjwTGDiGeD1vxW8zUPnQ0tU54TnglOBPuA/CiIFTOW10dTz7BrNodi3zaE25mtshI9fKSrJ3/Fi+c8R2NivBbLU7bjRZlqx2/H89HkRw/bYRu2zo5vrLtndToRL01xBK5or/QWRWIWKjeRbPmpEgxN6fbe9cVaDpNePnWfOmS5jnj1yNOjuR6juEN5ad8nudoGwSZLMtSK0STgna5nNlPBcy0aAl7vt5VaN6SeifALwtvU3jRyZtmO7+WhIr4hsFC2tQQWPkoZbKHhUk+c5N1YbYxtyESOaZaJguHHlxieUJAPx9+eewhkZq5BWOG5jUaiLqUv4tKlagTD9D5BaTbLVWCaxMrhoWFxdickN6hVZjjQ6GFQ1m989/2MyF7rnq9F36hmpdza6fM8kw3wq0Jm8apS40xGaXJjacjCQnhmnmPk2skZdIm+I7v0Ykz8KQXEGs+2fqskK6D+H48Ea9S6i0Er74pxI5dI2cJ51DRQvajYkCSzcdoejWUzbRlD5Rqzwfbv+KZa3JMsJABCmRhwB7t6cmtKuNqK/t3pAi+CoR1iOG8fo+blcTpC4nWCzKTftJL0kstQXUpJBfVxfyB4bqTvmttZdsrtdMPfWaOvaNmzdiSSE3+s+jdQveLNM3RNL/oLaaMMN5snISDW3YTEvi4k2mGM8K3AD+0NAs+2oh1ObDKMNXvm5OrrXdIJGRC1nKRjNMT/qEFAZstjbdHY8r+f3+2Ac9z9CdQfw1rpLdrcTs86YxLHRh/WRZDn6PozpgqqjcsTOLbQ4Q41jG6AfL4yFRBudH6eiyPS07ETZVyYg7ITkaqP92dPEqKxjw6M9Uasi2X2mZ7zCi+UE5yCLChX7xlizk7ERX4GVXEw2weq6zTBM4DW0MVbvgzatNRlAvZ0EMtLLA0siPD1KZgJ9zQcdob10nHYv2sxr9L1OGMXHQ0Hd4xDUHpab6y7Z3U5dH8bcTuhbEbPL0AcyU7fvieBAFIeJ283tyHhv8mptqEaei1ws8ASleEnz5klzPA5piZMm/ibtI007A+eZIW33bdRejGNz3SW726lckRp7jm3YtDHBea5O35mcYGCbQs8TmMENh/PMmNyxotKBp1QzbYb4hkChArRWAZd/OavDsWE0u+qaX1A+02XESyEnc/BQgRPXYLh1L41wszIZZ12vT8ViIfiKYJbPj5JyWnEAWJeCPQSEW2AzqjNGNgr241xImaE3EyglHr6UWE1LcNnQ0xgKgVUUAsdvjIVAK/34N1JZvuaJwdUhO1OPIn6ZRhww36pp5x8YM6ttK24rzQg6VRtED8OLgfUG/G+wqa+7P6i9/d//A2KcfB4="
+
+def payload(prefix: str) -> str:
+    parts = sorted(PATCH_DIR.glob(f"{prefix}_*.txt"))
+    if not parts:
+        raise SystemExit(f"Missing {prefix} web payload in {PATCH_DIR}/")
+    return "".join(p.read_text(encoding="utf-8").strip() for p in parts)
+
+
+def inflate(prefix: str) -> str:
+    try:
+        return zlib.decompress(base64.b64decode(payload(prefix))).decode("utf-8")
+    except Exception as exc:
+        raise SystemExit(f"Could not decode {prefix} web payload: {exc}") from exc
+
+
+def apply_line_patch(path: Path, prefix: str) -> None:
+    lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
+    ops = json.loads(inflate(prefix))
+    for i1, i2, replacement in reversed(ops):
+        lines[i1:i2] = [replacement] if replacement else []
+    path.write_text("".join(lines), encoding="utf-8")
+
 
 zip_path = Path(ZIP_NAME)
 if not zip_path.exists():
@@ -40,44 +63,56 @@ for item in source.iterdir():
     else:
         shutil.copy2(item, destination)
 
-# Keep the browser-safe Supabase config editable in GitHub without rebuilding the ZIP.
+# Upgrade the proven browser package to Android/Web Build 184 without storing
+# another large binary ZIP in git. These patches reconstruct the exact tested
+# game bundle and browser stylesheet from the prior production web package.
+apply_line_patch(OUTPUT / "app-bundle.js", "app")
+apply_line_patch(OUTPUT / "styles.css", "csspatch")
+(OUTPUT / "index.html").write_text(inflate("index"), encoding="utf-8")
+
+# Keep the browser-safe Supabase config editable in GitHub.
 repo_cloud_config = Path("cloud-config.js")
 if repo_cloud_config.exists():
     shutil.copy2(repo_cloud_config, OUTPUT / "cloud-config.js")
 
-# Restore the exact team SVG artwork into every web deployment.
-logo_payload = json.loads(zlib.decompress(base64.b64decode(LOGO_ARCHIVE_B64)).decode("utf-8"))
-logo_dir = OUTPUT / "assets" / "logos"
-logo_dir.mkdir(parents=True, exist_ok=True)
-for filename, svg in logo_payload.items():
-    (logo_dir / filename).write_text(svg, encoding="utf-8")
+# Force all clients onto the Build 184 assets instead of an older PWA cache.
+(OUTPUT / "sw.js").write_text(
+    """const CACHE='sdf-web-v27-3-3-build-184';
+const CORE=['./','./index.html','./styles.css','./app-bundle.js','./ad-config.js','./cloud-config.js','./web-shell.js','./manifest.webmanifest','./icon.svg'];
+self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting())));
+self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
+self.addEventListener('fetch',event=>{if(event.request.method!=='GET')return;event.respondWith(fetch(event.request).then(response=>{const copy=response.clone();caches.open(CACHE).then(cache=>cache.put(event.request,copy));return response}).catch(()=>caches.match(event.request).then(hit=>hit||caches.match('./index.html'))));});
+""",
+    encoding="utf-8",
+)
 
-# Force clients to discard the pre-logo browser cache.
-sw_path = OUTPUT / "sw.js"
-if sw_path.exists():
-    sw = sw_path.read_text(encoding="utf-8")
-    sw = sw.replace("sdf-web-v26-beta-3", "sdf-web-v26-beta-5")
-    sw = sw.replace("sdf-web-v26-beta-4", "sdf-web-v26-beta-5")
-    sw_path.write_text(sw, encoding="utf-8")
+# Cloudflare static-assets mode does not need the old SPA redirect and SQL is
+# an admin/setup artifact, not a public browser asset.
+for name in ("_redirects", "supabase.sql"):
+    candidate = OUTPUT / name
+    if candidate.exists():
+        candidate.unlink()
 
-# Cloudflare Workers static-assets mode rejects the old SPA catch-all redirect.
-redirects = OUTPUT / "_redirects"
-if redirects.exists():
-    redirects.unlink()
-
-# Database setup belongs in the repository/admin workflow, not public web assets.
-public_sql = OUTPUT / "supabase.sql"
-if public_sql.exists():
-    public_sql.unlink()
-
-required = ["index.html", "app-bundle.js", "styles.css", "web-shell.js", "cloud-config.js"]
+required = [
+    "index.html", "app-bundle.js", "styles.css", "web-shell.js",
+    "cloud-config.js", "manifest.webmanifest", "icon.svg", "sw.js"
+]
 missing = [name for name in required if not (OUTPUT / name).exists()]
 if missing:
     raise SystemExit("Web build is missing: " + ", ".join(missing))
 
-logos = sorted(logo_dir.glob("team-*.svg"))
-if len(logos) != 128:
-    raise SystemExit(f"Browser build image validation failed: expected 128 team logo SVGs, found {len(logos)}.")
+app_hash = hashlib.sha256((OUTPUT / "app-bundle.js").read_bytes()).hexdigest()
+css_hash = hashlib.sha256((OUTPUT / "styles.css").read_bytes()).hexdigest()
+if app_hash != APP_SHA256:
+    raise SystemExit(f"Build 184 app-bundle validation failed: {app_hash}")
+if css_hash != CSS_SHA256:
+    raise SystemExit(f"Build 184 stylesheet validation failed: {css_hash}")
 
-print(f"Validated {len(logos)} team logos")
-print(f"Saturday Dynasty web build ready in {OUTPUT.resolve()}")
+html = (OUTPUT / "index.html").read_text(encoding="utf-8")
+if "ALL-TIME RECORD BOOK" not in html or "Web V27.3.3" not in html:
+    raise SystemExit("Build 184 index validation failed.")
+
+print("Validated Saturday Dynasty Football Web V27.3.3 / Build 184")
+print(f"app-bundle sha256: {app_hash}")
+print(f"styles sha256: {css_hash}")
+print(f"Web build ready in {OUTPUT.resolve()}")
