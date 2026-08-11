@@ -87,7 +87,7 @@ window.SDF_CLOUD_CONFIG={
   ['commissioner_mode','Commissioner Mode','$9.99','No ads, Player Editor, Team Editor, plus future commissioner tools.','BEST VALUE'],
   ['remove_ads','Remove Ads','$4.99','Permanently removes browser display and forced ads from your account.',''],
   ['player_editor','Player Editor','$4.99','Unlock player editing tools for your dynasties.',''],
-  ['team_editor','Team Editor','$4.99','Unlock team and program customization tools.','']
+  ['team_editor','Team Editor','$4.99','Unlock team and program customization tools for your dynasties.','']
  ];
  const SESSION_KEY='SDF_SUPABASE_SESSION';
  let E=null;
@@ -186,4 +186,18 @@ window.SDF_CLOUD_CONFIG={
  const start=()=>{apply();watch.observe(document.body,{childList:true,subtree:true})};
  document.readyState==='loading'?document.addEventListener('DOMContentLoaded',start):start();
  window.addEventListener('sdf:entitlements',apply);
+})();
+
+// Browser feedback widget. Version-pinned to the matching implementation commit.
+(()=>{
+ const load=()=>{
+  if(document.querySelector('script[data-sdf-feedback]'))return;
+  const s=document.createElement('script');
+  s.dataset.sdfFeedback='1';
+  s.src='https://cdn.jsdelivr.net/gh/Snake3ite/SaturdayDynasty@703513aac364834953324d4b09cd78b12df095bb/browser-feedback.js';
+  s.async=true;
+  s.onerror=()=>console.error('Saturday Dynasty feedback widget failed to load');
+  document.head.appendChild(s);
+ };
+ document.readyState==='loading'?document.addEventListener('DOMContentLoaded',load):load();
 })();
