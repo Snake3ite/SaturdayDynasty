@@ -13,6 +13,7 @@ PATCH_187 = Path(".web187")
 PATCH_188 = Path(".web188")
 PATCH_189 = Path(".web189")
 APP_SHA256 = "9d7a6115e10b830fdde60f918d2c27e76c292230fe59561c2a8d3528a0c8fa0d"
+BROWSER_FILES = ["browser-editors.js", "browser-commerce-bridge.js", "browser-feedback.js"]
 
 
 def payload(prefix: str, patch_dir: Path) -> str:
@@ -100,10 +101,31 @@ html = html.replace("?v=188", "?v=189")
 html = html.replace("Build 188", "Build 189")
 index_path.write_text(html, encoding="utf-8")
 
-# Keep the browser-safe Supabase config editable in GitHub.
+# Keep browser-owned account/commerce files editable in GitHub.
 repo_cloud_config = Path("cloud-config.js")
 if repo_cloud_config.exists():
     shutil.copy2(repo_cloud_config, OUTPUT / "cloud-config.js")
+
+for name in BROWSER_FILES:
+    src = Path(name)
+    if not src.exists():
+        raise SystemExit(f"Missing browser-only runtime: {name}")
+    shutil.copy2(src, OUTPUT / name)
+
+# The shared bundle owns Android billing. Browser-specific scripts must load after it so
+# Stripe/Supabase entitlements and browser editor tools become authoritative on web.
+html = index_path.read_text(encoding="utf-8")
+anchor = '<script src="web-shell.js?v=189"></script>'
+browser_scripts = (
+    '<script data-sdf-paid-editors="1" src="browser-editors.js?v=189"></script>\n'
+    '<script src="browser-commerce-bridge.js?v=189"></script>\n'
+    '<script data-sdf-feedback="1" src="browser-feedback.js?v=189"></script>'
+)
+if 'browser-commerce-bridge.js?v=189' not in html:
+    if anchor not in html:
+        raise SystemExit("Could not locate Build 189 web-shell script anchor.")
+    html = html.replace(anchor, anchor + "\n" + browser_scripts)
+    index_path.write_text(html, encoding="utf-8")
 
 # Preserve the stable dynasty save key while identifying the actual browser build.
 web_shell = OUTPUT / "web-shell.js"
@@ -117,7 +139,7 @@ if web_shell.exists():
 # Force PWA clients onto Build 189 rather than reusing Build 188 assets.
 (OUTPUT / "sw.js").write_text(
     """const CACHE='sdf-web-v27-3-8-build-189';
-const CORE=['./','./index.html','./styles.css','./app-bundle.js','./ad-config.js','./cloud-config.js','./web-shell.js','./manifest.webmanifest','./icon.svg'];
+const CORE=['./','./index.html','./styles.css','./app-bundle.js','./ad-config.js','./cloud-config.js','./web-shell.js','./browser-editors.js','./browser-commerce-bridge.js','./browser-feedback.js','./manifest.webmanifest','./icon.svg'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',event=>{if(event.request.method!=='GET')return;event.respondWith(fetch(event.request).then(response=>{const copy=response.clone();caches.open(CACHE).then(cache=>cache.put(event.request,copy));return response}).catch(()=>caches.match(event.request).then(hit=>hit||caches.match('./index.html'))));});
@@ -132,7 +154,8 @@ for name in ("_redirects", "supabase.sql"):
 
 required = [
     "index.html", "app-bundle.js", "styles.css", "web-shell.js",
-    "cloud-config.js", "manifest.webmanifest", "icon.svg", "sw.js"
+    "cloud-config.js", "browser-editors.js", "browser-commerce-bridge.js",
+    "browser-feedback.js", "manifest.webmanifest", "icon.svg", "sw.js"
 ]
 missing = [name for name in required if not (OUTPUT / name).exists()]
 if missing:
@@ -149,6 +172,18 @@ if "Web V27.3.8 · Staff Overhaul" not in html:
     raise SystemExit("Build 189 index content validation failed.")
 if "app-bundle.js?v=189" not in html or "cloud-config.js?v=189" not in html or "web-shell.js?v=189" not in html:
     raise SystemExit("Build 189 browser cache busters are missing.")
+for script in ("browser-editors.js?v=189", "browser-commerce-bridge.js?v=189", "browser-feedback.js?v=189"):
+    if script not in html:
+        raise SystemExit(f"Build 189 browser runtime is not loaded: {script}")
+cloud = (OUTPUT / "cloud-config.js").read_text(encoding="utf-8")
+editors = (OUTPUT / "browser-editors.js").read_text(encoding="utf-8")
+bridge = (OUTPUT / "browser-commerce-bridge.js").read_text(encoding="utf-8")
+if "Browser-only Stripe/Supabase storefront" not in cloud or "user_entitlements" not in cloud or "SDF_COMMERCE" not in cloud:
+    raise SystemExit("Build 189 browser Stripe/Supabase commerce adapter is missing.")
+if "SDF_COMMERCE" not in editors or "sdf:entitlements" not in editors:
+    raise SystemExit("Build 189 browser entitlement-aware editor layer is missing.")
+if "SDF_BROWSER_COMMERCE_BRIDGE" not in bridge or "#sdfPlayShop" not in bridge or "SHOP_SELECTORS" not in bridge:
+    raise SystemExit("Build 189 browser commerce routing bridge is missing.")
 if "V27.3.8 Build 189 — Staff Overhaul" not in css or ".staff-profile-v189" not in css or ".assignment-card-v189" not in css:
     raise SystemExit("Build 189 staff-overhaul styles are missing.")
 if "app_version:'web-v27.3.8-build-189'" not in shell:
@@ -160,4 +195,5 @@ print("Validated Saturday Dynasty Football Web V27.3.8 / Build 189")
 print(f"app-bundle sha256: {app_hash}")
 print(f"styles sha256: {hashlib.sha256((OUTPUT / 'styles.css').read_bytes()).hexdigest()}")
 print(f"index sha256: {hashlib.sha256((OUTPUT / 'index.html').read_bytes()).hexdigest()}")
+print("browser commerce: local Stripe/Supabase entitlement layer")
 print(f"Web build ready in {OUTPUT.resolve()}")
