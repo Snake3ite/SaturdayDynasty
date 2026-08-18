@@ -80,7 +80,7 @@ if "V27.3.7 Build 188 — Promises, Trust & Culture" not in styles:
 index_path = OUTPUT / "index.html"
 html = index_path.read_text(encoding="utf-8")
 html = html.replace("Android V27.3.6 · Coach Tree V2", "Android V27.3.7 · Promises, Trust & Culture")
-html = html.replace("Web V27.3.6", "Web V27.3.7")
+html = html.replace("Web V27.3.6 · Coach Tree V2", "Web V27.3.7 · Promises, Trust & Culture")
 html = html.replace("?v=187", "?v=188")
 html = html.replace("Build 187", "Build 188")
 index_path.write_text(html, encoding="utf-8")
@@ -95,7 +95,7 @@ if "V27.3.8 Build 189 — Staff Overhaul" not in styles:
 
 html = index_path.read_text(encoding="utf-8")
 html = html.replace("Android V27.3.7 · Promises, Trust & Culture", "Android V27.3.8 · Staff Overhaul")
-html = html.replace("Web V27.3.7", "Web V27.3.8")
+html = html.replace("Web V27.3.7 · Promises, Trust & Culture", "Web V27.3.8 · Staff Overhaul")
 html = html.replace("?v=188", "?v=189")
 html = html.replace("Build 188", "Build 189")
 index_path.write_text(html, encoding="utf-8")
@@ -145,7 +145,7 @@ if app_hash != APP_SHA256:
 html = (OUTPUT / "index.html").read_text(encoding="utf-8")
 css = (OUTPUT / "styles.css").read_text(encoding="utf-8")
 shell = (OUTPUT / "web-shell.js").read_text(encoding="utf-8")
-if "Staff Overhaul" not in html or "Web V27.3.8" not in html:
+if "Web V27.3.8 · Staff Overhaul" not in html:
     raise SystemExit("Build 189 index content validation failed.")
 if "app-bundle.js?v=189" not in html or "cloud-config.js?v=189" not in html or "web-shell.js?v=189" not in html:
     raise SystemExit("Build 189 browser cache busters are missing.")
