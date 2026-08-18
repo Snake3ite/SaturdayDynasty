@@ -9,9 +9,10 @@ import zlib
 ZIP_NAME = "SaturdayDynasty_Web_Beta_Configured.zip"
 ARCHIVE_ROOT = "SaturdayDynasty_Web_Beta"
 OUTPUT = Path("dist")
-PATCH_DIR = Path(".web184")
-APP_SHA256 = "11975405175198f82dad118d631032f3ba4df8298702f2a08fea9f7c0f7a0a14"
-CSS_SHA256 = "d488b5fd9f59f32519768a144e8de104bd1789e13cc971ed0439683d927a39e3"
+PATCH_DIR = Path(".web187")
+APP_SHA256 = "07440693ba264ca6fc20c4bc7a1c4dc54d0a8b613cf09e1e5dd3b7ebf6bc8fcc"
+CSS_SHA256 = "3f551c1032edd85e85eb4d82ea54795ea6c594c6d7645dc2d6713e4436767895"
+INDEX_SHA256 = "d97609267af9669db2d82d6795f8617d818b14c9a044085c7cb1724d2bad7966"
 
 
 def payload(prefix: str) -> str:
@@ -63,9 +64,8 @@ for item in source.iterdir():
     else:
         shutil.copy2(item, destination)
 
-# Upgrade the proven browser package to Android/Web Build 184 without storing
-# another large binary ZIP in git. These patches reconstruct the exact tested
-# game bundle and browser stylesheet from the prior production web package.
+# Reconstruct the exact Build 187 shared game bundle and the browser-specific
+# merged stylesheet/index from the proven configured web shell.
 apply_line_patch(OUTPUT / "app-bundle.js", "app")
 apply_line_patch(OUTPUT / "styles.css", "csspatch")
 (OUTPUT / "index.html").write_text(inflate("index"), encoding="utf-8")
@@ -75,9 +75,17 @@ repo_cloud_config = Path("cloud-config.js")
 if repo_cloud_config.exists():
     shutil.copy2(repo_cloud_config, OUTPUT / "cloud-config.js")
 
-# Force all clients onto the Build 184 assets instead of an older PWA cache.
+# Preserve the stable save key, but make cloud-save metadata identify this
+# actual browser build rather than the original beta shell version.
+web_shell = OUTPUT / "web-shell.js"
+if web_shell.exists():
+    shell = web_shell.read_text(encoding="utf-8")
+    shell = shell.replace("app_version:'web-v26-beta'", "app_version:'web-v27.3.6-build-187'")
+    web_shell.write_text(shell, encoding="utf-8")
+
+# Force all PWA clients onto Build 187 assets instead of an older cache.
 (OUTPUT / "sw.js").write_text(
-    """const CACHE='sdf-web-v27-3-3-build-184';
+    """const CACHE='sdf-web-v27-3-6-build-187';
 const CORE=['./','./index.html','./styles.css','./app-bundle.js','./ad-config.js','./cloud-config.js','./web-shell.js','./manifest.webmanifest','./icon.svg'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
@@ -103,16 +111,24 @@ if missing:
 
 app_hash = hashlib.sha256((OUTPUT / "app-bundle.js").read_bytes()).hexdigest()
 css_hash = hashlib.sha256((OUTPUT / "styles.css").read_bytes()).hexdigest()
+index_hash = hashlib.sha256((OUTPUT / "index.html").read_bytes()).hexdigest()
 if app_hash != APP_SHA256:
-    raise SystemExit(f"Build 184 app-bundle validation failed: {app_hash}")
+    raise SystemExit(f"Build 187 app-bundle validation failed: {app_hash}")
 if css_hash != CSS_SHA256:
-    raise SystemExit(f"Build 184 stylesheet validation failed: {css_hash}")
+    raise SystemExit(f"Build 187 stylesheet validation failed: {css_hash}")
+if index_hash != INDEX_SHA256:
+    raise SystemExit(f"Build 187 index validation failed: {index_hash}")
 
 html = (OUTPUT / "index.html").read_text(encoding="utf-8")
-if "ALL-TIME RECORD BOOK" not in html or "Web V27.3.3" not in html:
-    raise SystemExit("Build 184 index validation failed.")
+if "Coach Tree V2" not in html or "Web V27.3.6" not in html:
+    raise SystemExit("Build 187 index content validation failed.")
+if "cloud-config.js?v=187" not in html or "web-shell.js?v=187" not in html:
+    raise SystemExit("Build 187 browser shell scripts are missing.")
+if "app_version:'web-v27.3.6-build-187'" not in (OUTPUT / "web-shell.js").read_text(encoding="utf-8"):
+    raise SystemExit("Build 187 web-shell metadata validation failed.")
 
-print("Validated Saturday Dynasty Football Web V27.3.3 / Build 184")
+print("Validated Saturday Dynasty Football Web V27.3.6 / Build 187")
 print(f"app-bundle sha256: {app_hash}")
 print(f"styles sha256: {css_hash}")
+print(f"index sha256: {index_hash}")
 print(f"Web build ready in {OUTPUT.resolve()}")
