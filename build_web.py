@@ -12,7 +12,8 @@ OUTPUT = Path("dist")
 PATCH_187 = Path(".web187")
 PATCH_188 = Path(".web188")
 PATCH_189 = Path(".web189")
-APP_SHA256 = "9d7a6115e10b830fdde60f918d2c27e76c292230fe59561c2a8d3528a0c8fa0d"
+PATCH_190 = Path(".web190")
+APP_SHA256 = "8c1e2c144f0b26da99dc6f8b38f42673dc7316d917cb780d9fb4069bf1920e04"
 BROWSER_FILES = ["browser-editors.js", "browser-commerce-bridge.js", "browser-feedback.js"]
 
 
@@ -101,6 +102,20 @@ html = html.replace("?v=188", "?v=189")
 html = html.replace("Build 188", "Build 189")
 index_path.write_text(html, encoding="utf-8")
 
+# Stage 4: advance the shared game/runtime to Build 190 Program Identity & Traditions.
+apply_line_patch(OUTPUT / "app-bundle.js", "app", PATCH_190)
+style_190 = (PATCH_190 / "styles-additions.css").read_text(encoding="utf-8")
+styles = styles_path.read_text(encoding="utf-8")
+if "V27.3.9 Build 190 — Program Identity & Traditions" not in styles:
+    styles_path.write_text(styles.rstrip() + "\n\n" + style_190.rstrip() + "\n", encoding="utf-8")
+
+html = index_path.read_text(encoding="utf-8")
+html = html.replace("Android V27.3.8 · Staff Overhaul", "Android V27.3.9 · Program Identity & Traditions")
+html = html.replace("Web V27.3.8 · Staff Overhaul", "Web V27.3.9 · Program Identity & Traditions")
+html = html.replace("?v=189", "?v=190")
+html = html.replace("Build 189", "Build 190")
+index_path.write_text(html, encoding="utf-8")
+
 # Keep browser-owned account/commerce files editable in GitHub.
 repo_cloud_config = Path("cloud-config.js")
 if repo_cloud_config.exists():
@@ -115,15 +130,15 @@ for name in BROWSER_FILES:
 # The shared bundle owns Android billing. Browser-specific scripts must load after it so
 # Stripe/Supabase entitlements and browser editor tools become authoritative on web.
 html = index_path.read_text(encoding="utf-8")
-anchor = '<script src="web-shell.js?v=189"></script>'
+anchor = '<script src="web-shell.js?v=190"></script>'
 browser_scripts = (
-    '<script data-sdf-paid-editors="1" src="browser-editors.js?v=189"></script>\n'
-    '<script src="browser-commerce-bridge.js?v=189"></script>\n'
-    '<script data-sdf-feedback="1" src="browser-feedback.js?v=189"></script>'
+    '<script data-sdf-paid-editors="1" src="browser-editors.js?v=190"></script>\n'
+    '<script src="browser-commerce-bridge.js?v=190"></script>\n'
+    '<script data-sdf-feedback="1" src="browser-feedback.js?v=190"></script>'
 )
-if 'browser-commerce-bridge.js?v=189' not in html:
+if 'browser-commerce-bridge.js?v=190' not in html:
     if anchor not in html:
-        raise SystemExit("Could not locate Build 189 web-shell script anchor.")
+        raise SystemExit("Could not locate Build 190 web-shell script anchor.")
     html = html.replace(anchor, anchor + "\n" + browser_scripts)
     index_path.write_text(html, encoding="utf-8")
 
@@ -131,14 +146,15 @@ if 'browser-commerce-bridge.js?v=189' not in html:
 web_shell = OUTPUT / "web-shell.js"
 if web_shell.exists():
     shell = web_shell.read_text(encoding="utf-8")
-    shell = shell.replace("app_version:'web-v26-beta'", "app_version:'web-v27.3.8-build-189'")
-    shell = shell.replace("app_version:'web-v27.3.6-build-187'", "app_version:'web-v27.3.8-build-189'")
-    shell = shell.replace("app_version:'web-v27.3.7-build-188'", "app_version:'web-v27.3.8-build-189'")
+    shell = shell.replace("app_version:'web-v26-beta'", "app_version:'web-v27.3.9-build-190'")
+    shell = shell.replace("app_version:'web-v27.3.6-build-187'", "app_version:'web-v27.3.9-build-190'")
+    shell = shell.replace("app_version:'web-v27.3.7-build-188'", "app_version:'web-v27.3.9-build-190'")
+    shell = shell.replace("app_version:'web-v27.3.8-build-189'", "app_version:'web-v27.3.9-build-190'")
     web_shell.write_text(shell, encoding="utf-8")
 
-# Force PWA clients onto Build 189 rather than reusing Build 188 assets.
+# Force PWA clients onto Build 190 rather than reusing Build 189 assets.
 (OUTPUT / "sw.js").write_text(
-    """const CACHE='sdf-web-v27-3-8-build-189';
+    """const CACHE='sdf-web-v27-3-9-build-190';
 const CORE=['./','./index.html','./styles.css','./app-bundle.js','./ad-config.js','./cloud-config.js','./web-shell.js','./browser-editors.js','./browser-commerce-bridge.js','./browser-feedback.js','./manifest.webmanifest','./icon.svg'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
@@ -163,35 +179,35 @@ if missing:
 
 app_hash = hashlib.sha256((OUTPUT / "app-bundle.js").read_bytes()).hexdigest()
 if app_hash != APP_SHA256:
-    raise SystemExit(f"Build 189 app-bundle validation failed: {app_hash}")
+    raise SystemExit(f"Build 190 app-bundle validation failed: {app_hash}")
 
 html = (OUTPUT / "index.html").read_text(encoding="utf-8")
 css = (OUTPUT / "styles.css").read_text(encoding="utf-8")
 shell = (OUTPUT / "web-shell.js").read_text(encoding="utf-8")
-if "Web V27.3.8 · Staff Overhaul" not in html:
-    raise SystemExit("Build 189 index content validation failed.")
-if "app-bundle.js?v=189" not in html or "cloud-config.js?v=189" not in html or "web-shell.js?v=189" not in html:
-    raise SystemExit("Build 189 browser cache busters are missing.")
-for script in ("browser-editors.js?v=189", "browser-commerce-bridge.js?v=189", "browser-feedback.js?v=189"):
+if "Web V27.3.9 · Program Identity & Traditions" not in html:
+    raise SystemExit("Build 190 index content validation failed.")
+if "app-bundle.js?v=190" not in html or "cloud-config.js?v=190" not in html or "web-shell.js?v=190" not in html:
+    raise SystemExit("Build 190 browser cache busters are missing.")
+for script in ("browser-editors.js?v=190", "browser-commerce-bridge.js?v=190", "browser-feedback.js?v=190"):
     if script not in html:
-        raise SystemExit(f"Build 189 browser runtime is not loaded: {script}")
+        raise SystemExit(f"Build 190 browser runtime is not loaded: {script}")
 cloud = (OUTPUT / "cloud-config.js").read_text(encoding="utf-8")
 editors = (OUTPUT / "browser-editors.js").read_text(encoding="utf-8")
 bridge = (OUTPUT / "browser-commerce-bridge.js").read_text(encoding="utf-8")
 if "Browser-only Stripe/Supabase storefront" not in cloud or "user_entitlements" not in cloud or "SDF_COMMERCE" not in cloud:
-    raise SystemExit("Build 189 browser Stripe/Supabase commerce adapter is missing.")
+    raise SystemExit("Build 190 browser Stripe/Supabase commerce adapter is missing.")
 if "SDF_COMMERCE" not in editors or "sdf:entitlements" not in editors:
-    raise SystemExit("Build 189 browser entitlement-aware editor layer is missing.")
+    raise SystemExit("Build 190 browser entitlement-aware editor layer is missing.")
 if "SDF_BROWSER_COMMERCE_BRIDGE" not in bridge or "#sdfPlayShop" not in bridge or "SHOP_SELECTORS" not in bridge:
-    raise SystemExit("Build 189 browser commerce routing bridge is missing.")
-if "V27.3.8 Build 189 — Staff Overhaul" not in css or ".staff-profile-v189" not in css or ".assignment-card-v189" not in css:
-    raise SystemExit("Build 189 staff-overhaul styles are missing.")
-if "app_version:'web-v27.3.8-build-189'" not in shell:
-    raise SystemExit("Build 189 web-shell metadata validation failed.")
-if "sdf-web-v27-3-8-build-189" not in (OUTPUT / "sw.js").read_text(encoding="utf-8"):
-    raise SystemExit("Build 189 service-worker cache validation failed.")
+    raise SystemExit("Build 190 browser commerce routing bridge is missing.")
+if "V27.3.9 Build 190 — Program Identity & Traditions" not in css or ".program-identity-v190" not in css or ".tradition-v190" not in css:
+    raise SystemExit("Build 190 program-identity styles are missing.")
+if "app_version:'web-v27.3.9-build-190'" not in shell:
+    raise SystemExit("Build 190 web-shell metadata validation failed.")
+if "sdf-web-v27-3-9-build-190" not in (OUTPUT / "sw.js").read_text(encoding="utf-8"):
+    raise SystemExit("Build 190 service-worker cache validation failed.")
 
-print("Validated Saturday Dynasty Football Web V27.3.8 / Build 189")
+print("Validated Saturday Dynasty Football Web V27.3.9 / Build 190")
 print(f"app-bundle sha256: {app_hash}")
 print(f"styles sha256: {hashlib.sha256((OUTPUT / 'styles.css').read_bytes()).hexdigest()}")
 print(f"index sha256: {hashlib.sha256((OUTPUT / 'index.html').read_bytes()).hexdigest()}")
