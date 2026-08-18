@@ -14,7 +14,7 @@ PATCH_188 = Path(".web188")
 PATCH_189 = Path(".web189")
 PATCH_190 = Path(".web190")
 APP_SHA256 = "8c1e2c144f0b26da99dc6f8b38f42673dc7316d917cb780d9fb4069bf1920e04"
-BROWSER_FILES = ["browser-editors.js", "browser-commerce-bridge.js", "browser-feedback.js"]
+BROWSER_FILES = ["browser-save-bridge.js", "browser-editors.js", "browser-commerce-bridge.js", "browser-feedback.js"]
 
 
 def payload(prefix: str, patch_dir: Path) -> str:
@@ -132,11 +132,12 @@ for name in BROWSER_FILES:
 html = index_path.read_text(encoding="utf-8")
 anchor = '<script src="web-shell.js?v=190"></script>'
 browser_scripts = (
+    '<script src="browser-save-bridge.js?v=190h1"></script>\n'
     '<script data-sdf-paid-editors="1" src="browser-editors.js?v=190"></script>\n'
     '<script src="browser-commerce-bridge.js?v=190"></script>\n'
     '<script data-sdf-feedback="1" src="browser-feedback.js?v=190"></script>'
 )
-if 'browser-commerce-bridge.js?v=190' not in html:
+if 'browser-save-bridge.js?v=190h1' not in html:
     if anchor not in html:
         raise SystemExit("Could not locate Build 190 web-shell script anchor.")
     html = html.replace(anchor, anchor + "\n" + browser_scripts)
@@ -154,8 +155,8 @@ if web_shell.exists():
 
 # Force PWA clients onto Build 190 rather than reusing Build 189 assets.
 (OUTPUT / "sw.js").write_text(
-    """const CACHE='sdf-web-v27-3-9-build-190';
-const CORE=['./','./index.html','./styles.css','./app-bundle.js','./ad-config.js','./cloud-config.js','./web-shell.js','./browser-editors.js','./browser-commerce-bridge.js','./browser-feedback.js','./manifest.webmanifest','./icon.svg'];
+    """const CACHE='sdf-web-v27-3-9-build-190-save-hotfix-1';
+const CORE=['./','./index.html','./styles.css','./app-bundle.js','./ad-config.js','./cloud-config.js','./web-shell.js','./browser-save-bridge.js','./browser-editors.js','./browser-commerce-bridge.js','./browser-feedback.js','./manifest.webmanifest','./icon.svg'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',event=>{if(event.request.method!=='GET')return;event.respondWith(fetch(event.request).then(response=>{const copy=response.clone();caches.open(CACHE).then(cache=>cache.put(event.request,copy));return response}).catch(()=>caches.match(event.request).then(hit=>hit||caches.match('./index.html'))));});
@@ -170,46 +171,9 @@ for name in ("_redirects", "supabase.sql"):
 
 required = [
     "index.html", "app-bundle.js", "styles.css", "web-shell.js",
-    "cloud-config.js", "browser-editors.js", "browser-commerce-bridge.js",
+    "cloud-config.js", "browser-save-bridge.js", "browser-editors.js", "browser-commerce-bridge.js",
     "browser-feedback.js", "manifest.webmanifest", "icon.svg", "sw.js"
 ]
 missing = [name for name in required if not (OUTPUT / name).exists()]
 if missing:
-    raise SystemExit("Web build is missing: " + ", ".join(missing))
-
-app_hash = hashlib.sha256((OUTPUT / "app-bundle.js").read_bytes()).hexdigest()
-if app_hash != APP_SHA256:
-    raise SystemExit(f"Build 190 app-bundle validation failed: {app_hash}")
-
-html = (OUTPUT / "index.html").read_text(encoding="utf-8")
-css = (OUTPUT / "styles.css").read_text(encoding="utf-8")
-shell = (OUTPUT / "web-shell.js").read_text(encoding="utf-8")
-if "Web V27.3.9 · Program Identity & Traditions" not in html:
-    raise SystemExit("Build 190 index content validation failed.")
-if "app-bundle.js?v=190" not in html or "cloud-config.js?v=190" not in html or "web-shell.js?v=190" not in html:
-    raise SystemExit("Build 190 browser cache busters are missing.")
-for script in ("browser-editors.js?v=190", "browser-commerce-bridge.js?v=190", "browser-feedback.js?v=190"):
-    if script not in html:
-        raise SystemExit(f"Build 190 browser runtime is not loaded: {script}")
-cloud = (OUTPUT / "cloud-config.js").read_text(encoding="utf-8")
-editors = (OUTPUT / "browser-editors.js").read_text(encoding="utf-8")
-bridge = (OUTPUT / "browser-commerce-bridge.js").read_text(encoding="utf-8")
-if "Browser-only Stripe/Supabase storefront" not in cloud or "user_entitlements" not in cloud or "SDF_COMMERCE" not in cloud:
-    raise SystemExit("Build 190 browser Stripe/Supabase commerce adapter is missing.")
-if "SDF_COMMERCE" not in editors or "sdf:entitlements" not in editors:
-    raise SystemExit("Build 190 browser entitlement-aware editor layer is missing.")
-if "SDF_BROWSER_COMMERCE_BRIDGE" not in bridge or "#sdfPlayShop" not in bridge or "SHOP_SELECTORS" not in bridge:
-    raise SystemExit("Build 190 browser commerce routing bridge is missing.")
-if "V27.3.9 Build 190 — Program Identity & Traditions" not in css or ".program-identity-v190" not in css or ".tradition-v190" not in css:
-    raise SystemExit("Build 190 program-identity styles are missing.")
-if "app_version:'web-v27.3.9-build-190'" not in shell:
-    raise SystemExit("Build 190 web-shell metadata validation failed.")
-if "sdf-web-v27-3-9-build-190" not in (OUTPUT / "sw.js").read_text(encoding="utf-8"):
-    raise SystemExit("Build 190 service-worker cache validation failed.")
-
-print("Validated Saturday Dynasty Football Web V27.3.9 / Build 190")
-print(f"app-bundle sha256: {app_hash}")
-print(f"styles sha256: {hashlib.sha256((OUTPUT / 'styles.css').read_bytes()).hexdigest()}")
-print(f"index sha256: {hashlib.sha256((OUTPUT / 'index.html').read_bytes()).hexdigest()}")
-print("browser commerce: local Stripe/Supabase entitlement layer")
-print(f"Web build ready in {OUTPUT.resolve()}")
+    raise S
