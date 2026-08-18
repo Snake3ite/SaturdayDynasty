@@ -14,7 +14,8 @@ PATCH_188 = Path(".web188")
 PATCH_189 = Path(".web189")
 PATCH_190 = Path(".web190")
 PATCH_191 = Path(".web191")
-APP_SHA256 = "c84a49d62c1ed3e70583db779ff960c298003c0e3510e37ae09a45b845dd4f0c"
+PATCH_192 = Path(".web192")
+APP_SHA256 = "81c6eccaddd4fbfa589c26e36ef11bce340619f56578d510eace633fa544aaa3"
 BROWSER_FILES = [
     "browser-save-bridge.js",
     "browser-editors.js",
@@ -126,6 +127,16 @@ html = html.replace("?v=190", "?v=191")
 html = html.replace("Build 190", "Build 191")
 index_path.write_text(html, encoding="utf-8")
 
+# Stage 6: Build 192 — Players Become People.
+apply_line_patch(OUTPUT / "app-bundle.js", "app", PATCH_192)
+append_css_once(styles_path, PATCH_192, "V27.4.1 Build 192 — Players Become People")
+html = index_path.read_text(encoding="utf-8")
+html = html.replace("Android V27.4.0 · Rivalries & World", "Android V27.4.1 · Players Become People")
+html = html.replace("Web V27.4.0 · Rivalries & World", "Web V27.4.1 · Players Become People")
+html = html.replace("?v=191", "?v=192")
+html = html.replace("Build 191", "Build 192")
+index_path.write_text(html, encoding="utf-8")
+
 # Browser-owned account, cloud-save, commerce and feedback layers are mandatory.
 repo_cloud_config = Path("cloud-config.js")
 if not repo_cloud_config.exists():
@@ -141,16 +152,16 @@ for name in BROWSER_FILES:
 # The shared bundle owns Android billing. Browser layers load afterwards and make
 # Supabase account saves + Stripe/Supabase entitlements authoritative on web.
 html = index_path.read_text(encoding="utf-8")
-anchor = '<script src="web-shell.js?v=191"></script>'
+anchor = '<script src="web-shell.js?v=192"></script>'
 browser_scripts = (
-    '<script src="browser-save-bridge.js?v=191"></script>\n'
-    '<script data-sdf-paid-editors="1" src="browser-editors.js?v=191"></script>\n'
-    '<script src="browser-commerce-bridge.js?v=191"></script>\n'
-    '<script data-sdf-feedback="1" src="browser-feedback.js?v=191"></script>'
+    '<script src="browser-save-bridge.js?v=192"></script>\n'
+    '<script data-sdf-paid-editors="1" src="browser-editors.js?v=192"></script>\n'
+    '<script src="browser-commerce-bridge.js?v=192"></script>\n'
+    '<script data-sdf-feedback="1" src="browser-feedback.js?v=192"></script>'
 )
-if 'browser-save-bridge.js?v=191' not in html:
+if 'browser-save-bridge.js?v=192' not in html:
     if anchor not in html:
-        raise SystemExit("Could not locate Build 191 web-shell script anchor.")
+        raise SystemExit("Could not locate Build 192 web-shell script anchor.")
     html = html.replace(anchor, anchor + "\n" + browser_scripts)
     index_path.write_text(html, encoding="utf-8")
 
@@ -164,13 +175,14 @@ if web_shell.exists():
         "web-v27.3.7-build-188",
         "web-v27.3.8-build-189",
         "web-v27.3.9-build-190",
+        "web-v27.4.0-build-191",
     ):
-        shell = shell.replace(f"app_version:'{old}'", "app_version:'web-v27.4.0-build-191'")
+        shell = shell.replace(f"app_version:'{old}'", "app_version:'web-v27.4.1-build-192'")
     web_shell.write_text(shell, encoding="utf-8")
 
-# Force PWA clients onto Build 191, including browser save/billing hotfix layers.
+# Force PWA clients onto Build 192, including browser save/billing layers.
 (OUTPUT / "sw.js").write_text(
-    """const CACHE='sdf-web-v27-4-0-build-191';
+    """const CACHE='sdf-web-v27-4-1-build-192';
 const CORE=['./','./index.html','./styles.css','./app-bundle.js','./ad-config.js','./cloud-config.js','./web-shell.js','./browser-save-bridge.js','./browser-editors.js','./browser-commerce-bridge.js','./browser-feedback.js','./manifest.webmanifest','./icon.svg'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
@@ -204,7 +216,7 @@ if missing:
 
 app_hash = hashlib.sha256((OUTPUT / "app-bundle.js").read_bytes()).hexdigest()
 if app_hash != APP_SHA256:
-    raise SystemExit(f"Build 191 app-bundle validation failed: {app_hash}")
+    raise SystemExit(f"Build 192 app-bundle validation failed: {app_hash}")
 
 html = (OUTPUT / "index.html").read_text(encoding="utf-8")
 css = (OUTPUT / "styles.css").read_text(encoding="utf-8")
@@ -214,36 +226,36 @@ save_bridge = (OUTPUT / "browser-save-bridge.js").read_text(encoding="utf-8")
 editors = (OUTPUT / "browser-editors.js").read_text(encoding="utf-8")
 commerce_bridge = (OUTPUT / "browser-commerce-bridge.js").read_text(encoding="utf-8")
 
-if "Web V27.4.0 · Rivalries & World" not in html:
-    raise SystemExit("Build 191 index content validation failed.")
+if "Web V27.4.1 · Players Become People" not in html:
+    raise SystemExit("Build 192 index content validation failed.")
 for script in (
-    "app-bundle.js?v=191",
-    "cloud-config.js?v=191",
-    "web-shell.js?v=191",
-    "browser-save-bridge.js?v=191",
-    "browser-editors.js?v=191",
-    "browser-commerce-bridge.js?v=191",
-    "browser-feedback.js?v=191",
+    "app-bundle.js?v=192",
+    "cloud-config.js?v=192",
+    "web-shell.js?v=192",
+    "browser-save-bridge.js?v=192",
+    "browser-editors.js?v=192",
+    "browser-commerce-bridge.js?v=192",
+    "browser-feedback.js?v=192",
 ):
     if script not in html:
-        raise SystemExit(f"Build 191 browser runtime/cache buster is missing: {script}")
+        raise SystemExit(f"Build 192 browser runtime/cache buster is missing: {script}")
 
 if "Browser-only Stripe/Supabase storefront" not in cloud or "user_entitlements" not in cloud or "SDF_COMMERCE" not in cloud:
-    raise SystemExit("Build 191 browser Stripe/Supabase commerce adapter is missing.")
+    raise SystemExit("Build 192 browser Stripe/Supabase commerce adapter is missing.")
 if "SDF_BROWSER_SAVE_BRIDGE" not in save_bridge or "indexedDB" not in save_bridge or "usesIndexedDb:true" not in save_bridge:
-    raise SystemExit("Build 191 browser account-save bridge is missing.")
+    raise SystemExit("Build 192 browser account-save bridge is missing.")
 if "SDF_COMMERCE" not in editors or "sdf:entitlements" not in editors:
-    raise SystemExit("Build 191 browser entitlement-aware editor layer is missing.")
+    raise SystemExit("Build 192 browser entitlement-aware editor layer is missing.")
 if "SDF_BROWSER_COMMERCE_BRIDGE" not in commerce_bridge or "#sdfPlayShop" not in commerce_bridge or "SHOP_SELECTORS" not in commerce_bridge:
-    raise SystemExit("Build 191 browser commerce routing bridge is missing.")
-if "V27.4.0 Build 191 — Rivalries & World" not in css or ".rivalry-network-v191" not in css or ".world-pulse-v191" not in css:
-    raise SystemExit("Build 191 Rivalries & World styles are missing.")
-if "app_version:'web-v27.4.0-build-191'" not in shell:
-    raise SystemExit("Build 191 web-shell metadata validation failed.")
-if "sdf-web-v27-4-0-build-191" not in (OUTPUT / "sw.js").read_text(encoding="utf-8"):
-    raise SystemExit("Build 191 service-worker cache validation failed.")
+    raise SystemExit("Build 192 browser commerce routing bridge is missing.")
+if "V27.4.1 Build 192 — Players Become People" not in css or ".player-person-v192" not in css or ".leadership-v192" not in css:
+    raise SystemExit("Build 192 Players Become People styles are missing.")
+if "app_version:'web-v27.4.1-build-192'" not in shell:
+    raise SystemExit("Build 192 web-shell metadata validation failed.")
+if "sdf-web-v27-4-1-build-192" not in (OUTPUT / "sw.js").read_text(encoding="utf-8"):
+    raise SystemExit("Build 192 service-worker cache validation failed.")
 
-print("Validated Saturday Dynasty Football Web V27.4.0 / Build 191")
+print("Validated Saturday Dynasty Football Web V27.4.1 / Build 192")
 print(f"app-bundle sha256: {app_hash}")
 print(f"styles sha256: {hashlib.sha256((OUTPUT / 'styles.css').read_bytes()).hexdigest()}")
 print(f"index sha256: {hashlib.sha256((OUTPUT / 'index.html').read_bytes()).hexdigest()}")
