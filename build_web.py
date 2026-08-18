@@ -67,7 +67,7 @@ for item in source.iterdir():
 # Stage 1: reconstruct the proven browser-specific Build 187 package.
 apply_line_patch(OUTPUT / "app-bundle.js", "app", PATCH_187)
 apply_line_patch(OUTPUT / "styles.css", "csspatch", PATCH_187)
-(OUTPUT / "index.html").write_text(inflate("index", PATCH_187), encoding="utf-8")
+apply_line_patch(OUTPUT / "index.html", "index", PATCH_187)
 
 # Stage 2: advance to Build 188 promises/trust/culture.
 apply_line_patch(OUTPUT / "app-bundle.js", "app", PATCH_188)
