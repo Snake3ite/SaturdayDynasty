@@ -133,6 +133,21 @@ html = index_path.read_text(encoding="utf-8")
 html = html.replace('styles.css?v=194', 'styles.css?v=194-cssfix')
 index_path.write_text(html, encoding="utf-8")
 
+# Restore the exact current team-logo assets used by the shared game bundle.
+# The configured browser base predates these files, so the browser builder must
+# materialize them explicitly instead of allowing broken <img> requests.
+logo_payload = json.loads(inflate("logos_json", CURRENT))
+if not isinstance(logo_payload, dict) or len(logo_payload) != 128:
+    raise SystemExit(f"Build 194 team-logo bundle validation failed: expected 128, got {len(logo_payload) if isinstance(logo_payload, dict) else 'invalid'}")
+logo_dir = OUTPUT / "assets" / "logos"
+if logo_dir.exists():
+    shutil.rmtree(logo_dir)
+logo_dir.mkdir(parents=True, exist_ok=True)
+for filename, svg in logo_payload.items():
+    if not re.fullmatch(r"team-\d+\.svg", filename) or not isinstance(svg, str) or "<svg" not in svg:
+        raise SystemExit(f"Build 194 team-logo bundle contains an invalid entry: {filename}")
+    (logo_dir / filename).write_text(svg, encoding="utf-8")
+
 # Browser-owned account, save, commerce, paid-editor and feedback layers.
 repo_cloud_config = Path("cloud-config.js")
 if not repo_cloud_config.exists():
@@ -165,7 +180,7 @@ if web_shell.exists():
     web_shell.write_text(shell, encoding="utf-8")
 
 (OUTPUT / "sw.js").write_text(
-    """const CACHE='sdf-web-v27-4-3-build-194-cssfix';
+    """const CACHE='sdf-web-v27-4-3-build-194-assetsfix';
 const CORE=['./','./index.html','./styles.css','./app-bundle.js','./ad-config.js','./cloud-config.js','./web-shell.js','./browser-save-bridge.js','./browser-editors.js','./browser-commerce-bridge.js','./browser-feedback.js','./manifest.webmanifest','./icon.svg'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
@@ -196,6 +211,15 @@ if styles_hash != STYLES_SHA256:
     raise SystemExit(f"Build 194 merged browser stylesheet validation failed: {styles_hash}")
 if styles_path.stat().st_size < 100000:
     raise SystemExit(f"Build 194 browser stylesheet is unexpectedly small: {styles_path.stat().st_size} bytes")
+
+app_text = (OUTPUT / "app-bundle.js").read_text(encoding="utf-8")
+logo_refs = set(re.findall(r"assets/logos/(team-\d+\.svg)", app_text))
+missing_logos = sorted(name for name in logo_refs if not (logo_dir / name).exists())
+extra_logos = sorted(set(logo_payload) - logo_refs)
+if len(logo_refs) != 128 or missing_logos or extra_logos:
+    raise SystemExit(
+        f"Build 194 browser logo validation failed: refs={len(logo_refs)}, missing={missing_logos[:5]}, extra={extra_logos[:5]}"
+    )
 
 html = index_path.read_text(encoding="utf-8")
 css = styles_path.read_text(encoding="utf-8")
@@ -241,7 +265,7 @@ for browser_selector in (".new-dynasty-setup", ".mobile-bottom-nav", ".logo-img"
         raise SystemExit(f"Build 194 merged browser stylesheet is missing {browser_selector}")
 if "app_version:'web-v27.4.3-build-194'" not in shell:
     raise SystemExit("Build 194 web-shell metadata validation failed.")
-if "sdf-web-v27-4-3-build-194-cssfix" not in (OUTPUT / "sw.js").read_text(encoding="utf-8"):
+if "sdf-web-v27-4-3-build-194-assetsfix" not in (OUTPUT / "sw.js").read_text(encoding="utf-8"):
     raise SystemExit("Build 194 service-worker cache validation failed.")
 
 print("Validated Saturday Dynasty Football Web V27.4.3 / Build 194")
@@ -251,4 +275,5 @@ print(f"index sha256: {hashlib.sha256(index_path.read_bytes()).hexdigest()}")
 print("browser saves: Supabase account sync + IndexedDB large-save cache")
 print("browser commerce: Stripe/Supabase entitlement layer")
 print("browser player editor: Android DOM collision guard active")
+print("browser team logos: 128/128 exact SVG assets restored")
 print(f"Web build ready in {OUTPUT.resolve()}")
