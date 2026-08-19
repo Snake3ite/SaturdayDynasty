@@ -2,6 +2,7 @@ from pathlib import Path
 import base64
 import hashlib
 import json
+import re
 import shutil
 import zipfile
 import zlib
@@ -9,18 +10,36 @@ import zlib
 ZIP_NAME = "SaturdayDynasty_Web_Beta_Configured.zip"
 ARCHIVE_ROOT = "SaturdayDynasty_Web_Beta"
 OUTPUT = Path("dist")
-PATCH_187 = Path(".web187")
-PATCH_188 = Path(".web188")
-PATCH_189 = Path(".web189")
-PATCH_190 = Path(".web190")
-PATCH_191 = Path(".web191")
-PATCH_192 = Path(".web192")
-APP_SHA256 = "81c6eccaddd4fbfa589c26e36ef11bce340619f56578d510eace633fa544aaa3"
+APP_SHA256 = "a1461ac9d08db9ba0fb5bacc36f34fa5b46be12b7887a031bbfc49616006d888"
+STYLES_SHA256 = "df96da01177c4dad964595cda9259c5bbd7289193543fa040a45fd7a865f7458"
 BROWSER_FILES = [
     "browser-save-bridge.js",
     "browser-editors.js",
     "browser-commerce-bridge.js",
     "browser-feedback.js",
+]
+
+# Historical browser reconstruction. Build 187 is the proven browser-specific base;
+# later releases apply exact line deltas + CSS additions in release order.
+STAGES = [
+    (188, Path(".web188"), "V27.3.7 Build 188 — Promises, Trust & Culture",
+     "Android V27.3.6 · Coach Tree V2", "Android V27.3.7 · Promises, Trust & Culture",
+     "Web V27.3.6 · Coach Tree V2", "Web V27.3.7 · Promises, Trust & Culture"),
+    (189, Path(".web189"), "V27.3.8 Build 189 — Staff Overhaul",
+     "Android V27.3.7 · Promises, Trust & Culture", "Android V27.3.8 · Staff Overhaul",
+     "Web V27.3.7 · Promises, Trust & Culture", "Web V27.3.8 · Staff Overhaul"),
+    (190, Path(".web190"), "V27.3.9 Build 190 — Program Identity & Traditions",
+     "Android V27.3.8 · Staff Overhaul", "Android V27.3.9 · Program Identity & Traditions",
+     "Web V27.3.8 · Staff Overhaul", "Web V27.3.9 · Program Identity & Traditions"),
+    (191, Path(".web191"), "V27.4.0 Build 191 — Rivalries & World",
+     "Android V27.3.9 · Program Identity & Traditions", "Android V27.4.0 · Rivalries & World",
+     "Web V27.3.9 · Program Identity & Traditions", "Web V27.4.0 · Rivalries & World"),
+    (192, Path(".web192"), "V27.4.1 Build 192 — Players Become People",
+     "Android V27.4.0 · Rivalries & World", "Android V27.4.1 · Players Become People",
+     "Web V27.4.0 · Rivalries & World", "Web V27.4.1 · Players Become People"),
+    (193, Path(".web193"), "V27.4.2 Build 193 — Stakeholders & Administration",
+     "Android V27.4.1 · Players Become People", "Android V27.4.2 · Stakeholders & Administration",
+     "Web V27.4.1 · Players Become People", "Web V27.4.2 · Stakeholders & Administration"),
 ]
 
 
@@ -80,109 +99,65 @@ for item in source.iterdir():
     else:
         shutil.copy2(item, destination)
 
-# Stage 1: reconstruct the proven browser-specific Build 187 package.
-apply_line_patch(OUTPUT / "app-bundle.js", "app", PATCH_187)
-apply_line_patch(OUTPUT / "styles.css", "csspatch", PATCH_187)
-apply_line_patch(OUTPUT / "index.html", "index", PATCH_187)
+# Build 187 browser reconstruction. All three files are line-patch payloads.
+patch_187 = Path(".web187")
+apply_line_patch(OUTPUT / "app-bundle.js", "app", patch_187)
+apply_line_patch(OUTPUT / "styles.css", "csspatch", patch_187)
+apply_line_patch(OUTPUT / "index.html", "index", patch_187)
 
-# Stage 2: Build 188 — Promises, Trust & Culture.
-apply_line_patch(OUTPUT / "app-bundle.js", "app", PATCH_188)
 styles_path = OUTPUT / "styles.css"
-append_css_once(styles_path, PATCH_188, "V27.3.7 Build 188 — Promises, Trust & Culture")
 index_path = OUTPUT / "index.html"
-html = index_path.read_text(encoding="utf-8")
-html = html.replace("Android V27.3.6 · Coach Tree V2", "Android V27.3.7 · Promises, Trust & Culture")
-html = html.replace("Web V27.3.6 · Coach Tree V2", "Web V27.3.7 · Promises, Trust & Culture")
-html = html.replace("?v=187", "?v=188")
-html = html.replace("Build 187", "Build 188")
-index_path.write_text(html, encoding="utf-8")
 
-# Stage 3: Build 189 — Staff Overhaul.
-apply_line_patch(OUTPUT / "app-bundle.js", "app", PATCH_189)
-append_css_once(styles_path, PATCH_189, "V27.3.8 Build 189 — Staff Overhaul")
-html = index_path.read_text(encoding="utf-8")
-html = html.replace("Android V27.3.7 · Promises, Trust & Culture", "Android V27.3.8 · Staff Overhaul")
-html = html.replace("Web V27.3.7 · Promises, Trust & Culture", "Web V27.3.8 · Staff Overhaul")
-html = html.replace("?v=188", "?v=189")
-html = html.replace("Build 188", "Build 189")
-index_path.write_text(html, encoding="utf-8")
+# Build 188 -> 193 exact release deltas.
+previous_build = 187
+for build, patch_dir, css_marker, android_old, android_new, web_old, web_new in STAGES:
+    apply_line_patch(OUTPUT / "app-bundle.js", "app", patch_dir)
+    append_css_once(styles_path, patch_dir, css_marker)
+    html = index_path.read_text(encoding="utf-8")
+    html = html.replace(android_old, android_new)
+    html = html.replace(web_old, web_new)
+    html = html.replace(f"?v={previous_build}", f"?v={build}")
+    html = html.replace(f"Build {previous_build}", f"Build {build}")
+    index_path.write_text(html, encoding="utf-8")
+    previous_build = build
 
-# Stage 4: Build 190 — Program Identity & Traditions.
-apply_line_patch(OUTPUT / "app-bundle.js", "app", PATCH_190)
-append_css_once(styles_path, PATCH_190, "V27.3.9 Build 190 — Program Identity & Traditions")
-html = index_path.read_text(encoding="utf-8")
-html = html.replace("Android V27.3.8 · Staff Overhaul", "Android V27.3.9 · Program Identity & Traditions")
-html = html.replace("Web V27.3.8 · Staff Overhaul", "Web V27.3.9 · Program Identity & Traditions")
-html = html.replace("?v=189", "?v=190")
-html = html.replace("Build 189", "Build 190")
-index_path.write_text(html, encoding="utf-8")
-
-# Stage 5: Build 191 — Rivalries & World.
-apply_line_patch(OUTPUT / "app-bundle.js", "app", PATCH_191)
-append_css_once(styles_path, PATCH_191, "V27.4.0 Build 191 — Rivalries & World")
-html = index_path.read_text(encoding="utf-8")
-html = html.replace("Android V27.3.9 · Program Identity & Traditions", "Android V27.4.0 · Rivalries & World")
-html = html.replace("Web V27.3.9 · Program Identity & Traditions", "Web V27.4.0 · Rivalries & World")
-html = html.replace("?v=190", "?v=191")
-html = html.replace("Build 190", "Build 191")
-index_path.write_text(html, encoding="utf-8")
-
-# Stage 6: Build 192 — Players Become People.
-apply_line_patch(OUTPUT / "app-bundle.js", "app", PATCH_192)
-append_css_once(styles_path, PATCH_192, "V27.4.1 Build 192 — Players Become People")
-html = index_path.read_text(encoding="utf-8")
-html = html.replace("Android V27.4.0 · Rivalries & World", "Android V27.4.1 · Players Become People")
-html = html.replace("Web V27.4.0 · Rivalries & World", "Web V27.4.1 · Players Become People")
-html = html.replace("?v=191", "?v=192")
-html = html.replace("Build 191", "Build 192")
-index_path.write_text(html, encoding="utf-8")
-
-# Browser-owned account, cloud-save, commerce and feedback layers are mandatory.
+# Browser-owned account, cloud-save, commerce, paid-editor and feedback layers.
 repo_cloud_config = Path("cloud-config.js")
 if not repo_cloud_config.exists():
     raise SystemExit("Missing browser-only runtime: cloud-config.js")
 shutil.copy2(repo_cloud_config, OUTPUT / "cloud-config.js")
-
 for name in BROWSER_FILES:
     src = Path(name)
     if not src.exists():
         raise SystemExit(f"Missing browser-only runtime: {name}")
     shutil.copy2(src, OUTPUT / name)
 
-# The shared bundle owns Android billing. Browser layers load afterwards and make
-# Supabase account saves + Stripe/Supabase entitlements authoritative on web.
+# The shared bundle owns Android billing; browser layers load after it and take
+# authority for Supabase account saves + Stripe/Supabase entitlements on web.
 html = index_path.read_text(encoding="utf-8")
-anchor = '<script src="web-shell.js?v=192"></script>'
+anchor = '<script src="web-shell.js?v=193"></script>'
 browser_scripts = (
-    '<script src="browser-save-bridge.js?v=192"></script>\n'
-    '<script data-sdf-paid-editors="1" src="browser-editors.js?v=192"></script>\n'
-    '<script src="browser-commerce-bridge.js?v=192"></script>\n'
-    '<script data-sdf-feedback="1" src="browser-feedback.js?v=192"></script>'
+    '<script src="browser-save-bridge.js?v=193"></script>\n'
+    '<script data-sdf-paid-editors="1" src="browser-editors.js?v=193"></script>\n'
+    '<script src="browser-commerce-bridge.js?v=193"></script>\n'
+    '<script data-sdf-feedback="1" src="browser-feedback.js?v=193"></script>'
 )
-if 'browser-save-bridge.js?v=192' not in html:
+if "browser-save-bridge.js?v=193" not in html:
     if anchor not in html:
-        raise SystemExit("Could not locate Build 192 web-shell script anchor.")
+        raise SystemExit("Could not locate Build 193 web-shell script anchor.")
     html = html.replace(anchor, anchor + "\n" + browser_scripts)
-    index_path.write_text(html, encoding="utf-8")
+index_path.write_text(html, encoding="utf-8")
 
-# Preserve the stable dynasty save key while advancing browser build metadata.
+# Preserve stable dynasty save keys while advancing browser build metadata.
 web_shell = OUTPUT / "web-shell.js"
 if web_shell.exists():
     shell = web_shell.read_text(encoding="utf-8")
-    for old in (
-        "web-v26-beta",
-        "web-v27.3.6-build-187",
-        "web-v27.3.7-build-188",
-        "web-v27.3.8-build-189",
-        "web-v27.3.9-build-190",
-        "web-v27.4.0-build-191",
-    ):
-        shell = shell.replace(f"app_version:'{old}'", "app_version:'web-v27.4.1-build-192'")
+    shell = re.sub(r"app_version:'web-v[^']+'", "app_version:'web-v27.4.2-build-193'", shell)
     web_shell.write_text(shell, encoding="utf-8")
 
-# Force PWA clients onto Build 192, including browser save/billing layers.
+# Force PWA clients onto Build 193, including browser save/billing/editor layers.
 (OUTPUT / "sw.js").write_text(
-    """const CACHE='sdf-web-v27-4-1-build-192';
+    """const CACHE='sdf-web-v27-4-2-build-193';
 const CORE=['./','./index.html','./styles.css','./app-bundle.js','./ad-config.js','./cloud-config.js','./web-shell.js','./browser-save-bridge.js','./browser-editors.js','./browser-commerce-bridge.js','./browser-feedback.js','./manifest.webmanifest','./icon.svg'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
@@ -197,68 +172,64 @@ for name in ("_redirects", "supabase.sql"):
         candidate.unlink()
 
 required = [
-    "index.html",
-    "app-bundle.js",
-    "styles.css",
-    "web-shell.js",
-    "cloud-config.js",
-    "browser-save-bridge.js",
-    "browser-editors.js",
-    "browser-commerce-bridge.js",
-    "browser-feedback.js",
-    "manifest.webmanifest",
-    "icon.svg",
-    "sw.js",
+    "index.html", "app-bundle.js", "styles.css", "web-shell.js", "cloud-config.js",
+    "browser-save-bridge.js", "browser-editors.js", "browser-commerce-bridge.js",
+    "browser-feedback.js", "manifest.webmanifest", "icon.svg", "sw.js",
 ]
 missing = [name for name in required if not (OUTPUT / name).exists()]
 if missing:
     raise SystemExit("Web build is missing: " + ", ".join(missing))
 
 app_hash = hashlib.sha256((OUTPUT / "app-bundle.js").read_bytes()).hexdigest()
+styles_hash = hashlib.sha256((OUTPUT / "styles.css").read_bytes()).hexdigest()
 if app_hash != APP_SHA256:
-    raise SystemExit(f"Build 192 app-bundle validation failed: {app_hash}")
+    raise SystemExit(f"Build 193 app-bundle validation failed: {app_hash}")
+if styles_hash != STYLES_SHA256:
+    raise SystemExit(f"Build 193 stylesheet validation failed: {styles_hash}")
 
-html = (OUTPUT / "index.html").read_text(encoding="utf-8")
-css = (OUTPUT / "styles.css").read_text(encoding="utf-8")
-shell = (OUTPUT / "web-shell.js").read_text(encoding="utf-8")
+html = index_path.read_text(encoding="utf-8")
+css = styles_path.read_text(encoding="utf-8")
+shell = web_shell.read_text(encoding="utf-8")
 cloud = (OUTPUT / "cloud-config.js").read_text(encoding="utf-8")
 save_bridge = (OUTPUT / "browser-save-bridge.js").read_text(encoding="utf-8")
 editors = (OUTPUT / "browser-editors.js").read_text(encoding="utf-8")
 commerce_bridge = (OUTPUT / "browser-commerce-bridge.js").read_text(encoding="utf-8")
 
-if "Web V27.4.1 · Players Become People" not in html:
-    raise SystemExit("Build 192 index content validation failed.")
+if "Web V27.4.2 · Stakeholders & Administration" not in html:
+    raise SystemExit("Build 193 index content validation failed.")
 for script in (
-    "app-bundle.js?v=192",
-    "cloud-config.js?v=192",
-    "web-shell.js?v=192",
-    "browser-save-bridge.js?v=192",
-    "browser-editors.js?v=192",
-    "browser-commerce-bridge.js?v=192",
-    "browser-feedback.js?v=192",
+    "app-bundle.js?v=193", "cloud-config.js?v=193", "web-shell.js?v=193",
+    "browser-save-bridge.js?v=193", "browser-editors.js?v=193",
+    "browser-commerce-bridge.js?v=193", "browser-feedback.js?v=193",
 ):
     if script not in html:
-        raise SystemExit(f"Build 192 browser runtime/cache buster is missing: {script}")
+        raise SystemExit(f"Build 193 browser runtime/cache buster is missing: {script}")
 
 if "Browser-only Stripe/Supabase storefront" not in cloud or "user_entitlements" not in cloud or "SDF_COMMERCE" not in cloud:
-    raise SystemExit("Build 192 browser Stripe/Supabase commerce adapter is missing.")
+    raise SystemExit("Build 193 browser Stripe/Supabase commerce adapter is missing.")
 if "SDF_BROWSER_SAVE_BRIDGE" not in save_bridge or "indexedDB" not in save_bridge or "usesIndexedDb:true" not in save_bridge:
-    raise SystemExit("Build 192 browser account-save bridge is missing.")
+    raise SystemExit("Build 193 browser account-save bridge is missing.")
 if "SDF_COMMERCE" not in editors or "sdf:entitlements" not in editors:
-    raise SystemExit("Build 192 browser entitlement-aware editor layer is missing.")
-if "SDF_BROWSER_COMMERCE_BRIDGE" not in commerce_bridge or "#sdfPlayShop" not in commerce_bridge or "SHOP_SELECTORS" not in commerce_bridge:
-    raise SystemExit("Build 192 browser commerce routing bridge is missing.")
-if "V27.4.1 Build 192 — Players Become People" not in css or ".player-person-v192" not in css or ".leadership-v192" not in css:
-    raise SystemExit("Build 192 Players Become People styles are missing.")
-if "app_version:'web-v27.4.1-build-192'" not in shell:
-    raise SystemExit("Build 192 web-shell metadata validation failed.")
-if "sdf-web-v27-4-1-build-192" not in (OUTPUT / "sw.js").read_text(encoding="utf-8"):
-    raise SystemExit("Build 192 service-worker cache validation failed.")
+    raise SystemExit("Build 193 browser entitlement-aware editor layer is missing.")
+if (
+    "SDF_BROWSER_COMMERCE_BRIDGE" not in commerce_bridge
+    or "SHOP_SELECTORS" not in commerce_bridge
+    or "removeAndroidEditor" not in commerce_bridge
+    or "#sdfAndroidEditor" not in commerce_bridge
+):
+    raise SystemExit("Build 193 browser commerce/player-editor routing bridge is missing or stale.")
+if "V27.4.2 Build 193 — Stakeholders & Administration" not in css or ".stakeholder-hub-v193" not in css:
+    raise SystemExit("Build 193 stakeholder styles are missing.")
+if "app_version:'web-v27.4.2-build-193'" not in shell:
+    raise SystemExit("Build 193 web-shell metadata validation failed.")
+if "sdf-web-v27-4-2-build-193" not in (OUTPUT / "sw.js").read_text(encoding="utf-8"):
+    raise SystemExit("Build 193 service-worker cache validation failed.")
 
-print("Validated Saturday Dynasty Football Web V27.4.1 / Build 192")
+print("Validated Saturday Dynasty Football Web V27.4.2 / Build 193")
 print(f"app-bundle sha256: {app_hash}")
-print(f"styles sha256: {hashlib.sha256((OUTPUT / 'styles.css').read_bytes()).hexdigest()}")
-print(f"index sha256: {hashlib.sha256((OUTPUT / 'index.html').read_bytes()).hexdigest()}")
+print(f"styles sha256: {styles_hash}")
+print(f"index sha256: {hashlib.sha256(index_path.read_bytes()).hexdigest()}")
 print("browser saves: Supabase account sync + IndexedDB large-save cache")
 print("browser commerce: Stripe/Supabase entitlement layer")
+print("browser player editor: Android DOM collision guard active")
 print(f"Web build ready in {OUTPUT.resolve()}")
