@@ -6,6 +6,7 @@
 
   const SHOP_SELECTORS='#sdfStartupShopBtn,#sdfSponsorShopBtn,#sdfMobileShopBtn';
   const $=s=>document.querySelector(s);
+  let currentProfilePlayerId=null;
 
   const style=document.createElement('style');
   style.id='sdf-browser-commerce-bridge-style';
@@ -39,11 +40,34 @@
     p.setAttribute('aria-hidden','true');
   }
 
+  function wrapPlayerProfileTracker(){
+    const base=window.openPlayerProfile;
+    if(typeof base!=='function'||base.__sdfBrowserProfileTracker)return;
+    const wrapped=function(id,...args){
+      if(id!==undefined&&id!==null&&id!=='')currentProfilePlayerId=id;
+      const out=base.apply(this,[id,...args]);
+      queueMicrotask(syncProfileButton);
+      return out;
+    };
+    Object.defineProperty(wrapped,'__sdfBrowserProfileTracker',{value:true});
+    Object.defineProperty(wrapped,'__sdfBrowserProfileBase',{value:base});
+    window.openPlayerProfile=wrapped;
+  }
+
+  function syncProfileButton(){
+    const b=$('#sdfProfilePlayerEditorBtn');
+    if(!b||currentProfilePlayerId===null)return;
+    b.dataset.playerId=String(currentProfilePlayerId);
+    b.dataset.sdfBrowserPlayerEditor='1';
+  }
+
   function routeVisibleButtons(){
     document.querySelectorAll(SHOP_SELECTORS).forEach(b=>{
       b.dataset.sdfBrowserCommerce='1';
       b.onclick=e=>{e?.preventDefault?.();openWebShop()};
     });
+    wrapPlayerProfileTracker();
+    syncProfileButton();
     patchAndroidFacade();
     closeAndroidShop();
   }
@@ -57,10 +81,23 @@
     openWebShop();
   },true);
 
-  // The shared Android and browser editor layers both use this profile button ID.
-  // Route it through the browser commissioner API, which checks Supabase entitlements.
+  // Android and browser layers share the player-profile editor button. Keep the
+  // browser commissioner editor authoritative and preserve the player being viewed.
   document.addEventListener('click',e=>{
     const target=e.target?.closest?.('#sdfProfilePlayerEditorBtn');
+    if(!target)return;
+    const editor=window.SDF_COMMISSIONER?.openPlayerEditor;
+    if(typeof editor!=='function')return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    const id=target.dataset.playerId||currentProfilePlayerId||null;
+    editor(id);
+  },true);
+
+  // Roster-level browser editor fallback. This keeps the paid tool functional even
+  // if a shared render replaces the browser editor button's direct onclick handler.
+  document.addEventListener('click',e=>{
+    const target=e.target?.closest?.('#sdfPlayerEditorBtn');
     if(!target)return;
     const editor=window.SDF_COMMISSIONER?.openPlayerEditor;
     if(typeof editor!=='function')return;
@@ -90,8 +127,10 @@
   document.readyState==='loading'?document.addEventListener('DOMContentLoaded',init):init();
 
   window.SDF_BROWSER_COMMERCE_BRIDGE={
+    version:2,
     openShop:openWebShop,
     refresh:()=>commerce()?.refreshEntitlements?.(true),
-    owns:k=>!!commerce()?.owns?.(k)
+    owns:k=>!!commerce()?.owns?.(k),
+    currentProfilePlayerId:()=>currentProfilePlayerId
   };
 })();
