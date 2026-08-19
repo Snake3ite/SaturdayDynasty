@@ -12,7 +12,7 @@ ARCHIVE_ROOT = "SaturdayDynasty_Web_Beta"
 OUTPUT = Path("dist")
 CURRENT = Path(".web194")
 APP_SHA256 = "70711efa6d85594f0ce26a2a74f12e0bbbf362df148e45aae997ca26b7048986"
-STYLES_SHA256 = "4f3225bdf09ff9740276974e4e339d6070935f921453f362bcb01892ae5ed6e9"
+STYLES_SHA256 = "ede4cca4f7ca3c724f925d5f091fd8119f4fb639a70165c7e81f73aa051f91f9"
 BROWSER_FILES = [
     "browser-save-bridge.js",
     "browser-editors.js",
@@ -20,28 +20,28 @@ BROWSER_FILES = [
     "browser-feedback.js",
 ]
 
-# App/index browser reconstruction. CSS is intentionally NOT reconstructed through
-# historical additions anymore; Build 194 uses one exact current stylesheet snapshot.
+# Browser reconstruction. Build 187 is the proven merged browser base; later
+# releases apply exact app deltas plus scoped CSS additions in release order.
 STAGES = [
-    (188, Path(".web188"),
+    (188, Path(".web188"), "V27.3.7 Build 188 — Promises, Trust & Culture",
      "Android V27.3.6 · Coach Tree V2", "Android V27.3.7 · Promises, Trust & Culture",
      "Web V27.3.6 · Coach Tree V2", "Web V27.3.7 · Promises, Trust & Culture"),
-    (189, Path(".web189"),
+    (189, Path(".web189"), "V27.3.8 Build 189 — Staff Overhaul",
      "Android V27.3.7 · Promises, Trust & Culture", "Android V27.3.8 · Staff Overhaul",
      "Web V27.3.7 · Promises, Trust & Culture", "Web V27.3.8 · Staff Overhaul"),
-    (190, Path(".web190"),
+    (190, Path(".web190"), "V27.3.9 Build 190 — Program Identity & Traditions",
      "Android V27.3.8 · Staff Overhaul", "Android V27.3.9 · Program Identity & Traditions",
      "Web V27.3.8 · Staff Overhaul", "Web V27.3.9 · Program Identity & Traditions"),
-    (191, Path(".web191"),
+    (191, Path(".web191"), "V27.4.0 Build 191 — Rivalries & World",
      "Android V27.3.9 · Program Identity & Traditions", "Android V27.4.0 · Rivalries & World",
      "Web V27.3.9 · Program Identity & Traditions", "Web V27.4.0 · Rivalries & World"),
-    (192, Path(".web192"),
+    (192, Path(".web192"), "V27.4.1 Build 192 — Players Become People",
      "Android V27.4.0 · Rivalries & World", "Android V27.4.1 · Players Become People",
      "Web V27.4.0 · Rivalries & World", "Web V27.4.1 · Players Become People"),
-    (193, Path(".web193"),
+    (193, Path(".web193"), "V27.4.2 Build 193 — Stakeholders & Administration",
      "Android V27.4.1 · Players Become People", "Android V27.4.2 · Stakeholders & Administration",
      "Web V27.4.1 · Players Become People", "Web V27.4.2 · Stakeholders & Administration"),
-    (194, Path(".web194"),
+    (194, Path(".web194"), "V27.4.3 Build 194 — Coaching Reputation & Career Identity",
      "Android V27.4.2 · Stakeholders & Administration", "Android V27.4.3 · Coaching Reputation & Career Identity",
      "Web V27.4.2 · Stakeholders & Administration", "Web V27.4.3 · Coaching Reputation & Career Identity"),
 ]
@@ -68,6 +68,13 @@ def apply_line_patch(path: Path, prefix: str, patch_dir: Path) -> None:
     for i1, i2, replacement in reversed(ops):
         lines[i1:i2] = [replacement] if replacement else []
     path.write_text("".join(lines), encoding="utf-8")
+
+
+def append_css_once(styles_path: Path, patch_dir: Path, marker: str) -> None:
+    addition = (patch_dir / "styles-additions.css").read_text(encoding="utf-8")
+    styles = styles_path.read_text(encoding="utf-8")
+    if marker not in styles:
+        styles_path.write_text(styles.rstrip() + "\n\n" + addition.rstrip() + "\n", encoding="utf-8")
 
 
 zip_path = Path(ZIP_NAME)
@@ -100,15 +107,19 @@ for item in source.iterdir():
     else:
         shutil.copy2(item, destination)
 
-# Build 187 proven browser app/index reconstruction.
+# Build 187 proven merged-browser reconstruction. The CSS patch is intentionally
+# browser-specific; do NOT compare this merged file to the Android/shared CSS hash.
 patch_187 = Path(".web187")
 apply_line_patch(OUTPUT / "app-bundle.js", "app", patch_187)
+apply_line_patch(OUTPUT / "styles.css", "csspatch", patch_187)
 apply_line_patch(OUTPUT / "index.html", "index", patch_187)
 
+styles_path = OUTPUT / "styles.css"
 index_path = OUTPUT / "index.html"
 previous_build = 187
-for build, patch_dir, android_old, android_new, web_old, web_new in STAGES:
+for build, patch_dir, css_marker, android_old, android_new, web_old, web_new in STAGES:
     apply_line_patch(OUTPUT / "app-bundle.js", "app", patch_dir)
+    append_css_once(styles_path, patch_dir, css_marker)
     html = index_path.read_text(encoding="utf-8")
     html = html.replace(android_old, android_new)
     html = html.replace(web_old, web_new)
@@ -117,10 +128,10 @@ for build, patch_dir, android_old, android_new, web_old, web_new in STAGES:
     index_path.write_text(html, encoding="utf-8")
     previous_build = build
 
-# Exact Build 194 stylesheet snapshot. This deliberately replaces the old
-# 187->194 CSS append chain, whose historical whitespace caused deployment drift.
-styles_path = OUTPUT / "styles.css"
-styles_path.write_text(inflate("styles_current", CURRENT), encoding="utf-8")
+# Force a fresh corrected browser stylesheet after the bad shared-CSS hotfix.
+html = index_path.read_text(encoding="utf-8")
+html = html.replace('styles.css?v=194', 'styles.css?v=194-cssfix')
+index_path.write_text(html, encoding="utf-8")
 
 # Browser-owned account, save, commerce, paid-editor and feedback layers.
 repo_cloud_config = Path("cloud-config.js")
@@ -154,7 +165,7 @@ if web_shell.exists():
     web_shell.write_text(shell, encoding="utf-8")
 
 (OUTPUT / "sw.js").write_text(
-    """const CACHE='sdf-web-v27-4-3-build-194';
+    """const CACHE='sdf-web-v27-4-3-build-194-cssfix';
 const CORE=['./','./index.html','./styles.css','./app-bundle.js','./ad-config.js','./cloud-config.js','./web-shell.js','./browser-save-bridge.js','./browser-editors.js','./browser-commerce-bridge.js','./browser-feedback.js','./manifest.webmanifest','./icon.svg'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
@@ -182,7 +193,9 @@ styles_hash = hashlib.sha256(styles_path.read_bytes()).hexdigest()
 if app_hash != APP_SHA256:
     raise SystemExit(f"Build 194 app-bundle validation failed: {app_hash}")
 if styles_hash != STYLES_SHA256:
-    raise SystemExit(f"Build 194 stylesheet snapshot validation failed: {styles_hash}")
+    raise SystemExit(f"Build 194 merged browser stylesheet validation failed: {styles_hash}")
+if styles_path.stat().st_size < 100000:
+    raise SystemExit(f"Build 194 browser stylesheet is unexpectedly small: {styles_path.stat().st_size} bytes")
 
 html = index_path.read_text(encoding="utf-8")
 css = styles_path.read_text(encoding="utf-8")
@@ -194,6 +207,8 @@ commerce_bridge = (OUTPUT / "browser-commerce-bridge.js").read_text(encoding="ut
 
 if "Web V27.4.3 · Coaching Reputation & Career Identity" not in html:
     raise SystemExit("Build 194 index content validation failed.")
+if "styles.css?v=194-cssfix" not in html:
+    raise SystemExit("Build 194 corrected browser stylesheet cache buster is missing.")
 for script in (
     "app-bundle.js?v=194", "cloud-config.js?v=194", "web-shell.js?v=194",
     "browser-save-bridge.js?v=194", "browser-editors.js?v=194",
@@ -221,14 +236,17 @@ if (
     or ".coach-story-v194" not in css
 ):
     raise SystemExit("Build 194 Coaching Reputation & Career Identity styles are missing.")
+for browser_selector in (".new-dynasty-setup", ".mobile-bottom-nav", ".logo-img", ".school-grid"):
+    if browser_selector not in css:
+        raise SystemExit(f"Build 194 merged browser stylesheet is missing {browser_selector}")
 if "app_version:'web-v27.4.3-build-194'" not in shell:
     raise SystemExit("Build 194 web-shell metadata validation failed.")
-if "sdf-web-v27-4-3-build-194" not in (OUTPUT / "sw.js").read_text(encoding="utf-8"):
+if "sdf-web-v27-4-3-build-194-cssfix" not in (OUTPUT / "sw.js").read_text(encoding="utf-8"):
     raise SystemExit("Build 194 service-worker cache validation failed.")
 
 print("Validated Saturday Dynasty Football Web V27.4.3 / Build 194")
 print(f"app-bundle sha256: {app_hash}")
-print(f"styles sha256: {styles_hash} (exact current snapshot)")
+print(f"styles sha256: {styles_hash} (merged browser CSS)")
 print(f"index sha256: {hashlib.sha256(index_path.read_bytes()).hexdigest()}")
 print("browser saves: Supabase account sync + IndexedDB large-save cache")
 print("browser commerce: Stripe/Supabase entitlement layer")
