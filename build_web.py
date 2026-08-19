@@ -10,6 +10,7 @@ import zlib
 ZIP_NAME = "SaturdayDynasty_Web_Beta_Configured.zip"
 ARCHIVE_ROOT = "SaturdayDynasty_Web_Beta"
 OUTPUT = Path("dist")
+CURRENT = Path(".web194")
 APP_SHA256 = "70711efa6d85594f0ce26a2a74f12e0bbbf362df148e45aae997ca26b7048986"
 STYLES_SHA256 = "4f3225bdf09ff9740276974e4e339d6070935f921453f362bcb01892ae5ed6e9"
 BROWSER_FILES = [
@@ -19,28 +20,28 @@ BROWSER_FILES = [
     "browser-feedback.js",
 ]
 
-# Historical browser reconstruction. Build 187 is the proven browser-specific base;
-# later releases apply exact line deltas + CSS additions in release order.
+# App/index browser reconstruction. CSS is intentionally NOT reconstructed through
+# historical additions anymore; Build 194 uses one exact current stylesheet snapshot.
 STAGES = [
-    (188, Path(".web188"), "V27.3.7 Build 188 — Promises, Trust & Culture",
+    (188, Path(".web188"),
      "Android V27.3.6 · Coach Tree V2", "Android V27.3.7 · Promises, Trust & Culture",
      "Web V27.3.6 · Coach Tree V2", "Web V27.3.7 · Promises, Trust & Culture"),
-    (189, Path(".web189"), "V27.3.8 Build 189 — Staff Overhaul",
+    (189, Path(".web189"),
      "Android V27.3.7 · Promises, Trust & Culture", "Android V27.3.8 · Staff Overhaul",
      "Web V27.3.7 · Promises, Trust & Culture", "Web V27.3.8 · Staff Overhaul"),
-    (190, Path(".web190"), "V27.3.9 Build 190 — Program Identity & Traditions",
+    (190, Path(".web190"),
      "Android V27.3.8 · Staff Overhaul", "Android V27.3.9 · Program Identity & Traditions",
      "Web V27.3.8 · Staff Overhaul", "Web V27.3.9 · Program Identity & Traditions"),
-    (191, Path(".web191"), "V27.4.0 Build 191 — Rivalries & World",
+    (191, Path(".web191"),
      "Android V27.3.9 · Program Identity & Traditions", "Android V27.4.0 · Rivalries & World",
      "Web V27.3.9 · Program Identity & Traditions", "Web V27.4.0 · Rivalries & World"),
-    (192, Path(".web192"), "V27.4.1 Build 192 — Players Become People",
+    (192, Path(".web192"),
      "Android V27.4.0 · Rivalries & World", "Android V27.4.1 · Players Become People",
      "Web V27.4.0 · Rivalries & World", "Web V27.4.1 · Players Become People"),
-    (193, Path(".web193"), "V27.4.2 Build 193 — Stakeholders & Administration",
+    (193, Path(".web193"),
      "Android V27.4.1 · Players Become People", "Android V27.4.2 · Stakeholders & Administration",
      "Web V27.4.1 · Players Become People", "Web V27.4.2 · Stakeholders & Administration"),
-    (194, Path(".web194"), "V27.4.3 Build 194 — Coaching Reputation & Career Identity",
+    (194, Path(".web194"),
      "Android V27.4.2 · Stakeholders & Administration", "Android V27.4.3 · Coaching Reputation & Career Identity",
      "Web V27.4.2 · Stakeholders & Administration", "Web V27.4.3 · Coaching Reputation & Career Identity"),
 ]
@@ -53,9 +54,10 @@ def payload(prefix: str, patch_dir: Path) -> str:
     return "".join(p.read_text(encoding="utf-8").strip() for p in parts)
 
 
-def inflate(prefix: str, patch_dir: Path):
+def inflate(prefix: str, patch_dir: Path) -> str:
     try:
-        return zlib.decompress(base64.b64decode(payload(prefix, patch_dir))).decode("utf-8")
+        packed = base64.b64decode(payload(prefix, patch_dir), validate=True)
+        return zlib.decompress(packed).decode("utf-8")
     except Exception as exc:
         raise SystemExit(f"Could not decode {prefix} web payload from {patch_dir}: {exc}") from exc
 
@@ -66,13 +68,6 @@ def apply_line_patch(path: Path, prefix: str, patch_dir: Path) -> None:
     for i1, i2, replacement in reversed(ops):
         lines[i1:i2] = [replacement] if replacement else []
     path.write_text("".join(lines), encoding="utf-8")
-
-
-def append_css_once(styles_path: Path, patch_dir: Path, marker: str) -> None:
-    addition = (patch_dir / "styles-additions.css").read_text(encoding="utf-8")
-    styles = styles_path.read_text(encoding="utf-8")
-    if marker not in styles:
-        styles_path.write_text(styles.rstrip() + "\n\n" + addition.rstrip() + "\n", encoding="utf-8")
 
 
 zip_path = Path(ZIP_NAME)
@@ -89,6 +84,9 @@ if staging.exists():
 staging.mkdir(parents=True)
 
 with zipfile.ZipFile(zip_path) as archive:
+    bad = archive.testzip()
+    if bad:
+        raise SystemExit(f"Configured web package failed ZIP integrity at: {bad}")
     archive.extractall(staging)
 
 source = staging / ARCHIVE_ROOT
@@ -102,20 +100,15 @@ for item in source.iterdir():
     else:
         shutil.copy2(item, destination)
 
-# Build 187 browser reconstruction. All three files are line-patch payloads.
+# Build 187 proven browser app/index reconstruction.
 patch_187 = Path(".web187")
 apply_line_patch(OUTPUT / "app-bundle.js", "app", patch_187)
-apply_line_patch(OUTPUT / "styles.css", "csspatch", patch_187)
 apply_line_patch(OUTPUT / "index.html", "index", patch_187)
 
-styles_path = OUTPUT / "styles.css"
 index_path = OUTPUT / "index.html"
-
-# Build 188 -> 194 exact release deltas.
 previous_build = 187
-for build, patch_dir, css_marker, android_old, android_new, web_old, web_new in STAGES:
+for build, patch_dir, android_old, android_new, web_old, web_new in STAGES:
     apply_line_patch(OUTPUT / "app-bundle.js", "app", patch_dir)
-    append_css_once(styles_path, patch_dir, css_marker)
     html = index_path.read_text(encoding="utf-8")
     html = html.replace(android_old, android_new)
     html = html.replace(web_old, web_new)
@@ -124,7 +117,12 @@ for build, patch_dir, css_marker, android_old, android_new, web_old, web_new in 
     index_path.write_text(html, encoding="utf-8")
     previous_build = build
 
-# Browser-owned account, cloud-save, commerce, paid-editor and feedback layers.
+# Exact Build 194 stylesheet snapshot. This deliberately replaces the old
+# 187->194 CSS append chain, whose historical whitespace caused deployment drift.
+styles_path = OUTPUT / "styles.css"
+styles_path.write_text(inflate("styles_current", CURRENT), encoding="utf-8")
+
+# Browser-owned account, save, commerce, paid-editor and feedback layers.
 repo_cloud_config = Path("cloud-config.js")
 if not repo_cloud_config.exists():
     raise SystemExit("Missing browser-only runtime: cloud-config.js")
@@ -135,8 +133,6 @@ for name in BROWSER_FILES:
         raise SystemExit(f"Missing browser-only runtime: {name}")
     shutil.copy2(src, OUTPUT / name)
 
-# The shared bundle owns Android billing; browser layers load after it and take
-# authority for Supabase account saves + Stripe/Supabase entitlements on web.
 html = index_path.read_text(encoding="utf-8")
 anchor = '<script src="web-shell.js?v=194"></script>'
 browser_scripts = (
@@ -151,14 +147,12 @@ if "browser-save-bridge.js?v=194" not in html:
     html = html.replace(anchor, anchor + "\n" + browser_scripts)
 index_path.write_text(html, encoding="utf-8")
 
-# Preserve stable dynasty save keys while advancing browser build metadata.
 web_shell = OUTPUT / "web-shell.js"
 if web_shell.exists():
     shell = web_shell.read_text(encoding="utf-8")
     shell = re.sub(r"app_version:'web-v[^']+'", "app_version:'web-v27.4.3-build-194'", shell)
     web_shell.write_text(shell, encoding="utf-8")
 
-# Force PWA clients onto Build 194, including browser save/billing/editor layers.
 (OUTPUT / "sw.js").write_text(
     """const CACHE='sdf-web-v27-4-3-build-194';
 const CORE=['./','./index.html','./styles.css','./app-bundle.js','./ad-config.js','./cloud-config.js','./web-shell.js','./browser-save-bridge.js','./browser-editors.js','./browser-commerce-bridge.js','./browser-feedback.js','./manifest.webmanifest','./icon.svg'];
@@ -184,11 +178,11 @@ if missing:
     raise SystemExit("Web build is missing: " + ", ".join(missing))
 
 app_hash = hashlib.sha256((OUTPUT / "app-bundle.js").read_bytes()).hexdigest()
-styles_hash = hashlib.sha256((OUTPUT / "styles.css").read_bytes()).hexdigest()
+styles_hash = hashlib.sha256(styles_path.read_bytes()).hexdigest()
 if app_hash != APP_SHA256:
     raise SystemExit(f"Build 194 app-bundle validation failed: {app_hash}")
 if styles_hash != STYLES_SHA256:
-    raise SystemExit(f"Build 194 stylesheet validation failed: {styles_hash}")
+    raise SystemExit(f"Build 194 stylesheet snapshot validation failed: {styles_hash}")
 
 html = index_path.read_text(encoding="utf-8")
 css = styles_path.read_text(encoding="utf-8")
@@ -234,7 +228,7 @@ if "sdf-web-v27-4-3-build-194" not in (OUTPUT / "sw.js").read_text(encoding="utf
 
 print("Validated Saturday Dynasty Football Web V27.4.3 / Build 194")
 print(f"app-bundle sha256: {app_hash}")
-print(f"styles sha256: {styles_hash}")
+print(f"styles sha256: {styles_hash} (exact current snapshot)")
 print(f"index sha256: {hashlib.sha256(index_path.read_bytes()).hexdigest()}")
 print("browser saves: Supabase account sync + IndexedDB large-save cache")
 print("browser commerce: Stripe/Supabase entitlement layer")
