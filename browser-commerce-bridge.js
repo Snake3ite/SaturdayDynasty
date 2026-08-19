@@ -11,7 +11,7 @@
   const style=document.createElement('style');
   style.id='sdf-browser-commerce-bridge-style';
   style.textContent=`
-    #sdfPlayShop,#sdfAndroidPlayerEditorBtn,#sdfAndroidTeamEditorBtn{display:none!important}
+    #sdfPlayShop,#sdfAndroidEditor,#sdfAndroidPlayerEditorBtn,#sdfAndroidTeamEditorBtn{display:none!important}
   `;
   document.head.appendChild(style);
 
@@ -40,6 +40,16 @@
     p.setAttribute('aria-hidden','true');
   }
 
+  // The shared Android editor reuses many of the exact same child IDs as the
+  // browser editor (#sdfEditorTitle, #sdfEditorContent, #peName, etc.). Merely
+  // hiding it is not enough because document.querySelector still resolves those
+  // hidden fields first. On web the Android editor is never authoritative, so
+  // remove its DOM whenever it exists and let the browser editor own those IDs.
+  function removeAndroidEditor(){
+    const androidEditor=$('#sdfAndroidEditor');
+    if(androidEditor)androidEditor.remove();
+  }
+
   function wrapPlayerProfileTracker(){
     const base=window.openPlayerProfile;
     if(typeof base!=='function'||base.__sdfBrowserProfileTracker)return;
@@ -62,6 +72,7 @@
   }
 
   function routeVisibleButtons(){
+    removeAndroidEditor();
     document.querySelectorAll(SHOP_SELECTORS).forEach(b=>{
       b.dataset.sdfBrowserCommerce='1';
       b.onclick=e=>{e?.preventDefault?.();openWebShop()};
@@ -90,6 +101,7 @@
     if(typeof editor!=='function')return;
     e.preventDefault();
     e.stopImmediatePropagation();
+    removeAndroidEditor();
     const id=target.dataset.playerId||currentProfilePlayerId||null;
     editor(id);
   },true);
@@ -103,6 +115,7 @@
     if(typeof editor!=='function')return;
     e.preventDefault();
     e.stopImmediatePropagation();
+    removeAndroidEditor();
     editor();
   },true);
 
@@ -127,10 +140,11 @@
   document.readyState==='loading'?document.addEventListener('DOMContentLoaded',init):init();
 
   window.SDF_BROWSER_COMMERCE_BRIDGE={
-    version:2,
+    version:3,
     openShop:openWebShop,
     refresh:()=>commerce()?.refreshEntitlements?.(true),
     owns:k=>!!commerce()?.owns?.(k),
-    currentProfilePlayerId:()=>currentProfilePlayerId
+    currentProfilePlayerId:()=>currentProfilePlayerId,
+    removeAndroidEditor
   };
 })();
