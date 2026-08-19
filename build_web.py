@@ -10,18 +10,24 @@ import zlib
 ZIP_NAME = "SaturdayDynasty_Web_Beta_Configured.zip"
 ARCHIVE_ROOT = "SaturdayDynasty_Web_Beta"
 OUTPUT = Path("dist")
-CURRENT = Path(".web194")
-APP_SHA256 = "70711efa6d85594f0ce26a2a74f12e0bbbf362df148e45aae997ca26b7048986"
+CURRENT = Path(".web195")
+LOGO_ASSETS = Path(".web194")
+APP_SHA256 = "fb9eb24b41692cf2af13c6749e30cb8f534d102c7958de1366eb3705d3988b43"
+# Build 195 UI styles are injected by the v195 runtime. Keep the proven merged
+# browser stylesheet bytes untouched after the Build 194 CSS recovery.
 STYLES_SHA256 = "ede4cca4f7ca3c724f925d5f091fd8119f4fb639a70165c7e81f73aa051f91f9"
 BROWSER_FILES = [
     "browser-save-bridge.js",
     "browser-editors.js",
     "browser-commerce-bridge.js",
+    "browser-team-editor-v195.js",
     "browser-feedback.js",
 ]
 
-# Browser reconstruction. Build 187 is the proven merged browser base; later
-# releases apply exact app deltas plus scoped CSS additions in release order.
+# Build 187 is the proven merged-browser base. Builds 188-194 append their
+# historical browser CSS. Build 195 applies only its exact app delta because its
+# new interface CSS is runtime-injected and the recovered browser stylesheet must
+# remain byte-for-byte stable.
 STAGES = [
     (188, Path(".web188"), "V27.3.7 Build 188 — Promises, Trust & Culture",
      "Android V27.3.6 · Coach Tree V2", "Android V27.3.7 · Promises, Trust & Culture",
@@ -44,6 +50,9 @@ STAGES = [
     (194, Path(".web194"), "V27.4.3 Build 194 — Coaching Reputation & Career Identity",
      "Android V27.4.2 · Stakeholders & Administration", "Android V27.4.3 · Coaching Reputation & Career Identity",
      "Web V27.4.2 · Stakeholders & Administration", "Web V27.4.3 · Coaching Reputation & Career Identity"),
+    (195, Path(".web195"), None,
+     "Android V27.4.3 · Coaching Reputation & Career Identity", "Android V27.4.4 · Commissioner & Conference Ecosystem",
+     "Web V27.4.3 · Coaching Reputation & Career Identity", "Web V27.4.4 · Commissioner & Conference Ecosystem"),
 ]
 
 
@@ -70,7 +79,9 @@ def apply_line_patch(path: Path, prefix: str, patch_dir: Path) -> None:
     path.write_text("".join(lines), encoding="utf-8")
 
 
-def append_css_once(styles_path: Path, patch_dir: Path, marker: str) -> None:
+def append_css_once(styles_path: Path, patch_dir: Path, marker: str | None) -> None:
+    if not marker:
+        return
     addition = (patch_dir / "styles-additions.css").read_text(encoding="utf-8")
     styles = styles_path.read_text(encoding="utf-8")
     if marker not in styles:
@@ -107,8 +118,6 @@ for item in source.iterdir():
     else:
         shutil.copy2(item, destination)
 
-# Build 187 proven merged-browser reconstruction. The CSS patch is intentionally
-# browser-specific; do NOT compare this merged file to the Android/shared CSS hash.
 patch_187 = Path(".web187")
 apply_line_patch(OUTPUT / "app-bundle.js", "app", patch_187)
 apply_line_patch(OUTPUT / "styles.css", "csspatch", patch_187)
@@ -128,27 +137,26 @@ for build, patch_dir, css_marker, android_old, android_new, web_old, web_new in 
     index_path.write_text(html, encoding="utf-8")
     previous_build = build
 
-# Force a fresh corrected browser stylesheet after the bad shared-CSS hotfix.
+# Normalize the recovered Build 194 stylesheet cache key to the Build 195 release.
 html = index_path.read_text(encoding="utf-8")
-html = html.replace('styles.css?v=194', 'styles.css?v=194-cssfix')
+html = html.replace('styles.css?v=195-cssfix', 'styles.css?v=195')
+html = html.replace('styles.css?v=194-cssfix', 'styles.css?v=195')
 index_path.write_text(html, encoding="utf-8")
 
-# Restore the exact current team-logo assets used by the shared game bundle.
-# The configured browser base predates these files, so the browser builder must
-# materialize them explicitly instead of allowing broken <img> requests.
-logo_payload = json.loads(inflate("logos_json", CURRENT))
+# Restore exact canonical team logos. Custom commissioner logos live in the save
+# and override these assets at runtime.
+logo_payload = json.loads(inflate("logos_json", LOGO_ASSETS))
 if not isinstance(logo_payload, dict) or len(logo_payload) != 128:
-    raise SystemExit(f"Build 194 team-logo bundle validation failed: expected 128, got {len(logo_payload) if isinstance(logo_payload, dict) else 'invalid'}")
+    raise SystemExit(f"Build 195 team-logo bundle validation failed: expected 128, got {len(logo_payload) if isinstance(logo_payload, dict) else 'invalid'}")
 logo_dir = OUTPUT / "assets" / "logos"
 if logo_dir.exists():
     shutil.rmtree(logo_dir)
 logo_dir.mkdir(parents=True, exist_ok=True)
 for filename, svg in logo_payload.items():
     if not re.fullmatch(r"team-\d+\.svg", filename) or not isinstance(svg, str) or "<svg" not in svg:
-        raise SystemExit(f"Build 194 team-logo bundle contains an invalid entry: {filename}")
+        raise SystemExit(f"Build 195 team-logo bundle contains an invalid entry: {filename}")
     (logo_dir / filename).write_text(svg, encoding="utf-8")
 
-# Browser-owned account, save, commerce, paid-editor and feedback layers.
 repo_cloud_config = Path("cloud-config.js")
 if not repo_cloud_config.exists():
     raise SystemExit("Missing browser-only runtime: cloud-config.js")
@@ -160,28 +168,29 @@ for name in BROWSER_FILES:
     shutil.copy2(src, OUTPUT / name)
 
 html = index_path.read_text(encoding="utf-8")
-anchor = '<script src="web-shell.js?v=194"></script>'
+anchor = '<script src="web-shell.js?v=195"></script>'
 browser_scripts = (
-    '<script src="browser-save-bridge.js?v=194"></script>\n'
-    '<script data-sdf-paid-editors="1" src="browser-editors.js?v=194"></script>\n'
-    '<script src="browser-commerce-bridge.js?v=194"></script>\n'
-    '<script data-sdf-feedback="1" src="browser-feedback.js?v=194"></script>'
+    '<script src="browser-save-bridge.js?v=195"></script>\n'
+    '<script data-sdf-paid-editors="1" src="browser-editors.js?v=195"></script>\n'
+    '<script src="browser-commerce-bridge.js?v=195"></script>\n'
+    '<script src="browser-team-editor-v195.js?v=195"></script>\n'
+    '<script data-sdf-feedback="1" src="browser-feedback.js?v=195"></script>'
 )
-if "browser-save-bridge.js?v=194" not in html:
+if "browser-save-bridge.js?v=195" not in html:
     if anchor not in html:
-        raise SystemExit("Could not locate Build 194 web-shell script anchor.")
+        raise SystemExit("Could not locate Build 195 web-shell script anchor.")
     html = html.replace(anchor, anchor + "\n" + browser_scripts)
 index_path.write_text(html, encoding="utf-8")
 
 web_shell = OUTPUT / "web-shell.js"
 if web_shell.exists():
     shell = web_shell.read_text(encoding="utf-8")
-    shell = re.sub(r"app_version:'web-v[^']+'", "app_version:'web-v27.4.3-build-194'", shell)
+    shell = re.sub(r"app_version:'web-v[^']+'", "app_version:'web-v27.4.4-build-195'", shell)
     web_shell.write_text(shell, encoding="utf-8")
 
 (OUTPUT / "sw.js").write_text(
-    """const CACHE='sdf-web-v27-4-3-build-194-assetsfix';
-const CORE=['./','./index.html','./styles.css','./app-bundle.js','./ad-config.js','./cloud-config.js','./web-shell.js','./browser-save-bridge.js','./browser-editors.js','./browser-commerce-bridge.js','./browser-feedback.js','./manifest.webmanifest','./icon.svg'];
+    """const CACHE='sdf-web-v27-4-4-build-195';
+const CORE=['./','./index.html','./styles.css','./app-bundle.js','./ad-config.js','./cloud-config.js','./web-shell.js','./browser-save-bridge.js','./browser-editors.js','./browser-commerce-bridge.js','./browser-team-editor-v195.js','./browser-feedback.js','./manifest.webmanifest','./icon.svg'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',event=>{if(event.request.method!=='GET')return;event.respondWith(fetch(event.request).then(response=>{const copy=response.clone();caches.open(CACHE).then(cache=>cache.put(event.request,copy));return response}).catch(()=>caches.match(event.request).then(hit=>hit||caches.match('./index.html'))));});
@@ -197,29 +206,28 @@ for name in ("_redirects", "supabase.sql"):
 required = [
     "index.html", "app-bundle.js", "styles.css", "web-shell.js", "cloud-config.js",
     "browser-save-bridge.js", "browser-editors.js", "browser-commerce-bridge.js",
-    "browser-feedback.js", "manifest.webmanifest", "icon.svg", "sw.js",
+    "browser-team-editor-v195.js", "browser-feedback.js", "manifest.webmanifest", "icon.svg", "sw.js",
 ]
 missing = [name for name in required if not (OUTPUT / name).exists()]
 if missing:
     raise SystemExit("Web build is missing: " + ", ".join(missing))
 
-app_hash = hashlib.sha256((OUTPUT / "app-bundle.js").read_bytes()).hexdigest()
+app_path = OUTPUT / "app-bundle.js"
+app_hash = hashlib.sha256(app_path.read_bytes()).hexdigest()
 styles_hash = hashlib.sha256(styles_path.read_bytes()).hexdigest()
 if app_hash != APP_SHA256:
-    raise SystemExit(f"Build 194 app-bundle validation failed: {app_hash}")
+    raise SystemExit(f"Build 195 app-bundle validation failed: {app_hash}")
 if styles_hash != STYLES_SHA256:
-    raise SystemExit(f"Build 194 merged browser stylesheet validation failed: {styles_hash}")
+    raise SystemExit(f"Build 195 merged browser stylesheet validation failed: {styles_hash}")
 if styles_path.stat().st_size < 100000:
-    raise SystemExit(f"Build 194 browser stylesheet is unexpectedly small: {styles_path.stat().st_size} bytes")
+    raise SystemExit(f"Build 195 browser stylesheet is unexpectedly small: {styles_path.stat().st_size} bytes")
 
-app_text = (OUTPUT / "app-bundle.js").read_text(encoding="utf-8")
+app_text = app_path.read_text(encoding="utf-8")
 logo_refs = set(re.findall(r"assets/logos/(team-\d+\.svg)", app_text))
 missing_logos = sorted(name for name in logo_refs if not (logo_dir / name).exists())
 extra_logos = sorted(set(logo_payload) - logo_refs)
 if len(logo_refs) != 128 or missing_logos or extra_logos:
-    raise SystemExit(
-        f"Build 194 browser logo validation failed: refs={len(logo_refs)}, missing={missing_logos[:5]}, extra={extra_logos[:5]}"
-    )
+    raise SystemExit(f"Build 195 browser logo validation failed: refs={len(logo_refs)}, missing={missing_logos[:5]}, extra={extra_logos[:5]}")
 
 html = index_path.read_text(encoding="utf-8")
 css = styles_path.read_text(encoding="utf-8")
@@ -228,52 +236,49 @@ cloud = (OUTPUT / "cloud-config.js").read_text(encoding="utf-8")
 save_bridge = (OUTPUT / "browser-save-bridge.js").read_text(encoding="utf-8")
 editors = (OUTPUT / "browser-editors.js").read_text(encoding="utf-8")
 commerce_bridge = (OUTPUT / "browser-commerce-bridge.js").read_text(encoding="utf-8")
+league_editor = (OUTPUT / "browser-team-editor-v195.js").read_text(encoding="utf-8")
 
-if "Web V27.4.3 · Coaching Reputation & Career Identity" not in html:
-    raise SystemExit("Build 194 index content validation failed.")
-if "styles.css?v=194-cssfix" not in html:
-    raise SystemExit("Build 194 corrected browser stylesheet cache buster is missing.")
+if "Web V27.4.4 · Commissioner & Conference Ecosystem" not in html:
+    raise SystemExit("Build 195 index content validation failed.")
+if "styles.css?v=195" not in html:
+    raise SystemExit("Build 195 browser stylesheet cache buster is missing.")
 for script in (
-    "app-bundle.js?v=194", "cloud-config.js?v=194", "web-shell.js?v=194",
-    "browser-save-bridge.js?v=194", "browser-editors.js?v=194",
-    "browser-commerce-bridge.js?v=194", "browser-feedback.js?v=194",
+    "app-bundle.js?v=195", "cloud-config.js?v=195", "web-shell.js?v=195",
+    "browser-save-bridge.js?v=195", "browser-editors.js?v=195",
+    "browser-commerce-bridge.js?v=195", "browser-team-editor-v195.js?v=195", "browser-feedback.js?v=195",
 ):
     if script not in html:
-        raise SystemExit(f"Build 194 browser runtime/cache buster is missing: {script}")
+        raise SystemExit(f"Build 195 browser runtime/cache buster is missing: {script}")
 
+for marker in ("SDF_V195", "conferencePowerRankings", "cfpRankings", "teamIdentityOverrides", "evaluateRealignment"):
+    if marker not in app_text:
+        raise SystemExit(f"Build 195 shared runtime is missing: {marker}")
 if "Browser-only Stripe/Supabase storefront" not in cloud or "user_entitlements" not in cloud or "SDF_COMMERCE" not in cloud:
-    raise SystemExit("Build 194 browser Stripe/Supabase commerce adapter is missing.")
+    raise SystemExit("Build 195 browser Stripe/Supabase commerce adapter is missing.")
 if "SDF_BROWSER_SAVE_BRIDGE" not in save_bridge or "indexedDB" not in save_bridge or "usesIndexedDb:true" not in save_bridge:
-    raise SystemExit("Build 194 browser account-save bridge is missing.")
+    raise SystemExit("Build 195 browser account-save bridge is missing.")
 if "SDF_COMMERCE" not in editors or "sdf:entitlements" not in editors:
-    raise SystemExit("Build 194 browser entitlement-aware editor layer is missing.")
-if (
-    "SDF_BROWSER_COMMERCE_BRIDGE" not in commerce_bridge
-    or "SHOP_SELECTORS" not in commerce_bridge
-    or "removeAndroidEditor" not in commerce_bridge
-    or "#sdfAndroidEditor" not in commerce_bridge
-):
-    raise SystemExit("Build 194 browser commerce/player-editor routing bridge is missing or stale.")
-if (
-    "V27.4.3 Build 194 — Coaching Reputation & Career Identity" not in css
-    or ".coach-reputation-v194" not in css
-    or ".coach-story-v194" not in css
-):
-    raise SystemExit("Build 194 Coaching Reputation & Career Identity styles are missing.")
+    raise SystemExit("Build 195 browser entitlement-aware editor layer is missing.")
+if "removeAndroidEditor" not in commerce_bridge or "#sdfAndroidEditor" not in commerce_bridge:
+    raise SystemExit("Build 195 browser Player Editor collision guard is missing.")
+for marker in ("SDF_BROWSER_TEAM_EDITOR_V195", "All Programs", "teAbbr", "teConference", "readLogoFile", "all 128 programs"):
+    if marker not in league_editor:
+        raise SystemExit(f"Build 195 browser League Team Editor is missing: {marker}")
 for browser_selector in (".new-dynasty-setup", ".mobile-bottom-nav", ".logo-img", ".school-grid"):
     if browser_selector not in css:
-        raise SystemExit(f"Build 194 merged browser stylesheet is missing {browser_selector}")
-if "app_version:'web-v27.4.3-build-194'" not in shell:
-    raise SystemExit("Build 194 web-shell metadata validation failed.")
-if "sdf-web-v27-4-3-build-194-assetsfix" not in (OUTPUT / "sw.js").read_text(encoding="utf-8"):
-    raise SystemExit("Build 194 service-worker cache validation failed.")
+        raise SystemExit(f"Build 195 merged browser stylesheet is missing {browser_selector}")
+if "app_version:'web-v27.4.4-build-195'" not in shell:
+    raise SystemExit("Build 195 web-shell metadata validation failed.")
+if "sdf-web-v27-4-4-build-195" not in (OUTPUT / "sw.js").read_text(encoding="utf-8"):
+    raise SystemExit("Build 195 service-worker cache validation failed.")
 
-print("Validated Saturday Dynasty Football Web V27.4.3 / Build 194")
+print("Validated Saturday Dynasty Football Web V27.4.4 / Build 195")
 print(f"app-bundle sha256: {app_hash}")
-print(f"styles sha256: {styles_hash} (merged browser CSS)")
+print(f"styles sha256: {styles_hash} (proven merged browser CSS retained)")
 print(f"index sha256: {hashlib.sha256(index_path.read_bytes()).hexdigest()}")
 print("browser saves: Supabase account sync + IndexedDB large-save cache")
 print("browser commerce: Stripe/Supabase entitlement layer")
 print("browser player editor: Android DOM collision guard active")
-print("browser team logos: 128/128 exact SVG assets restored")
+print("browser league editor: all 128 programs + save-backed branding")
+print("browser team logos: 128/128 canonical SVG assets restored")
 print(f"Web build ready in {OUTPUT.resolve()}")
