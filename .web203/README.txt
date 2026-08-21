@@ -1,0 +1,1 @@
+Build 203 browser delta: exact shared app-bundle patch from Build 201 to Build 203 Open Testing Stabilization. The browser builder preserves Supabase saves, Stripe entitlements, PWA/browser shell, editors, feedback, browser stylesheet and team logos, and injects the Coach staff-management surface into the browser index.
