@@ -98,6 +98,13 @@ self.addEventListener('fetch',event=>{if(event.request.method!=='GET')return;eve
     encoding="utf-8",
 )
 
+# AdMob app verification. Keep app-ads.txt in the generated Cloudflare output so
+# it is always available at https://saturdaydynasty.ctoolis.workers.dev/app-ads.txt.
+(OUTPUT / "app-ads.txt").write_text(
+    "google.com, pub-9690546015672361, DIRECT, f08c47fec0942fa0\n",
+    encoding="utf-8",
+)
+
 app_hash = hashlib.sha256(app_path.read_bytes()).hexdigest()
 styles_hash = hashlib.sha256(styles_path.read_bytes()).hexdigest()
 if app_hash != TARGET_APP_SHA256:
@@ -154,6 +161,7 @@ required_browser_files = (
     "browser-commerce-bridge.js",
     "browser-team-editor-v195.js",
     "browser-feedback.js",
+    "app-ads.txt",
 )
 missing = [name for name in required_browser_files if not (OUTPUT / name).exists()]
 if missing:
