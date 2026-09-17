@@ -1,7 +1,7 @@
 {
-  "version": "27.4.35",
-  "versionCode": 236,
-  "release": "Android V27.4.35 \u00b7 Build 236 \u00b7 Coach Journey",
+  "version": "27.4.36",
+  "versionCode": 237,
+  "release": "Android V27.4.36 \u00b7 Build 237 \u00b7 Dynasty Stories",
   "files": [
     {
       "path": "ad-config.js",
@@ -10,8 +10,8 @@
     },
     {
       "path": "app-bundle.js",
-      "bytes": 1242598,
-      "sha256": "d8788c88a8b0331c388b44f5c3da562ce547027f2bdac0482e5f6717707e7a28"
+      "bytes": 1269465,
+      "sha256": "4cfe476ae1745e14e8065c09b587ed194995e1a67455ecb129b7c64f892b450e"
     },
     {
       "path": "app-shell.css",
@@ -694,6 +694,11 @@
       "sha256": "b4a8621f0ab1ebc86896d640261ef121f4512a9c8a850d4ae545579e68f23fd2"
     },
     {
+      "path": "dynasty-story.css",
+      "bytes": 4065,
+      "sha256": "f23a88854455653c428c2f23548dadbb7c6ef0135d7ed0ed2c63c1fa253b35e7"
+    },
+    {
       "path": "icon-1024.png",
       "bytes": 999033,
       "sha256": "6ef6915c1e1cdcfcf2e26aee1f75ada869ad877c355588d048a01bbefef09148"
@@ -710,8 +715,8 @@
     },
     {
       "path": "index.html",
-      "bytes": 43296,
-      "sha256": "a9462c192e83fb15fbf4c78b8fd70ed708efa995d52ec9b8402bc8398c4c1459"
+      "bytes": 43488,
+      "sha256": "4aa39f5c5ae3da857a1fedb19042430e6e15b12c749dbab3dab2d0244a18896b"
     },
     {
       "path": "live-game.css",
@@ -720,8 +725,8 @@
     },
     {
       "path": "manifest.json",
-      "bytes": 737,
-      "sha256": "2dab640c0f5e530e8b081132fa4942558a53c94ff6d34c6192e501082e180751"
+      "bytes": 744,
+      "sha256": "381cc64dbd3d906b03e352621917f842752f5012e4cb19807b6277b47de0cf01"
     },
     {
       "path": "navigation.css",
@@ -859,5 +864,5 @@
       "sha256": "14d1c25fe97a69b34cb497fb95821747a6029f1c29ba7f6492b58f36135f2473"
     }
   ],
-  "fileCount": 171
+  "fileCount": 172
 }

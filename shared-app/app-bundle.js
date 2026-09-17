@@ -1942,9 +1942,15 @@ function nilBonus(r,id){
  if(Number(id)!==USER_ID())return 0;const paid=Number(state.nilCommitments?.[r.id]||0),demand=Number(nilOfferAmount(r)||1),reaction=nilReaction(paid,demand);return reaction.bonus-Number(r.nilTrustPenalty||0)
 }
 function relationshipBonus(r,id){return Number(id)===USER_ID()&&r.relationship&&state.commits?.some(x=>x.id===r.relationship.otherId)&&r.relationship.type!=='Rival'?4:0}
-function totalInterest(r,s){
- const id=s.id,cap=capFor(r,s),value=baseInterest(r,s)+Number(r.recruitInfluence?.[id]||0)+offerBonus(r,id)+Number(r.visitBoostBySchool?.[id]||0)+Number(r.promiseBoostBySchool?.[id]||0)+nilBonus(r,id)+relationshipBonus(r,id);
- return clamp(value,2,cap)
+function interestParts(r,s){
+ const id=s.id;return{fit:baseInterest(r,s),effort:Number(r.recruitInfluence?.[id]||0),scholarship:offerBonus(r,id),visit:Number(r.visitBoostBySchool?.[id]||0),promise:Number(r.promiseBoostBySchool?.[id]||0),nil:nilBonus(r,id),relationship:relationshipBonus(r,id)}
+}
+function totalInterest(r,s){return clamp(Object.values(interestParts(r,s)).reduce((sum,value)=>sum+value,0),2,capFor(r,s))}
+function feedbackSnapshot(r){
+ const rc=race(r);return{score:Number(rc.user?.score||0),rank:rc.user?.rank||null,leader:rc.leader?{id:rc.leader.id,name:rc.leader.school.name,score:rc.leader.score}:null,parts:interestParts(r,state.school),cap:capFor(r,state.school),spent:weeklyContactHours(r)}
+}
+function rememberFeedback(r,before,label,hours,fitMult=null){
+ const after=feedbackSnapshot(r);r.feedbackV237={year:state.year,week:state.week,label,hours,fitMult,before,after};
 }
 function recalculateRecruit(r,trackTrend=true){
  if(!r.contenderIds?.length)establishContenders(r,true);r.interest??={};const ids=unique([...r.contenderIds,USER_ID()]);
@@ -1992,12 +1998,13 @@ function canUseAction(r,key,status=statusFor(r)){
 }
 function performAction(r,key,{silent=false,fromPlan=false}={}){
  ensureRecruit(r);const action=ACTIONS[key],status=statusFor(r);if(!action)return false;const availability=canUseAction(r,key,status);if(!availability.allowed){if(!silent)rejectRecruitAction(r,availability.reason);return false}if(!addToBoard(r,{quiet:silent}))return false;
- const beforeScore=race(r).user?.score||0;state.weeklyHours-=action.hours;r.actionHistory[actionWeekKey()]??={};r.actionHistory[actionWeekKey()][key]=1;
+ const feedbackBefore=feedbackSnapshot(r),beforeScore=race(r).user?.score||0;state.weeklyHours-=action.hours;r.actionHistory[actionWeekKey()]??={};r.actionHistory[actionWeekKey()][key]=1;
  let gain=Math.max(.25,availability.preview.estimate*(.90+Math.random()*.20));r.recruitInfluence[USER_ID()]=clamp(Number(r.recruitInfluence[USER_ID()]||0)+gain,0,58);recalculateRecruit(r,true);
  let afterScore=race(r).user?.score||0;if(afterScore<beforeScore){r.recruitInfluence[USER_ID()]=clamp(Number(r.recruitInfluence[USER_ID()]||0)+(beforeScore-afterScore),0,58);recalculateRecruit(r,true);afterScore=race(r).user?.score||beforeScore}
  maybeImmediateCommit(r);const rc=race(r),rank=rc.user?.rank||'—',gap=rc.gap==null?'—':Math.round(rc.gap),displayGain=Math.max(0,afterScore-beforeScore),spent=weeklyContactHours(r);
  const currentStatus=statusFor(r),interestCap=Number(currentStatus.eligibility?.cap||100),capMessage=interestCap<100&&afterScore>=interestCap-.05?` Interest has reached its ${interestCap}/100 limit. ${currentStatus.warning}`:'';
  const contactCap=contactCapFor(r);r.lastActionMessage=`${action.label} increased your score by ${displayGain<1?displayGain.toFixed(1):Math.round(displayGain)}. Contact allocation: ${spent}/${contactCap} hours this week; ${Math.max(0,contactCap-spent)} remain. You are #${rank}${gap>0?`, ${gap} behind ${rc.leader.school.name}`:', currently leading'}. Action limits reset next week.${capMessage}`;
+ rememberFeedback(r,feedbackBefore,fromPlan?`Weekly plan: ${action.label}`:action.label,action.hours,availability.preview.fitMult);
  if(!silent)state.news.push(`${r.name}: ${r.lastActionMessage}`);if(!fromPlan){updateRecruitCard(r.id);autosave(action.label)}return true
 }
 function actionButtons(r,status,compact=false){
@@ -2040,7 +2047,7 @@ function filteredProspects(){
 }
 function recruitingOverviewHtml(){const board=state.recruits.filter(r=>r.onBoard&&!r.committedTo).length,led=state.recruits.filter(r=>r.onBoard&&!r.committedTo&&race(r).user?.rank===1).length;return metric('Weekly Recruiting Hours',state.weeklyHours)+metric('Open Prospects',state.recruits.filter(r=>!r.committedTo).length)+metric('Recruitable Now',state.recruits.filter(recruitableNow).length)+metric('Recruiting Board',`${board}/${RECRUIT_BOARD_LIMIT}`)+metric('Board Slots',Math.max(0,RECRUIT_BOARD_LIMIT-board))+metric('Offers Left',state.scholarships)+metric('Signed Class',`${state.commits.length}/${CLASS_SIGNING_LIMIT}`)+metric('Battles Led',led)+metric('Late Opportunities',state.recruits.filter(lateOpportunity).length)+metric('Recruiting NIL Pool',formatNilMoney(state.nilBudget))+metric('NIL Offered',formatNilMoney(nilCommittedTotal()))+metric('Program Funds',formatNilMoney(state.budget))+metric('Recruiting Phase',state.recruitingPhase)}
 function recruitTableRowHtml(r){const n=recruitRenderNeeds(),status=statusFor(r),reason=status.canRecruit?status.warning:status.activeReason;return`<tr data-recruit-id="${r.id}" class="${!status.canRecruit?'recruit-blocked':''}"><td>${r.rank}</td><td><button class="link-button" onclick="openRecruit('${r.id}')">${r.name}</button><span class="sub">${r.arch} · ${r.personality}</span><div class="motivation-inline">${r.motivations.slice(0,2).map(m=>`<span>${m.label}</span>`).join('')}</div><span class="sub recruit-contact-remaining">${contactHoursLeft(r)}/${contactCapFor(r)} hrs remaining</span></td><td>${r.pos}</td><td class="star">${star(r.stars)}${!status.access.allowed?'<span class="lock-badge">TIER</span>':status.lockedOut?'<span class="lock-badge">CUT</span>':status.eligibility.locked?'<span class="lock-badge">DEALBREAKER</span>':''}</td><td>${r.city}, ${r.home}<span class="sub">${distance(state.school,r)} mi${state.school.pipelines.includes(r.home)?' · PIPELINE':''}</span></td><td><span class="stage">${stageFor(r)}</span></td><td>${r.scouted?r.ovr:'??'}</td><td>${projectedRecruitUpside(r)}</td><td>${r.scouted?(r.scoutConfidence||0)+'%':'—'}</td><td>${n[r.pos].label}<span class="sub">PT grade ${letterGrade(playingTimeGrade(r,state.school))}</span></td><td><span class="dealbreaker-badge">${dealbreakerDisplay(r)}</span></td><td><div class="race-summary">${userRaceSummary(r)}<div class="race-compact">${raceCompact(r,3)}</div></div>${reason?`<span class="sub ineligible">${reason}</span>`:''}</td><td>${planSelect(r,status)}</td><td><div class="actions">${recruitButtons(r,status)}</div></td></tr>`}
-function recruitMobileCardHtml(r){const status=statusFor(r),rc=race(r),notice=status.canRecruit?status.warning:status.activeReason;return`<article data-recruit-id="${r.id}" class="mobile-data-card ${!status.canRecruit?'recruit-blocked':''}"><div class="mobile-data-head"><div><h3>#${r.rank} ${r.name}</h3><span class="sub">${r.pos} · ${r.arch} · ${r.city}, ${r.home}</span><span class="sub recruit-contact-remaining">${contactHoursLeft(r)}/${contactCapFor(r)} hrs remaining</span></div><span class="star">${star(r.stars)}</span></div><div class="motivation-row">${motivationChips(r)}</div><div class="mobile-data-grid"><div><small>YOUR RANK</small><b>#${rc.user?.rank||'—'}</b></div><div><small>YOUR INTEREST</small><b>${Math.round(rc.user?.score||0)}</b></div><div><small>LEADER</small><b>${rc.leader?.school.name||'—'}</b></div><div><small>FIT</small><b>${rc.user?.grade||'—'}</b></div><div><small>PLAYING TIME</small><b>${letterGrade(playingTimeGrade(r,state.school))}</b></div><div><small>NIL ASK</small><b>${formatNilMoney(nilOfferAmount(r))}</b></div><div><small>CONTACT HRS LEFT</small><b>${contactHoursLeft(r)} / ${contactCapFor(r)}</b></div></div><div class="mobile-race-list">${raceCompact(r,5)}</div>${notice?`<div class="recruit-status-message ${status.canRecruit?'warning':''}"><b>${status.canRecruit?'Dealbreaker warning':'Active recruiting locked'}</b><span>${notice}</span></div>`:planSelect(r,status)}<div class="mobile-actions">${recruitButtons(r,status,true)}</div></article>`}
+function recruitMobileCardHtml(r){const status=statusFor(r),rc=race(r),notice=status.canRecruit?status.warning:status.activeReason;return`<article data-recruit-id="${r.id}" class="mobile-data-card ${!status.canRecruit?'recruit-blocked':''}"><div class="mobile-data-head"><div><h3>#${r.rank} ${r.name}</h3><span class="sub">${r.pos} · ${r.arch} · ${r.city}, ${r.home}</span><span class="sub recruit-contact-remaining">${contactHoursLeft(r)}/${contactCapFor(r)} hrs remaining</span></div><span class="star">${star(r.stars)}</span></div><div class="motivation-row">${motivationChips(r)}</div><div class="mobile-data-grid"><div><small>YOUR RANK</small><b>#${rc.user?.rank||'—'}</b></div><div><small>YOUR INTEREST</small><b>${Math.round(rc.user?.score||0)}</b></div><div><small>LEADER</small><b>${rc.leader?.school.name||'—'}</b></div><div><small>FIT</small><b>${rc.user?.grade||'—'}</b></div><div><small>PLAYING TIME</small><b>${letterGrade(playingTimeGrade(r,state.school))}</b></div><div><small>NIL ASK</small><b>${formatNilMoney(nilOfferAmount(r))}</b></div><div><small>CONTACT HRS LEFT</small><b>${contactHoursLeft(r)} / ${contactCapFor(r)}</b></div></div><div class="mobile-race-list">${raceCompact(r,5)}</div>${notice?`<div class="recruit-status-message ${status.canRecruit?'warning':''}"><b>${status.canRecruit?'Dealbreaker warning':'Active recruiting locked'}</b><span>${notice}</span></div>`:planSelect(r,status)}${window.SDF_DYNASTY_STORY?.recruitCardHtml?.(r)||''}<div class="mobile-actions">${recruitButtons(r,status,true)}</div></article>`}
 function renderRecruitSummary(){return withRecruitReadFrame(renderRecruitSummaryContents)}
 function renderRecruitSummaryContents(){const overview=$('recruitingOverview');if(overview&&!overview.closest('details:not([open])'))overview.innerHTML=recruitingOverviewHtml();if($('hoursLabel'))$('hoursLabel').textContent=state.weeklyHours;if($('scholarshipLabel'))$('scholarshipLabel').textContent=state.scholarships;const ca=Math.round(avg(state.commits.map(r=>r.ovr))||0),score=Math.round(state.commits.reduce((s,r)=>s+r.ovr+r.stars*5+(r.pot||r.ovr)*.2,0));if($('classCards'))$('classCards').innerHTML=metric('Commits',state.commits.length)+metric('Average OVR',ca||'—')+metric('5-stars',state.commits.filter(r=>r.stars===5).length)+metric('Class Score',score);if($('commitList'))$('commitList').innerHTML=state.commits.map(r=>`<div class="commit-card"><h4>${r.name}</h4><div>${r.pos} · ${r.arch} · <span class="star">${star(r.stars)}</span></div><span class="sub">${r.city}, ${r.home} · OVR ${r.ovr} · ${state.signingDayResolved?`POT ${r.truePot||r.pot||'?'}`:`Projected Upside ${projectedRecruitUpside(r)}`}</span></div>`).join('')||'<p class="muted">No commitments yet.</p>'}
 function updateRecruitCard(id){return withRecruitReadFrame(()=>updateRecruitCardContents(id))}
@@ -2143,7 +2150,7 @@ function maybeCommit(r){
  if(Math.random()*100<chance)commitRecruit(r,leader,'after winning the recruiting battle')
 }
 window.applyWeeklyPlans=applyPlans;
-window.resolveRecruiting=()=>{ensureAllRecruits();window.SDF_V201?.beginWorldSimulationCycle?.('recruiting-week');applyPlans();state.recruits.filter(r=>!r.committedTo).forEach(r=>{advanceAi(r);resolveVisit(r);recalculateRecruit(r,true);if(maybeImmediateCommit(r))return;makeCuts(r);recalculateRecruit(r,true);maybeCommit(r)})};
+window.resolveRecruiting=()=>{ensureAllRecruits();const feedbackBefore=new Map(state.recruits.filter(r=>r.onBoard&&!r.committedTo).map(r=>[r,feedbackSnapshot(r)]));window.SDF_V201?.beginWorldSimulationCycle?.('recruiting-week');applyPlans();state.recruits.filter(r=>!r.committedTo).forEach(r=>{advanceAi(r);resolveVisit(r);recalculateRecruit(r,true);if(maybeImmediateCommit(r))return;makeCuts(r);recalculateRecruit(r,true);maybeCommit(r)});for(const [r,before] of feedbackBefore)rememberFeedback(r,before,'Weekly recruiting update',Math.max(0,weeklyContactHours(r)-before.spent))};
 window.prepareSigningDay=()=>{state.phase='SIGNING';state.seasonDone=true;const undecided=state.recruits.filter(r=>!r.committedTo&&r.offered&&race(r).user?.rank<=5).sort((a,b)=>(race(a).user?.rank||99)-(race(b).user?.rank||99)||race(b).user.score-race(a).user.score).slice(0,24);$('signingDayList').innerHTML=undecided.map(r=>{const rc=race(r);return`<div class="commit-card"><h4>${r.name}</h4><div>${r.pos} · ${r.arch} · <span class="star">${star(r.stars)}</span></div><span class="sub">You are #${rc.user?.rank||'—'} · ${Math.round(rc.user?.score||0)} interest · Leader ${rc.leader?.school.name||'—'}</span></div>`}).join('')||'<p class="muted">No major decisions remain.</p>';$('signingDayPanel').classList.remove('hidden');showTab('season')};
 window.resolveSigningDay=()=>{if(state.signingDayResolved)return;state.recruits.filter(r=>!r.committedTo).forEach(r=>{ensureRecruit(r);const rc=race(r),top=rc.entries.slice(0,5).filter(e=>e.offered&&canSchoolSign(e.id));if(!top.length)return;const total=top.reduce((n,e)=>n+Math.exp(e.score/13),0),roll=Math.random()*total;let acc=0,winner=top[0];for(const e of top){acc+=Math.exp(e.score/13);if(roll<=acc){winner=e;break}}commitRecruit(r,winner,'on Signing Day')});checkDecommits();state.signingDayResolved=true;$('signingDayPanel').classList.add('hidden');prepareChampionshipWeek();window.renderAll();autosave('Signing Day')};
 
@@ -2166,7 +2173,7 @@ document.addEventListener('toggle',event=>{if(event.target?.id==='recruitIntelV2
 
 window.migrateDynastyCore?.();ensureAllRecruits();if(state.school)buildAiRecruitingBoards(false);if(state.school&&document.getElementById('recruitingTab')&&!document.getElementById('recruitingTab').classList.contains('hidden'))renderRecruitingV2();
 window.SDF_RECRUITING_V2={
- nilReaction,weeklyContactHours,contactCapFor,contactHoursLeft,canUseAction,CONTACT_CAP,MAX_CONTACT_CAP,ACTIONS,ensureRecruit,race,weightedFit,schoolGrade,recalculateRecruit,
+ interestParts,feedbackSnapshot,rememberFeedback,nilReaction,weeklyContactHours,contactCapFor,contactHoursLeft,canUseAction,CONTACT_CAP,MAX_CONTACT_CAP,ACTIONS,ensureRecruit,race,weightedFit,schoolGrade,recalculateRecruit,
  performAction,MOTIVATIONS,lateOpportunity,maybeImmediateCommit,makeCuts,statusFor,boardCount,
  RECRUIT_BOARD_LIMIT,CLASS_SIGNING_LIMIT,RECRUITING_PERSISTENCE_VERSION,buildAiRecruitingBoards,initializeRecruitingModelAsync,
  aiClassCount,aiTargetScore,renderRecruitingV2,updateRecruitCard,renderRecruitSummary,dealbreakerMet,
@@ -5196,6 +5203,13 @@ const $h=(selector,root=document)=>root.querySelector(selector);
 const esc=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 
 const GUIDES={
+ dynastystory:{label:'Dynasty story & challenges',icon:'★',summary:'Remember your players, save season recaps and try three free coaching challenges.',sections:[
+  ['Open your story','On Home, scroll to the Coach’s briefing and choose Open story & challenges. Season recap, Player journeys and Challenges each have their own tab.'],
+  ['Choose a challenge','Start a fresh dynasty and accept one challenge in Year 1, Week 1 before playing. Rebuild in Three needs a program with 55 prestige or lower and eight wins in one season within three years. Homegrown Class needs five home-state recruits confirmed at Signing Day. Rivalry Run needs three rivalry wins within three years.'],
+  ['Track the run','One challenge saves with each dynasty. Stay at the starting program. Your dynasty continues if the challenge ends; these are free personal goals with no gameplay bonus or leaderboard.'],
+  ['Keep the memories','Season recap uses recorded results and player stats. A recap is saved before offseason roster changes. Save recap image exports a PNG you can share. Player journeys open the saved career story and show growth since the first recorded rating.'],
+  ['Understand recruiting','After a contact or weekly update, open a recruit’s Profile → Recruiting for the actual interest change, contact hours and score components. Interest is a score, not a commitment percentage.']
+ ],tip:'A fresh dynasty can start one of three challenges. Existing dynasties still get stories, recaps and recruiting feedback.'},
  dashboard:{label:'Home',icon:'⌂',summary:'Start here each week. Details stays visible, with your matchup and shortcuts in Overview.',sections:[
   ['Read the next game','Check your opponent, venue and week. Open Game Center when you are ready, or use Game Plan to prepare first.'],
   ['Use the shortcuts','Recruiting hours, injuries and available coach points give you useful places to start. Tap a card to open its screen.'],
@@ -7288,7 +7302,7 @@ function enhancePlayerProfile(id){
    <section data-player-panel-v225="overview"><div class="profile-snapshot-v225">${metricCard('Role',role,`${Math.round(num(usage.snap))}% assigned snaps`)}${metricCard('Morale',num(player.morale),`${num(player.trust,70)} trust`)}${metricCard('Development',player.dev||'Normal',`${num(player.pot)-num(player.ovr)} OVR upside`)}${metricCard('Season',`${num(player.seasonStats?.games)} games`,statLine(player.pos,player.seasonStats||{}))}</div><article class="profile-goal-v225"><div><span class="eyebrow">CAREER GOAL</span><h3>${esc(goal?.label||'Earn a role')}</h3><p>${esc(goal?.desc||'Keep developing and compete for playing time.')}</p></div><strong class="${goal?.met?'met':''}">${goal?.met?'GOAL MET':'IN PROGRESS'}</strong><small>${esc(goal?.progress||`${promises.length} active promise${promises.length===1?'':'s'}`)}</small></article><article class="profile-actions-v225"><div><span class="eyebrow">COACH DECISIONS</span><h3>Manage ${esc(player.name.split(/\s+/)[0])}</h3><p>Depth, eligibility, and leadership decisions live here and on the roster card.</p></div><div><button class="btn primary" type="button" data-profile-depth-v225="${esc(player.id)}">Manage Depth</button>${rs?`<button class="btn ${rs.active?'warning':'neutral'}" type="button" data-profile-redshirt-v225="${esc(player.id)}" ${!rs.can?'disabled':''}>${esc(rs.label)}</button>`:''}<button class="btn ${captain?'success':'neutral'}" type="button" data-profile-captain-v225="${esc(player.id)}" ${!captain&&(state.captains||[]).length>=4?'disabled':''}>${captain?'Remove Captain':'Name Captain'}</button><span class="sdf-profile-editor-wrap"></span></div>${rs?`<small>${esc(rs.detail)}</small>`:''}</article>${promises.length?`<article class="profile-promises-v225"><span class="eyebrow">ACTIVE PROMISES</span>${promises.map(promise=>`<div><b>${esc(promise.type)}</b><span>${esc(promise.criterion||'This promise will be evaluated as the season develops.')}</span></div>`).join('')}</article>`:''}</section>
    <section data-player-panel-v225="development" hidden><div class="profile-development-head-v225">${metricCard('Current OVR',num(player.ovr))}${metricCard('Potential',num(player.pot))}${metricCard('Dev Trait',player.dev||'Normal')}${metricCard('Last Gain',player.progressionHistory?.length?`${num(player.progressionHistory.at(-1).gain)>=0?'+':''}${num(player.progressionHistory.at(-1).gain)}`:'—')}</div><article class="profile-section-v225"><span class="eyebrow">POSITION ATTRIBUTES</span><h3>${esc(player.pos)} Skill Profile</h3><div class="profile-attributes-v225">${profileAttributes(player)}</div></article><article class="profile-section-v225"><span class="eyebrow">DEVELOPMENT HISTORY</span><h3>OVR Progression</h3><div class="profile-timeline-v225">${profileProgression(player)}</div></article></section>
    <section data-player-panel-v225="career" hidden><div class="profile-career-summary-v225">${metricCard('Current Line',`${num(player.seasonStats?.games)} games`,statLine(player.pos,player.seasonStats||{}))}${metricCard('Role',role,`${Math.round(num(usage.snap))}% snaps`)}${metricCard('Joined',`Year ${identity.joinedYear||player.signedYear||1}`,`${num(identity.joinedOvr,player.ovr)} OVR`)}${metricCard('Origin',identity.origin||player.rosterOrigin||(player.walkOn?'Walk-on':'Scholarship player'))}</div><div class="profile-seasons-v225">${careerCards(player)}</div></section>
-   <section data-player-panel-v225="story" hidden><div class="profile-identity-v225">${metricCard('Personality',player.personality||'Competitive')}${metricCard('Loyalty',Math.round(num(identity.loyalty,70)))}${metricCard('Ambition',Math.round(num(identity.ambition,70)))}${metricCard('Leadership',Math.round(num(identity.leadership,70)))}${metricCard('Coach Bond',Math.round(num(identity.coachBond,70)))}${metricCard('Origin',identity.origin||player.rosterOrigin||'Program player')}</div><article class="profile-section-v225"><span class="eyebrow">CAREER STORY</span><h3>${esc(player.name.split(/\s+/)[0])}'s Timeline</h3><div class="profile-story-v225">${story.map(item=>`<div><span>Year ${esc(item.year||'—')}</span><p>${esc(item.text)}</p></div>`).join('')||'<p class="muted">This player’s story is just beginning.</p>'}</div></article></section>
+   <section data-player-panel-v225="story" hidden>${window.SDF_DYNASTY_STORY?.playerJourneyHtml?.(player)||''}<div class="profile-identity-v225">${metricCard('Personality',player.personality||'Competitive')}${metricCard('Loyalty',Math.round(num(identity.loyalty,70)))}${metricCard('Ambition',Math.round(num(identity.ambition,70)))}${metricCard('Leadership',Math.round(num(identity.leadership,70)))}${metricCard('Coach Bond',Math.round(num(identity.coachBond,70)))}${metricCard('Origin',identity.origin||player.rosterOrigin||'Program player')}</div><article class="profile-section-v225"><span class="eyebrow">CAREER STORY</span><h3>${esc(player.name.split(/\s+/)[0])}'s Timeline</h3><div class="profile-story-v225">${story.map(item=>`<div><span>Year ${esc(item.year||'—')}</span><p>${esc(item.text)}</p></div>`).join('')||'<p class="muted">This player’s story is just beginning.</p>'}</div></article></section>
   </div>
  </section>`;
  const shell=body.querySelector('.player-profile-v225');activatePlayerTab(shell,activePlayerTabs.get(String(player.id))||'overview');
@@ -7373,13 +7387,15 @@ function enhanceRecruitProfile(id){
  const body=$('modalBody'),recruit=recruitById(id);if(!body||!recruit||body.querySelector('.recruit-profile-shell-v226')||$('modal')?.classList.contains('hidden'))return;
  let hero=body.querySelector(':scope > .recruit-profile-hero-v223');
  if(!hero){const eyebrow=body.querySelector(':scope > .eyebrow'),title=body.querySelector(':scope > h2'),summary=title?.nextElementSibling;hero=document.createElement('header');hero.className='recruit-profile-hero-v223';const portrait=window.SDF_UI_V219?.portraitMarkup?.(recruit,'recruit')||'';hero.innerHTML=`${portrait}<div class="recruit-profile-copy-v223"></div>`;body.prepend(hero);const copy=hero.querySelector('.recruit-profile-copy-v223');if(eyebrow)copy.append(eyebrow);if(title)copy.append(title);if(summary)copy.append(summary)}
+ const feedback=window.SDF_DYNASTY_STORY?.recruitProfileHtml?.(recruit);if(feedback)body.insertAdjacentHTML('beforeend',feedback);
  const shell=document.createElement('section');shell.className='recruit-profile-shell-v226';shell.dataset.recruitId=String(recruit.id);
  shell.innerHTML=`<nav class="recruit-profile-tabs-v226" role="tablist" aria-label="Recruit profile sections"><button class="active" type="button" data-recruit-tab-v226="overview">Overview</button><button type="button" data-recruit-tab-v226="recruiting">Recruiting</button><button type="button" data-recruit-tab-v226="scouting">Scouting</button><button type="button" data-recruit-tab-v226="schools">Schools</button></nav><div class="recruit-profile-panels-v226"><section data-recruit-panel-v226="overview"></section><section data-recruit-panel-v226="recruiting" hidden></section><section data-recruit-panel-v226="scouting" hidden></section><section data-recruit-panel-v226="schools" hidden></section></div>`;
  const panels=Object.fromEntries([...shell.querySelectorAll('[data-recruit-panel-v226]')].map(panel=>[panel.dataset.recruitPanelV226,panel]));
  const nodes=[...body.children].filter(node=>node!==hero);
  for(const node of nodes){
   if(node===shell)continue;const title=sectionTitle(node),text=(node.textContent||'').trim();
-  if(/Recruiting Actions|Scholarship, Visit|Recruiting Plan|Roster Forecast|Urgency/i.test(title))panels.recruiting.append(node);
+  if(/Recruiting Feedback/i.test(title))panels.recruiting.prepend(node);
+  else if(/Recruiting Actions|Scholarship, Visit|Recruiting Plan|Roster Forecast|Urgency/i.test(title))panels.recruiting.append(node);
   else if(/Scouting|Evaluation|Attributes/i.test(title)||node.classList.contains('position-attributes'))panels.scouting.append(node);
   else if(/Top Schools|School Comparison/i.test(title))panels.schools.append(node);
   else if(/Why .*Likes|Program Identity|Rivalry Momentum|Staff Recruiting/i.test(title)||node.matches?.('.v170-fit-breakdown,.recruit-identity-v190,.recruit-rivalry-v191,.recruit-staff-v189'))panels.overview.append(node);
@@ -7761,7 +7777,7 @@ async function flush(){
  for(const item of data.queue){if(batch.length===40||item.trackingId!==trackingId)break;batch.push(item)}
  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),10000);activeRequest=controller;
  try{
-  const payload={action:'events',platform:native()?'android':'browser',build:236,qa:!native()&&location.hostname!=='saturdaydynasty.ctoolis.workers.dev',events:batch.map(({trackingId,...e})=>e)};
+  const payload={action:'events',platform:native()?'android':'browser',build:237,qa:!native()&&location.hostname!=='saturdaydynasty.ctoolis.workers.dev',events:batch.map(({trackingId,...e})=>e)};
   if(trackingId)payload.device=trackingId;
   const response=await fetch(URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),signal:controller.signal,credentials:'omit',referrerPolicy:'no-referrer'});
   if(!response.ok)throw new Error('Usage delivery unavailable');
@@ -7832,7 +7848,7 @@ function record(event,product){
 }
 let lastSession=0;
 function session(){const now=Date.now();if(now-lastSession>=1800000){record('session');lastSession=now}}
-function diagnosticReport(){return{build:236,scope:'This device only; no online reporting',enabled:diagnostics.enabled,counts:diagnostics.events.reduce((a,e)=>(a[e.event]=(a[e.event]||0)+1,a),{}),events:diagnostics.events.map(e=>({...e}))}}
+function diagnosticReport(){return{build:237,scope:'This device only; no online reporting',enabled:diagnostics.enabled,counts:diagnostics.events.reduce((a,e)=>(a[e.event]=(a[e.event]||0)+1,a),{}),events:diagnostics.events.map(e=>({...e}))}}
 function downloadReport(){const url=URL.createObjectURL(new Blob([JSON.stringify(diagnosticReport(),null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='Saturday-Dynasty-Device-Diagnostics.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
 function ensureJourney(s){
  if(!s.coachJourneyV236)s.coachJourneyV236={eligible:Number(s.year)===1&&Number(s.week)===1&&!(s.schedule||[]).some(g=>g.result),active:false,dismissed:false,done:{},observed:{}};
@@ -7857,7 +7873,7 @@ function briefing(s){
  const cards=[],uid=String(s.school.id),board=(s.recruits||[]).filter(r=>r.onBoard&&!r.committedTo);
  const mover=board.filter(r=>Number.isFinite(Number(r.interestTrend?.[uid]))&&Math.abs(Number(r.interestTrend[uid]))>=1).sort((a,b)=>Math.abs(b.interestTrend[uid])-Math.abs(a.interestTrend[uid]))[0];
  if(mover){const change=Number(mover.interestTrend[uid]);cards.push({label:'Recruiting movement',title:mover.name,text:`${mover.pos||'Prospect'} · Interest ${change>0?'up':'down'} ${Math.abs(change).toFixed(1)} points since the last race update. Review the competition before your next move.`,tab:'recruiting'})}
- else cards.push({label:'Recruiting',title:board.length?`${board.length} active targets`:'Build your recruiting board',text:`${Number(s.weeklyHours)||0} hours available. Focus on team needs and prospects whose priorities fit your program.`,tab:'recruiting'});
+ else cards.push({label:'Recruiting',title:board.length?`${board.length} active target${board.length===1?'':'s'}`:'Build your recruiting board',text:`${Number(s.weeklyHours)||0} hours available. Focus on team needs and prospects whose priorities fit your program.`,tab:'recruiting'});
  const hurt=(s.roster||[]).filter(p=>!!p.injury),unhappy=(s.roster||[]).filter(p=>Number.isFinite(p.morale)&&p.morale<50).sort((a,b)=>a.morale-b.morale)[0];
  if(hurt.length)cards.push({label:'Roster watch',title:`${hurt.length} player${hurt.length===1?'':'s'} unavailable`,text:`${hurt.slice(0,2).map(p=>p.name).join(', ')}. Check injuries and your rotation before kickoff.`,tab:'roster'});
  else if(unhappy)cards.push({label:'Player check-in',title:unhappy.name,text:`Morale ${Math.round(unhappy.morale)}/99. Review playing time, goals and any promises before deciding what to change.`,tab:'roster'});
@@ -7888,6 +7904,7 @@ function render(){
  if(panel.innerHTML!==html){panel.innerHTML=html;panel.querySelectorAll('[data-brief-tab]').forEach(b=>b.onclick=()=>navigate(b.dataset.briefTab))}
  renderGuideHint(s);
  window.SDF_USAGE?.render();
+ window.SDF_DYNASTY_STORY?.render?.();
 }
 function renderGuideHint(s){
  document.querySelectorAll('.journey-inline-hint').forEach(n=>n.remove());
@@ -7920,6 +7937,151 @@ window.startTutorial=()=>{const s=current();if(s){ensureJourney(s);render()}retu
 window.SDF_JOURNEY={render,newDynasty,isGuided:()=>!!current()?.coachJourneyV236?.active,record,diagnosticReport,openPreview,previewModel,briefing,progress};
 function init(){session();installSettings();render();document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')session()})}
 document.readyState==='loading'?document.addEventListener('DOMContentLoaded',init,{once:true}):init();
+})();
+
+(()=>{
+'use strict';
+const $=id=>document.getElementById(id),num=v=>Number.isFinite(Number(v))?Number(v):0;
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const current=()=>typeof state!=='undefined'&&state?.school?state:null;
+const signed=v=>`${v>0?'+':''}${num(v).toFixed(1)}`;
+const save=reason=>window.SDF_RELEASE_TEST?.scheduleSave?.(reason,150,false);
+const PARTS={fit:'Program fit',effort:'Recruiting effort',scholarship:'Scholarship',visit:'Official visit',promise:'Promises',nil:'NIL response',relationship:'Recruit relationship'};
+function feedbackLines(f){
+ if(!f?.before||!f?.after)return[];
+ const lines=Object.keys(PARTS).map(key=>({label:PARTS[key],delta:num(f.after.parts?.[key])-num(f.before.parts?.[key])})).filter(x=>Math.abs(x.delta)>=.05).map(x=>`${x.label}: ${signed(x.delta)} points`);
+ const raw=Object.values(f.after.parts||{}).reduce((a,v)=>a+num(v),0);
+ if(raw>num(f.after.cap)+.05)lines.push(`Interest capped at ${num(f.after.cap)}; extra influence cannot raise the displayed score past this limit.`);
+ if(f.before.leader&&f.after.leader){
+  if(f.before.leader.id===f.after.leader.id){const d=num(f.after.leader.score)-num(f.before.leader.score);if(Math.abs(d)>=.05)lines.push(`${f.after.leader.name}, the race leader: ${signed(d)} interest points.`)}
+  else lines.push(`Race leader changed from ${f.before.leader.name} to ${f.after.leader.name}.`);
+ }
+ return lines.length?lines:['No measured component change in this update.'];
+}
+function recruitCardHtml(r){const f=r.feedbackV237;if(!f)return'';return`<div class="recruit-feedback237" role="status"><b>${esc(f.label)} · ${signed(num(f.after?.score)-num(f.before?.score))} interest</b><span>Y${num(f.year)} W${num(f.week)} · ${num(f.hours)} contact hour${num(f.hours)===1?'':'s'} · Details in Profile → Recruiting</span></div>`}
+function recruitProfileHtml(r){
+ const api=window.SDF_RECRUITING_V2,f=r.feedbackV237,parts=api?.interestParts?.(r,current()?.school),priorities=(r.motivations||[]).map(m=>`${m.label}: ${Math.round(num(api?.schoolGrade?.(r,current()?.school,m.key)))}/100 fit (${num(m.weight)}% weight)`);
+ return`<section class="recruit-profile-section story237-section"><h3>Recruiting Feedback</h3><p>Interest is a recruiting score, not a commitment percentage. Other schools make moves each week.</p>${f?`<div class="story237-highlight"><small>YEAR ${num(f.year)} · WEEK ${num(f.week)}</small><h4>${esc(f.label)}</h4><strong>${signed(num(f.after.score)-num(f.before.score))} interest points</strong><p>${num(f.hours)} contact hour${num(f.hours)===1?'':'s'} used · ${num(f.before.score).toFixed(1)} → ${num(f.after.score).toFixed(1)} · ${f.after.rank?`Now #${num(f.after.rank)}`:'Outside active race'}</p><ul>${feedbackLines(f).map(s=>`<li>${esc(s)}</li>`).join('')}</ul>${f.fitMult!=null?`<p>Pitch fit multiplier: ${num(f.fitMult).toFixed(2)}×. Coach bonuses and the action’s normal variation also affect influence; the score change above is the actual result.</p>`:''}</div>`:'<p>Your next contact or weekly recruiting update will record a before-and-after breakdown here.</p>'}${parts?`<details><summary>What makes up today’s score?</summary><dl class="story237-factors">${Object.entries(PARTS).map(([key,label])=>`<div><dt>${label}</dt><dd>${num(parts[key]).toFixed(1)}</dd></div>`).join('')}</dl><p>The total is limited by recruiting eligibility and the interest cap.</p></details>`:''}<details><summary>Which pitches fit this player?</summary><ul>${priorities.map(s=>`<li>${esc(s)}</li>`).join('')}</ul><p>Hard Sell and Coach Visit use overall program fit. Family emphasizes home, academics and playing time. Calls use the top priority’s grade. Texts have no pitch-fit adjustment. The profile’s action cards show current estimated influence and exact hour costs.</p></details></section>`;
+}
+function playerSummary(p){
+ const identity=p.playerIdentityV192||p.profile||{},history=p.progressionHistory||[],first=history[0];
+ const baseline=Number.isFinite(Number(identity.joinedOvr))?num(identity.joinedOvr):first?num(first.from):num(p.ovr);
+ const now=Number.isFinite(Number(p.ovr))?num(p.ovr):history.length?num(history.at(-1).to):num(identity.lastOvr||baseline);
+ return{id:String(p.id),name:p.name,pos:p.pos,origin:identity.origin||p.rosterOrigin||'Program player',baseline,now,gain:now-baseline,stories:(identity.story||[]).slice(-3).reverse().map(x=>({year:x.year,text:x.text})),active:!!p.seasonStats};
+}
+function playerJourneyHtml(p){const x=playerSummary(p);return`<article class="story237-highlight"><small>THE PLAYER YOU DEVELOPED</small><h3>${esc(x.name)}</h3><div class="story237-rating"><span>${x.baseline}<small>FIRST RECORDED</small></span><b aria-hidden="true">→</b><span>${x.now}<small>CURRENT OVR</small></span><strong>${x.gain>=0?'+':''}${x.gain} OVR</strong></div><p>${esc(x.origin)} · ${esc(x.pos)}. Development and career moments below come from this player’s saved history.</p></article>`}
+function makeRecap(s){
+ const games=(s.schedule||[]).filter(g=>g.result),latest=games.at(-1),roster=s.roster||[];
+ const developed=roster.map(playerSummary).filter(p=>p.gain>0).sort((a,b)=>b.gain-a.gain||b.now-a.now).slice(0,3);
+ const categories=[['Passing','passYds'],['Rushing','rushYds'],['Receiving','recYds'],['Tackles','tackles']];
+ const leaders=categories.map(([label,key])=>{const p=roster.filter(p=>num(p.seasonStats?.[key])>0).sort((a,b)=>num(b.seasonStats[key])-num(a.seasonStats[key]))[0];return p?{label,name:p.name,pos:p.pos,value:num(p.seasonStats[key])}:null}).filter(Boolean);
+ const records=(s.nationalRecordHistory||[]).filter(r=>String(r.teamId)===String(s.school.id)&&num(r.year)===num(s.year)).slice(-4).map(r=>({player:r.player,label:r.label,level:r.level,value:r.value}));
+ const rivalry=games.filter(g=>g.rivalry).map(g=>({opponent:g.opponent,result:g.result,score:g.score}));
+ return{key:`${s.school.id}:${s.year}`,schoolId:s.school.id,school:s.school.name,year:num(s.year),wins:num(s.record?.w),losses:num(s.record?.l),games:games.length,commits:(s.commits||[]).length,developed,leaders,records,rivalry,trophies:(s.trophies||[]).filter(t=>num(t.year)===num(s.year)).map(t=>t.type),latest:latest?{opponent:latest.opponent,result:latest.result,score:latest.score}:null};
+}
+function captureSeason(s=current()){
+ if(!s?.school||!(s.schedule||[]).some(g=>g.result))return;
+ const recap=makeRecap(s);recap.complete=true;
+ s.careerRecapsV237=(s.careerRecapsV237||[]).filter(x=>x.key!==recap.key);s.careerRecapsV237.push(recap);s.careerRecapsV237=s.careerRecapsV237.slice(-40);save('Season memories saved');return recap;
+}
+const CHALLENGES={
+ rebuild:{title:'Rebuild in Three',years:3,target:8,unit:'wins',intro:'Take a program with 55 prestige or lower to an eight-win season within three years.',goal:'Eight total wins in any one season; postseason wins count.'},
+ homegrown:{title:'Homegrown Class',years:1,target:5,unit:'in-state commits',intro:'Build a recruiting class around home-state talent. Sign five local recruits in your first season.',goal:'Five recruits from your school’s state in the same signing class, confirmed on Signing Day. Transfers do not count.'},
+ rivalry:{title:'Rivalry Run',years:3,target:3,unit:'rivalry wins',intro:'Make your program the one your rivals dread. Win three rivalry games across your first three seasons.',goal:'Three wins in matchups marked as rivalry games on the schedule.'}
+};
+function eligibility(s,type='rebuild'){
+ if(!CHALLENGES[type])return'Choose one of the available challenges.';
+ if(!s?.school)return'Start a fresh dynasty, then accept a challenge from Home → Dynasty story before your first game.';
+ if(num(s.year)!==1||num(s.week)!==1||(s.schedule||[]).some(g=>g.result)||(s.history||[]).length)return'Start a fresh dynasty to try a challenge. Each begins in Year 1, Week 1, before any games.';
+ if(type==='rebuild'&&num(s.school.prestige)>55)return'Rebuild in Three requires 55 prestige or lower at the start.';
+ if(type==='homegrown'&&!s.school.state)return'This program needs a home state for the Homegrown Class challenge.';
+ if(type==='rivalry'&&!(s.schedule||[]).some(g=>g.rivalry))return'Rivalry Run requires a program with a rivalry matchup on its opening schedule.';
+ return'';
+}
+function challengeProgress(s){
+ const c=s?.challengeV237;if(!c)return null;const def=CHALLENGES[c.type];
+ const inWindow=num(s.year)>=c.startYear&&num(s.year)<=c.endYear;
+ let best=num(c.best);
+ if(c.status!=='active')return{best,season:Math.min(def.years,Math.max(1,num(s.year)-c.startYear+1)),target:def.target,unit:def.unit,title:def.title,status:c.status,remaining:0};
+ if(c.type==='rebuild'){
+  const seasons=(s.history||[]).filter(h=>num(h.year)>=c.startYear&&num(h.year)<=c.endYear);
+  best=Math.max(best,inWindow?num(s.record?.w):0,...seasons.map(h=>num(h.wins)));
+ }else if(c.type==='homegrown'&&inWindow){best=new Set((s.commits||[]).filter(r=>String(r.home).toUpperCase()===String(c.homeState).toUpperCase()).map(r=>String(r.id))).size}
+ else if(c.type==='rivalry'){
+  const keys=new Set(c.wonRivalries||[]);if(inWindow)for(const g of s.schedule||[])if(g.rivalry&&g.result==='W')keys.add(`${s.year}:${g.week}`);best=keys.size;
+ }
+ return{best,season:Math.min(def.years,Math.max(1,num(s.year)-c.startYear+1)),target:def.target,unit:def.unit,title:def.title,status:c.status,remaining:Math.max(0,c.endYear-num(s.year)+1)};
+}
+function observe(s=current(),endingSeason=false){
+ const c=s?.challengeV237;if(!c||c.status!=='active')return;
+ const prior=JSON.stringify(c);
+ if(String(s.school.id)!==String(c.schoolId)){c.status='ended';c.reason='You moved to another program.'}
+ else{
+  const p=challengeProgress(s);c.best=p.best;
+  if(c.type==='rivalry'&&num(s.year)<=c.endYear){const keys=new Set(c.wonRivalries||[]);for(const g of s.schedule||[])if(g.rivalry&&g.result==='W')keys.add(`${s.year}:${g.week}`);c.wonRivalries=[...keys]}
+  if(p.best>=p.target&&(c.type!=='homegrown'||s.signingDayResolved||endingSeason)){c.status='complete';c.completedYear=num(s.year);c.reason=`${p.title} complete. You reached ${p.target} ${p.unit}.`}
+  else if(num(s.year)>c.endYear||(endingSeason&&num(s.year)===c.endYear)){c.status='ended';c.reason='The challenge window is over. Your dynasty continues; try a fresh program for another run.'}
+ }
+ if(JSON.stringify(c)!==prior)save('Challenge progress');
+}
+function startChallenge(type='rebuild'){
+ const s=current(),reason=eligibility(s,type);if(reason||s?.challengeV237)return false;
+ const def=CHALLENGES[type];s.challengeV237={type,schoolId:s.school.id,school:s.school.name,homeState:s.school.state,startYear:1,endYear:def.years,best:0,status:'active',wonRivalries:[]};
+ save(`${def.title} started`);render();return true;
+}
+let selected='season',selectedKey='',opener=null;
+function recaps(s){const list=[...(s.careerRecapsV237||[])],now=makeRecap(s);return list.some(r=>r.key===now.key)?list:[...list,now]}
+function selectedRecap(s){const list=recaps(s);return list.find(r=>r.key===selectedKey)||list.at(-1)}
+function recapHtml(r){return`<div class="story237-highlight"><small>${r.complete?'SEASON RECAP':'SEASON SO FAR'} · YEAR ${r.year}</small><h3>${esc(r.school)}</h3><strong class="story237-record">${r.wins}–${r.losses}</strong><p>${r.games} recorded game${r.games===1?'':'s'} · ${r.commits} recruiting commitment${r.commits===1?'':'s'}</p>${r.latest?`<p>Latest: ${esc(r.latest.result)} ${esc(r.latest.score)} vs ${esc(r.latest.opponent)}</p>`:'<p>Your first result starts the story.</p>'}</div>${r.trophies.length?`<h4>Trophy cabinet</h4><p>${r.trophies.map(esc).join(' · ')}</p>`:''}<h4>Season leaders</h4>${r.leaders.length?`<div class="story237-grid">${r.leaders.map(p=>`<article><small>${esc(p.label)}</small><b>${esc(p.name)}</b><span>${p.value.toLocaleString()} ${p.label==='Tackles'?'tackles':'yards'}</span></article>`).join('')}</div>`:'<p>Player leaders appear after recorded game stats are available.</p>'}<h4>Development worth remembering</h4>${r.developed.length?`<div class="story237-grid">${r.developed.map(p=>`<article><small>${esc(p.pos)} · +${p.gain} OVR</small><b>${esc(p.name)}</b><span>${p.baseline} → ${p.now} since first recorded</span></article>`).join('')}</div>`:'<p>Player development will appear here as ratings improve.</p>'}${r.rivalry.length?`<h4>Rivalry Saturdays</h4><ul>${r.rivalry.map(g=>`<li>${esc(g.result)} ${esc(g.score)} vs ${esc(g.opponent)}</li>`).join('')}</ul>`:''}${r.records.length?`<h4>National records broken</h4><ul>${r.records.map(x=>`<li>${esc(x.player)} · ${esc(x.label)} (${esc(x.level)}) · ${num(x.value).toLocaleString()}</li>`).join('')}</ul>`:''}<button class="btn primary" type="button" data-story-export>Save recap image</button><p class="story237-note">Recaps are saved before the offseason roster changes. Earlier seasons without a saved recap are not reconstructed.</p>`}
+function challengeHtml(s){
+ const c=s?.challengeV237,p=c&&challengeProgress(s),def=c&&CHALLENGES[c.type];
+ if(c)return`<div class="story237-highlight"><small>FREE COACHING CHALLENGE</small><h3>${esc(def.title)}</h3><p>${esc(def.intro)}</p><p>${esc(def.goal)}</p></div><h4>${c.status==='complete'?'CHALLENGE COMPLETE':c.status==='ended'?'RUN FINISHED':`SEASON ${p.season} OF ${def.years}`}</h4><p>${esc(c.school)} · <b>${p.best} / ${p.target} ${esc(p.unit)}</b></p><progress max="${p.target}" value="${Math.min(p.target,p.best)}" aria-label="${esc(def.title)} progress"></progress><p>${esc(c.reason||`${Math.max(0,p.target-p.best)} more ${p.unit} to reach your goal.`)}</p>${c.status==='active'?'<button class="btn neutral" type="button" data-story-stop>Leave challenge</button>':'<p>Your dynasty continues normally. Start a fresh dynasty to play another challenge.</p>'}<p class="story237-note">One challenge per dynasty. Stay with the starting program. Normal settings, sponsor rewards and owned editors remain available; this is a personal challenge with no leaderboard or gameplay bonus.</p>`;
+ return`<div class="story237-highlight"><small>THREE FREE WAYS TO PLAY</small><h3>Choose your coaching challenge</h3><p>Each starts with a fresh Year 1, Week 1 dynasty before any games. Your challenge saves with that dynasty and never replaces a save.</p></div><div class="story237-grid story237-challenges">${Object.entries(CHALLENGES).map(([key,d])=>{const reason=eligibility(s,key);return`<article><small>${d.years===1?'ONE SEASON':d.years+' SEASONS'} · FREE</small><h3>${esc(d.title)}</h3><p>${esc(d.intro)}</p><p>${esc(d.goal)}</p>${reason?`<span>${esc(reason)}</span>`:`<button class="btn primary" type="button" data-story-start="${key}">Start ${esc(d.title)}</button>`}</article>`}).join('')}</div><p class="story237-note">One challenge per dynasty. Normal game settings, sponsor rewards and owned editors are available. No purchase, leaderboard or gameplay bonus is attached.</p>`;
+}
+function drawDialog(){
+ const dialog=$('dynastyStory237');if(!dialog)return;const s=current();
+ const panel=dialog.querySelector('[data-story-content]');dialog.querySelectorAll('[data-story-tab]').forEach(b=>{const active=b.dataset.storyTab===selected;b.setAttribute('aria-selected',String(active));b.tabIndex=active?0:-1;b.id='storyTab237-'+b.dataset.storyTab;if(active)panel.setAttribute('aria-labelledby',b.id);b.classList.toggle('active',active)});
+ if(selected==='challenge'){panel.innerHTML=challengeHtml(s);return}
+ if(!s){panel.innerHTML='<p>Start or load a dynasty to see its story.</p>';return}
+ if(selected==='players'){
+  const players=(s.roster||[]).map(playerSummary).sort((a,b)=>b.gain-a.gain||b.now-a.now).slice(0,12),alumni=(s.playerStoryArchiveV192||[]).slice(0,6).map(playerSummary);
+  panel.innerHTML=`<h3>The people behind your program</h3><p>First recorded ratings, current development and saved career moments.</p><div class="story237-grid">${players.map(p=>`<article><small>${esc(p.pos)} · ${p.gain>=0?'+':''}${p.gain} OVR</small><b>${esc(p.name)}</b><span>${p.baseline} → ${p.now} · ${esc(p.origin)}</span>${p.stories[0]?`<p>${esc(p.stories[0].text)}</p>`:''}<button class="btn neutral" type="button" data-story-player="${esc(p.id)}">Open player story</button></article>`).join('')}</div>${alumni.length?`<h4>Recent alumni</h4><div class="story237-grid">${alumni.map(p=>`<article><small>${esc(p.pos)}</small><b>${esc(p.name)}</b><span>${esc(p.origin)}</span>${p.stories[0]?`<p>${esc(p.stories[0].text)}</p>`:''}</article>`).join('')}</div>`:''}`;return;
+ }
+ const list=recaps(s),recap=selectedRecap(s);panel.innerHTML=`<label class="story237-picker">Choose a season <select data-story-season>${list.slice().reverse().map(r=>`<option value="${esc(r.key)}" ${r.key===recap.key?'selected':''}>Year ${r.year} · ${esc(r.school)}${r.complete?'':' · Current'}</option>`).join('')}</select></label>${recapHtml(recap)}`;
+}
+function open(tab='season'){
+ observe();selected=tab;selectedKey='';opener=document.activeElement;let dialog=$('dynastyStory237');
+ if(!dialog){dialog=document.createElement('dialog');dialog.id='dynastyStory237';dialog.setAttribute('aria-labelledby','storyTitle237');dialog.innerHTML='<header><div><small>YOUR PROGRAM. YOUR STORY.</small><h2 id="storyTitle237">Dynasty story</h2></div><button class="btn neutral" type="button" data-story-close aria-label="Close dynasty story">Close</button></header><nav role="tablist" aria-label="Dynasty story sections"><button type="button" role="tab" data-story-tab="season">Season recap</button><button type="button" role="tab" data-story-tab="players">Player journeys</button><button type="button" role="tab" data-story-tab="challenge">Challenges</button></nav><div data-story-content role="tabpanel"></div><p role="status" data-story-status></p>';document.body.append(dialog);dialog.addEventListener('close',()=>{opener?.focus?.()});dialog.addEventListener('click',event=>{
+  const b=event.target.closest('button');if(!b)return;
+  if(b.hasAttribute('data-story-close'))dialog.close();
+  if(b.dataset.storyTab){selected=b.dataset.storyTab;drawDialog()}
+  if(b.hasAttribute('data-story-start')){startChallenge(b.dataset.storyStart);drawDialog()}
+  if(b.hasAttribute('data-story-stop')){const c=current()?.challengeV237;if(c){c.status='ended';c.reason='You ended this challenge run.';save('Challenge ended');render();drawDialog()}}
+  if(b.dataset.storyPlayer){dialog.close();window.openPlayerProfile?.(b.dataset.storyPlayer);const shell=$('modalBody')?.querySelector('.player-profile-v225');window.SDF_UI_V225?.activatePlayerTab?.(shell,'story')}
+  if(b.hasAttribute('data-story-export'))exportRecap(selectedRecap(current())).catch(()=>{dialog.querySelector('[data-story-status]').textContent='The image could not be saved. Please try again.'});
+ });dialog.addEventListener('keydown',event=>{if(!event.target.matches('[data-story-tab]'))return;const tabs=[...dialog.querySelectorAll('[data-story-tab]')],i=tabs.indexOf(event.target);let next;if(event.key==='ArrowRight')next=(i+1)%tabs.length;else if(event.key==='ArrowLeft')next=(i+tabs.length-1)%tabs.length;else if(event.key==='Home')next=0;else if(event.key==='End')next=tabs.length-1;else return;event.preventDefault();selected=tabs[next].dataset.storyTab;drawDialog();tabs[next].focus()});dialog.addEventListener('change',event=>{if(event.target.matches('[data-story-season]')){selectedKey=event.target.value;drawDialog()}})}
+ dialog.querySelector('[data-story-status]').textContent='';drawDialog();if(!dialog.open)dialog.showModal();
+}
+async function exportRecap(r){
+ const canvas=document.createElement('canvas');canvas.width=1080;canvas.height=1350;const ctx=canvas.getContext('2d');
+ ctx.fillStyle='#06121d';ctx.fillRect(0,0,1080,1350);ctx.fillStyle='#102b3c';ctx.fillRect(48,48,984,1254);ctx.fillStyle='#6de0cb';ctx.fillRect(48,48,984,8);
+ const text=(value,x,y,size=32,color='#edf5fa')=>{ctx.font=`700 ${size}px system-ui`;ctx.fillStyle=color;ctx.fillText(String(value),x,y)};
+ function wrap(value,x,y,width,size){ctx.font=`700 ${size}px system-ui`;let line='';for(const word of String(value).split(/\s+/)){const next=line?line+' '+word:word;if(ctx.measureText(next).width>width&&line){text(line,x,y,size);y+=size*1.25;line=word}else line=next}if(line)text(line,x,y,size);return y+size*1.4}
+ text('SATURDAY DYNASTY FOOTBALL',90,115,26,'#6de0cb');let y=wrap(r.school,90,200,900,52);text(`YEAR ${r.year} · ${r.complete?'SEASON RECAP':'SEASON SO FAR'}`,90,y+15,25,'#9eb7c8');text(`${r.wins}–${r.losses}`,90,y+155,118);text(`${r.games} game${r.games===1?'':'s'} · ${r.commits} commitment${r.commits===1?'':'s'}`,90,y+215,30);y+=310;
+ for(const p of r.leaders.slice(0,3)){text(p.label.toUpperCase(),90,y,22,'#6de0cb');y=wrap(`${p.name} · ${p.value.toLocaleString()} ${p.label==='Tackles'?'tackles':'yards'}`,90,y+48,880,32)+40}
+ if(r.developed[0]&&y<1110){const p=r.developed[0];text('PLAYER DEVELOPMENT',90,y,22,'#6de0cb');wrap(`${p.name}: ${p.baseline} → ${p.now} OVR`,90,y+48,880,32)}
+ text('BUILD A PROGRAM. OWN SATURDAYS.',90,1242,25,'#9eb7c8');
+ if(window.SDFNative?.exportRecapImage){window.SDFNative.exportRecapImage(`Saturday-Dynasty-Year-${r.year}-Recap.png`,canvas.toDataURL('image/png').split(',')[1]);const status=$('dynastyStory237')?.querySelector('[data-story-status]');if(status)status.textContent='Choose where to save your recap image.';return}
+ const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!blob)throw Error('Image unavailable');const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`Saturday-Dynasty-Year-${r.year}-Recap.png`;a.click();setTimeout(()=>URL.revokeObjectURL(url),10000);const status=$('dynastyStory237')?.querySelector('[data-story-status]');if(status)status.textContent='Recap image created. Check your downloads.';
+}
+function render(){
+ const s=current();if(!s)return;observe(s);const host=$('coachBriefV236')||$('gameCommandCenterV219');if(!host)return;
+ let block=$('storyEntry237');if(!block){block=document.createElement('div');block.id='storyEntry237';block.className='story237-entry';host.append(block)}
+ const c=s.challengeV237,p=c&&challengeProgress(s),roster=(s.roster||[]).map(playerSummary).sort((a,b)=>b.gain-a.gain),top=roster[0];
+ const line=c?`${p.title} · ${c.status==='complete'?'Complete':c.status==='ended'?'Run finished':`${p.best}/${p.target} ${p.unit}`}`:top?.gain>0?`${top.name} has grown ${top.gain} OVR since first recorded.`:'Your players, season moments and next coaching challenge.';
+ block.innerHTML=`<div><b>Your dynasty story</b><span>${esc(line)}</span></div><button class="btn neutral" type="button" data-story-open>Open story &amp; challenges</button>`;block.querySelector('button').onclick=()=>open(c?'challenge':'season');
+}
+window.SDF_DYNASTY_STORY={CHALLENGES,feedbackLines,recruitCardHtml,recruitProfileHtml,playerSummary,playerJourneyHtml,makeRecap,captureSeason,eligibility,challengeProgress,startChallenge,observe,open,render,exportRecap};
 })();
 
 (()=>{
@@ -7993,6 +8155,8 @@ install('acceptJob',function(...args){
 });
 
 install('offseason',function(...args){
+ window.SDF_DYNASTY_STORY?.captureSeason?.(state);
+ window.SDF_DYNASTY_STORY?.observe?.(state,true);
  v163.lifecycle?.beforeOffseason?.();
  const progressionSnapshot=v170.lifecycle?.beforeOffseason?.()||new Map();
  let result=v170.lifecycle?.invokeOffseason?v170.lifecycle.invokeOffseason(base.offseason,this,args):base.offseason?.apply(this,args);
