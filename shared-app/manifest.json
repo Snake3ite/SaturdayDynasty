@@ -8,7 +8,7 @@
   "orientation": "portrait-primary",
   "background_color": "#020811",
   "theme_color": "#07131f",
-  "description": "Saturday Dynasty Football Build 237: three free challenges, recruiting feedback and dynasty stories",
+  "description": "Saturday Dynasty Football Build 238: challenge-first setup and completion trophies.",
   "icons": [
     {
       "src": "icon-192.png",
@@ -23,5 +23,5 @@
       "purpose": "any maskable"
     }
   ],
-  "version": "27.4.36"
+  "version": "27.4.37"
 }

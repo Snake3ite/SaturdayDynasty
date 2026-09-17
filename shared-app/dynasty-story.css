@@ -5,3 +5,7 @@
 @media(max-width:600px){#dynastyStory237{padding:16px;width:calc(100vw - 16px)}.story237-entry{align-items:stretch;flex-direction:column}.story237-entry button{width:100%}.story237-grid{grid-template-columns:1fr}.story237-highlight{padding:15px}.story237-factors{grid-template-columns:1fr}.story237-picker{align-items:stretch;flex-direction:column;gap:7px}.story237-picker select{max-width:100%;width:100%}.story237-rating{gap:14px}.story237-rating span{font-size:28px}}
 
 @media(min-width:780px){.story237-challenges{grid-template-columns:repeat(3,minmax(0,1fr))}.story237-challenges h3{margin:6px 0}.story237-challenges .btn{font-size:11px;padding:10px 9px}}
+
+.challenge-setup238{display:flex;align-items:center;gap:20px}.challenge-setup238>div:first-child{flex:1}.challenge-setup238-actions{display:flex;flex-wrap:wrap;gap:8px}.challenge-setup238 p{margin-bottom:0;color:var(--muted,#acc2ce);line-height:1.5}@media(max-width:600px){.challenge-setup238{align-items:stretch;flex-direction:column}.challenge-setup238-actions{display:grid;grid-template-columns:1fr}}
+
+.challenge-trophy238{display:inline-flex!important;align-items:center;gap:8px;padding:7px 10px;border:1px solid #a78942;border-radius:8px;color:#f4d58a!important;background:#47381770;font-size:12px!important}.challenge-trophy238 b{font-size:12px}.challenge-earned238{color:#c9b987!important;text-transform:none!important}.story237-highlight .challenge-trophy238{margin:10px 0 0}

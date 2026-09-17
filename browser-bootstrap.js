@@ -2,7 +2,7 @@
 (async()=>{
  'use strict';
  const load=src=>new Promise((resolve,reject)=>{
-  const script=document.createElement('script');script.src=src+'?v=237';
+  const script=document.createElement('script');script.src=src+'?v=238';
   if(src==='browser-editors.js')script.dataset.sdfPaidEditors='1';
   if(src==='browser-feedback.js')script.dataset.sdfFeedback='1';
   script.onload=resolve;script.onerror=()=>reject(new Error('Could not load '+src));document.body.append(script);

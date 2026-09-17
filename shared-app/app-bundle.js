@@ -1290,7 +1290,7 @@ if(location.protocol==="http:"||location.protocol==="https:"){
 
 (()=>{
 'use strict';
-const RELEASE='Android V27.4.35 · Build 236 · Coach Journey';
+const RELEASE='Android V27.4.37 · Build 238 · Challenge Careers';
 const SAVE_PREFIX='SaturdayDynastyFootballAndroidV1';
 const LEGACY_PREFIXES=['SaturdayArchitectAndroidV1','SaturdayArchitectCompleteV9','SaturdayArchitectStatsV82','SaturdayArchitectDynastyV81','SaturdayArchitectRealignmentV74','SaturdayArchitectRecruitingV73','SaturdayArchitect128V72','SaturdayArchitectMobileV71'];
 const ui={activeTab:'dashboard',recruitPage:1,recruitPageSize:window.innerWidth<=760?30:75,rosterQuery:'',recruitQuery:''};
@@ -1342,7 +1342,7 @@ function setupSummary(){
  const pending=window.SDF_NEW_DYNASTY_PENDING;if(!pending)return;
  const school=schools.find(s=>Number(s.id)===Number(pending.teamId)),name=($('newCoachName')?.value||'Coach').trim()||'Coach',style=NEW_DYNASTY_ARCHETYPES[selectedSetupStyle()]||NEW_DYNASTY_ARCHETYPES.BUILDER,preset=NEW_DYNASTY_PRESETS[selectedSetupPreset()]||NEW_DYNASTY_PRESETS.STANDARD;
  pending.coachName=name;pending.archetype=selectedSetupStyle();pending.preset=selectedSetupPreset();
- const host=$('newDynastySummary');if(host)host.innerHTML=`<span class="eyebrow">CAREER SUMMARY</span><div class="new-dynasty-summary-grid"><div><small>COACH</small><b>${setupEsc(name)}</b></div><div><small>STYLE</small><b>${style.label}</b></div><div><small>TEAM</small><b>${setupEsc(school?.name||'Program')}</b></div><div><small>DIFFICULTY</small><b>${preset.label}</b></div><div><small>SAVE</small><b>Slot ${pending.slot}</b></div></div>`;
+ const host=$('newDynastySummary');if(host)host.innerHTML=`<span class="eyebrow">CAREER SUMMARY</span><div class="new-dynasty-summary-grid"><div><small>COACH</small><b>${setupEsc(name)}</b></div><div><small>STYLE</small><b>${style.label}</b></div><div><small>TEAM</small><b>${setupEsc(school?.name||'Program')}</b></div><div><small>DIFFICULTY</small><b>${preset.label}</b></div><div><small>SAVE</small><b>Slot ${pending.slot}</b></div>${pending.challenge?`<div><small>CHALLENGE</small><b>${setupEsc(window.SDF_DYNASTY_STORY.CHALLENGES[pending.challenge].title)}</b></div>`:''}</div>`;
 }
 function renderCoachStyleExplanation(){
  const key=selectedSetupStyle(),def=NEW_DYNASTY_ARCHETYPES[key]||NEW_DYNASTY_ARCHETYPES.BUILDER,host=$('coachStyleExplanation');
@@ -1369,8 +1369,8 @@ function startCoachCareer(){
  $('modal')?.classList.add('hidden');window.start(Number(pending.teamId));
 }
 function openCoachCreation(teamId){
- const school=schools.find(s=>Number(s.id)===Number(teamId));if(!school)return;const slot=String($('saveSlotPicker')?.value||'1'),summary=readSlotSummary(slot),branding=brandFor(school);
- window.SDF_NEW_DYNASTY_PENDING={teamId:Number(teamId),slot,coachName:'Coach',archetype:'BUILDER',preset:'STANDARD',legacyDifficulty:'STANDARD',settings:cloneSetupSettings(NEW_DYNASTY_PRESETS.STANDARD.settings)};
+ const school=schools.find(s=>Number(s.id)===Number(teamId));if(!school||window.SDF_DYNASTY_STORY?.schoolEligible?.(school)===false)return;const slot=String($('saveSlotPicker')?.value||'1'),summary=readSlotSummary(slot),branding=brandFor(school);
+ window.SDF_NEW_DYNASTY_PENDING={teamId:Number(teamId),slot,challenge:window.SDF_DYNASTY_STORY?.pending?.()||'',coachName:'Coach',archetype:'BUILDER',preset:'STANDARD',legacyDifficulty:'STANDARD',settings:cloneSetupSettings(NEW_DYNASTY_PRESETS.STANDARD.settings)};
  $('modalBody').innerHTML=`<section class="new-dynasty-setup"><div class="new-dynasty-team-head"><img src="${branding.logo}" alt=""><div><span class="eyebrow">NEW DYNASTY · SLOT ${slot}</span><h2>Create Your Coach</h2><p>${setupEsc(school.name)} · ${setupEsc(school.conference)}${summary.empty?'':` · <strong>Will replace ${setupEsc(summary.name)}</strong>`}</p></div></div><label class="new-dynasty-name"><span>Coach name</span><input id="newCoachName" type="text" maxlength="28" value="Coach" autocomplete="name" placeholder="Enter coach name"></label><fieldset class="new-dynasty-fieldset"><legend>Coach style</legend><div class="new-dynasty-choice-grid coach-style-grid">${Object.entries(NEW_DYNASTY_ARCHETYPES).map(([key,def])=>`<label class="setup-choice"><input type="radio" name="newCoachStyle" value="${key}" ${key==='BUILDER'?'checked':''}><span><b>${def.label}</b><small>${def.description}</small></span></label>`).join('')}</div><div id="coachStyleExplanation" class="setup-explanation"></div></fieldset><fieldset class="new-dynasty-fieldset"><legend>Difficulty</legend><div class="new-dynasty-choice-grid difficulty-choice-grid">${Object.entries(NEW_DYNASTY_PRESETS).map(([key,def])=>`<label class="setup-choice"><input type="radio" name="newDifficultyPreset" value="${key}" ${key==='STANDARD'?'checked':''}><span><b>${def.label}</b><small>${def.description}</small></span></label>`).join('')}</div><div id="difficultyExplanation" class="setup-explanation"></div><details id="customDifficultyDetails" class="custom-difficulty-details"><summary>View detailed settings</summary><p class="muted">Changing a slider switches this dynasty to Custom difficulty.</p><div class="new-dynasty-slider-grid">${SETUP_SLIDERS.map(([key,label,min,max,step,help])=>`<label><span><b>${label}</b><small>${help}</small></span><input type="range" min="${min}" max="${max}" step="${step}" value="1" data-setup-setting="${key}"><output>1.00</output></label>`).join('')}</div></details></fieldset><div id="newDynastySummary" class="new-dynasty-summary"></div><div class="new-dynasty-actions"><button id="cancelCoachCreation" class="btn neutral" type="button">Back to Teams</button><button id="startCoachCareer" class="btn success" type="button">Start Coaching Career</button></div></section>`;
  $('modal').classList.remove('hidden');
  $('newCoachName').addEventListener('input',setupSummary);
@@ -1378,6 +1378,7 @@ function openCoachCreation(teamId){
  document.querySelectorAll('input[name="newDifficultyPreset"]').forEach(x=>x.addEventListener('change',renderDifficultyExplanation));
  document.querySelectorAll('[data-setup-setting]').forEach(input=>input.addEventListener('input',()=>{const pending=window.SDF_NEW_DYNASTY_PENDING;if(!pending)return;pending.settings[input.dataset.setupSetting]=Number(input.value);pending.preset='CUSTOM';pending.legacyDifficulty='STANDARD';const custom=document.querySelector('input[name="newDifficultyPreset"][value="CUSTOM"]');if(custom)custom.checked=true;const out=input.closest('label')?.querySelector('output');if(out)out.textContent=Number(input.value).toFixed(2);renderDifficultyExplanation()}));
  $('cancelCoachCreation').addEventListener('click',closeCoachCreation);$('startCoachCareer').addEventListener('click',startCoachCareer);
+ if(window.SDF_NEW_DYNASTY_PENDING.challenge)$('startCoachCareer').textContent='Start Challenge';
  renderCoachStyleExplanation();renderDifficultyExplanation();$('newCoachName').focus();$('newCoachName').select();
 }
 window.openCoachCreation=openCoachCreation;
@@ -1386,6 +1387,7 @@ window.SDF_NEW_DYNASTY_OPTIONS={archetypes:NEW_DYNASTY_ARCHETYPES,presets:NEW_DY
 const releaseStart=window.start;
 window.start=function(id){
  const setup=window.SDF_NEW_DYNASTY_PENDING;
+ if(setup?.challenge&&window.SDF_DYNASTY_STORY?.schoolEligible?.(schools.find(s=>Number(s.id)===Number(id)),setup.challenge)===false)return;
  let slot=String(setup?.slot||$('saveSlotPicker')?.value||'1'),existing=readSlotSummary(slot);
  if(!existing.empty){
   let name=existing.name||'the existing dynasty';
@@ -1406,12 +1408,13 @@ window.start=function(id){
   state.coachCareer.archetype=setup.archetype||'BUILDER';
   state.coachCareer.archetypeLabel=NEW_DYNASTY_ARCHETYPES[state.coachCareer.archetype]?.label||'Program Builder';
  }
+ if(setup?.challenge)window.SDF_DYNASTY_STORY?.activatePending?.(setup.challenge);
  window.SDF_NEW_DYNASTY_PENDING=null;
  window.scrollTo({top:0,behavior:'auto'});
  saveNow('New dynasty created',false,true);
 }
 
-window.renderSchools=function(){let c=$('conferencePicker').value,r=$('regionPicker').value,p=$('prestigePicker').value,q=($('teamSearch')?.value||'').trim().toLowerCase(),filtered=schools.filter(s=>(c==='ALL'||s.conference===c)&&(r==='ALL'||s.region===r)&&(p==='ALL'||(p==='ELITE'&&s.prestige>=85)||(p==='POWER'&&s.prestige>=65&&s.prestige<85)||(p==='BUILD'&&s.prestige<65))&&(!q||`${s.name} ${s.city} ${s.state} ${s.conference}`.toLowerCase().includes(q)));$('visibleTeamCount').textContent=filtered.length;$('schoolGrid').innerHTML=filtered.map(s=>{let b=brandFor(s),tier=schoolTier(s);return`<article class="school-card" style="--card-primary:${b.primary};--card-secondary:${b.secondary}"><div class="tier-line"><span class="tier-badge ${tier.className}">${tier.label}</span><small class="muted">${s.conference}</small></div><div class="school-card-brand"><img class="school-card-logo" src="${b.logo}" alt="${s.name} original logo" loading="lazy"><div class="school-card-title"><h3>${s.name}</h3><div class="school-location">${s.city}, ${s.state}<span class="sub">${CONFERENCE_META[s.conference]?.level||'Independent'}</span></div></div></div><p class="tagline">${s.tag}</p>${rate('Prestige',s.prestige)}${rate('Facilities',s.facilities)}${rate('Recent Success',s.recent)}${rate('Pro Pipeline',s.pro)}<button class="btn primary full choose" data-id="${s.id}">Take Over Program</button></article>`}).join('');document.querySelectorAll('.choose').forEach(b=>b.onclick=()=>openCoachCreation(+b.dataset.id))};
+window.renderSchools=function(){let c=$('conferencePicker').value,r=$('regionPicker').value,p=$('prestigePicker').value,q=($('teamSearch')?.value||'').trim().toLowerCase(),filtered=schools.filter(s=>window.SDF_DYNASTY_STORY?.schoolEligible?.(s)!==false&&(c==='ALL'||s.conference===c)&&(r==='ALL'||s.region===r)&&(p==='ALL'||(p==='ELITE'&&s.prestige>=85)||(p==='POWER'&&s.prestige>=65&&s.prestige<85)||(p==='BUILD'&&s.prestige<65))&&(!q||`${s.name} ${s.city} ${s.state} ${s.conference}`.toLowerCase().includes(q)));$('visibleTeamCount').textContent=filtered.length;$('schoolGrid').innerHTML=filtered.map(s=>{let b=brandFor(s),tier=schoolTier(s);return`<article class="school-card" style="--card-primary:${b.primary};--card-secondary:${b.secondary}"><div class="tier-line"><span class="tier-badge ${tier.className}">${tier.label}</span><small class="muted">${s.conference}</small></div><div class="school-card-brand"><img class="school-card-logo" src="${b.logo}" alt="${s.name} original logo" loading="lazy"><div class="school-card-title"><h3>${s.name}</h3><div class="school-location">${s.city}, ${s.state}<span class="sub">${CONFERENCE_META[s.conference]?.level||'Independent'}</span></div></div></div><p class="tagline">${s.tag}</p>${rate('Prestige',s.prestige)}${rate('Facilities',s.facilities)}${rate('Recent Success',s.recent)}${rate('Pro Pipeline',s.pro)}<button class="btn primary full choose" data-id="${s.id}">Take Over Program</button></article>`}).join('');document.querySelectorAll('.choose').forEach(b=>b.onclick=()=>openCoachCreation(+b.dataset.id));window.SDF_DYNASTY_STORY?.renderTeamPicker?.()};
 // Filters must resolve the current picker renderer. The original callbacks held
 // the legacy renderer, which started a dynasty before coach setup after a search.
 ['conferencePicker','regionPicker','prestigePicker'].forEach(id=>{const input=$(id);if(input)input.onchange=()=>window.renderSchools()});
@@ -5205,7 +5208,7 @@ const esc=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt
 const GUIDES={
  dynastystory:{label:'Dynasty story & challenges',icon:'★',summary:'Remember your players, save season recaps and try three free coaching challenges.',sections:[
   ['Open your story','On Home, scroll to the Coach’s briefing and choose Open story & challenges. Season recap, Player journeys and Challenges each have their own tab.'],
-  ['Choose a challenge','Start a fresh dynasty and accept one challenge in Year 1, Week 1 before playing. Rebuild in Three needs a program with 55 prestige or lower and eight wins in one season within three years. Homegrown Class needs five home-state recruits confirmed at Signing Day. Rivalry Run needs three rivalry wins within three years.'],
+  ['Choose a challenge','From Dynasty Menu, open Explore Free Challenges and press Start on a challenge. The team picker shows only qualifying programs; create your coach to begin automatically. You can also accept a challenge in an existing fresh Year 1, Week 1 dynasty before playing. Rebuild in Three needs a program with 55 prestige or lower and eight wins in one season within three years. Homegrown Class needs five home-state recruits confirmed at Signing Day. Rivalry Run needs three rivalry wins within three years.'],
   ['Track the run','One challenge saves with each dynasty. Stay at the starting program. Your dynasty continues if the challenge ends; these are free personal goals with no gameplay bonus or leaderboard.'],
   ['Keep the memories','Season recap uses recorded results and player stats. A recap is saved before offseason roster changes. Save recap image exports a PNG you can share. Player journeys open the saved career story and show growth since the first recorded rating.'],
   ['Understand recruiting','After a contact or weekly update, open a recruit’s Profile → Recruiting for the actual interest change, contact hours and score components. Interest is a score, not a commitment percentage.']
@@ -6960,11 +6963,12 @@ function setupStartupMenu(){
   const legacyHero=picker.querySelector('.hero-copy');if(legacyHero)legacyHero.classList.add('ui221-legacy-team-copy');
   $('startupBackBtnV221')?.addEventListener('click',()=>showTeamPicker(false));
  }
- if(fresh&&!fresh.dataset.ui221Bound){fresh.dataset.ui221Bound='1';fresh.onclick=()=>showTeamPicker(true)}
+ if(fresh&&!fresh.dataset.ui221Bound){fresh.dataset.ui221Bound='1';fresh.onclick=()=>{window.SDF_DYNASTY_STORY?.clearPending?.();showTeamPicker(true)}}
  screen.classList.toggle('ui221-team-picker-open',screen.classList.contains('ui221-team-picker-open'));
 }
 function showTeamPicker(open=true){
  const screen=$('schoolScreen');if(!screen)return;
+ if(!open)window.SDF_DYNASTY_STORY?.clearPending?.();
  setupStartupMenu();screen.classList.toggle('ui221-team-picker-open',!!open);
  if(open){window.renderSchools?.();setTimeout(()=>$('teamSearch')?.focus?.({preventScroll:true}),60)}
  window.scrollTo({top:0,left:0,behavior:'auto'});
@@ -7777,7 +7781,7 @@ async function flush(){
  for(const item of data.queue){if(batch.length===40||item.trackingId!==trackingId)break;batch.push(item)}
  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),10000);activeRequest=controller;
  try{
-  const payload={action:'events',platform:native()?'android':'browser',build:237,qa:!native()&&location.hostname!=='saturdaydynasty.ctoolis.workers.dev',events:batch.map(({trackingId,...e})=>e)};
+  const payload={action:'events',platform:native()?'android':'browser',build:238,qa:!native()&&location.hostname!=='saturdaydynasty.ctoolis.workers.dev',events:batch.map(({trackingId,...e})=>e)};
   if(trackingId)payload.device=trackingId;
   const response=await fetch(URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),signal:controller.signal,credentials:'omit',referrerPolicy:'no-referrer'});
   if(!response.ok)throw new Error('Usage delivery unavailable');
@@ -7848,7 +7852,7 @@ function record(event,product){
 }
 let lastSession=0;
 function session(){const now=Date.now();if(now-lastSession>=1800000){record('session');lastSession=now}}
-function diagnosticReport(){return{build:237,scope:'This device only; no online reporting',enabled:diagnostics.enabled,counts:diagnostics.events.reduce((a,e)=>(a[e.event]=(a[e.event]||0)+1,a),{}),events:diagnostics.events.map(e=>({...e}))}}
+function diagnosticReport(){return{build:238,scope:'This device only; no online reporting',enabled:diagnostics.enabled,counts:diagnostics.events.reduce((a,e)=>(a[e.event]=(a[e.event]||0)+1,a),{}),events:diagnostics.events.map(e=>({...e}))}}
 function downloadReport(){const url=URL.createObjectURL(new Blob([JSON.stringify(diagnosticReport(),null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='Saturday-Dynasty-Device-Diagnostics.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
 function ensureJourney(s){
  if(!s.coachJourneyV236)s.coachJourneyV236={eligible:Number(s.year)===1&&Number(s.week)===1&&!(s.schedule||[]).some(g=>g.result),active:false,dismissed:false,done:{},observed:{}};
@@ -7989,6 +7993,55 @@ const CHALLENGES={
  homegrown:{title:'Homegrown Class',years:1,target:5,unit:'in-state commits',intro:'Build a recruiting class around home-state talent. Sign five local recruits in your first season.',goal:'Five recruits from your school’s state in the same signing class, confirmed on Signing Day. Transfers do not count.'},
  rivalry:{title:'Rivalry Run',years:3,target:3,unit:'rivalry wins',intro:'Make your program the one your rivals dread. Win three rivalry games across your first three seasons.',goal:'Three wins in matchups marked as rivalry games on the schedule.'}
 };
+let pendingChallenge='';
+const trophyIcon='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 3h8v6a4 4 0 0 1-8 0V3ZM8 5H4v3a4 4 0 0 0 4 4M16 5h4v3a4 4 0 0 1-4 4M12 13v5M8 21h8M9 18h6v3H9"/></svg>';
+const completionKey=()=>`SDF_CHALLENGE_TROPHIES_V238:${window.SDF_ACCOUNT_SCOPE?.databaseName?.()||'local'}`;
+function completions(){try{const data=JSON.parse(localStorage.getItem(completionKey())||'{}');return data&&typeof data==='object'&&!Array.isArray(data)?data:{}}catch{return{}}}
+function completedBadge(type){const won=completions()[type];return won?`<span class="challenge-trophy238">${trophyIcon}<b>Completed</b></span><small class="challenge-earned238">${esc(won.school||'Your program')} · Year ${num(won.year)}</small>`:''}
+function awardCompletion(s){
+ const c=s?.challengeV237;if(c?.status!=='complete'||!CHALLENGES[c.type])return false;
+ const id=`CHALLENGE_${c.type.toUpperCase()}`,stat=`challenge_${c.type}`;
+ s.achievementStats??={};s.achievements??={};s.achievementStats[stat]=1;
+ const fresh=!s.achievements[id];
+ if(fresh){s.achievements[id]={year:num(c.completedYear||s.year),date:Date.now()};s.news??=[];s.news.push(`Achievement unlocked: ${CHALLENGES[c.type].title}.`);if(typeof toast==='function')toast(`Challenge complete: ${CHALLENGES[c.type].title}!`,'success')}
+ const completed=completions();if(!completed[c.type]){completed[c.type]={school:c.school,year:num(c.completedYear||s.year)};try{localStorage.setItem(completionKey(),JSON.stringify(completed))}catch{}}
+ return fresh;
+}
+function installChallengeAchievements(){
+ if(typeof ACHIEVEMENT_DEFS==='undefined')return;
+ for(const [type,def] of Object.entries(CHALLENGES)){const id=`CHALLENGE_${type.toUpperCase()}`;if(!ACHIEVEMENT_DEFS.some(a=>a.id===id))ACHIEVEMENT_DEFS.push({id,name:def.title,desc:`Complete the ${def.title} coaching challenge.`,icon:'🏆',goal:1,stat:`challenge_${type}`})}
+}
+function schoolEligible(s,type=pendingChallenge){
+ if(!type)return true;if(!s||!CHALLENGES[type])return false;
+ if(type==='rebuild')return Number.isFinite(Number(s.prestige))&&Number(s.prestige)<=55;
+ if(type==='homegrown')return !!String(s.state||'').trim();
+ const rivalId=window.findRival?.(s.id);
+ return typeof schools!=='undefined'&&schools.some(other=>Number(other.id)===Number(rivalId)&&Number(other.id)!==Number(s.id));
+}
+function clearPending(){pendingChallenge='';$('challengeSetup238')?.remove()}
+function chooseChallenge(type){
+ if(current()||!CHALLENGES[type])return false;
+ pendingChallenge=type;
+ for(const id of ['conferencePicker','regionPicker','prestigePicker'])if($(id))$(id).value='ALL';
+ if($('teamSearch'))$('teamSearch').value='';
+ // Close without restoring focus to a control now hidden behind the team picker.
+ opener=null;$('dynastyStory237')?.close();window.SDF_UI_V221?.showTeamPicker?.(true);return true;
+}
+function activatePending(type){
+ if(!type||type!==pendingChallenge)return false;
+ const started=startChallenge(type);if(started)clearPending();return started;
+}
+function renderTeamPicker(){
+ const picker=$('newDynastyTeamPickerV221');if(!picker)return;
+ if(!pendingChallenge){$('challengeSetup238')?.remove();return}
+ const def=CHALLENGES[pendingChallenge],eligible=typeof schools==='undefined'?[]:schools.filter(s=>schoolEligible(s));
+ let banner=$('challengeSetup238');if(!banner){banner=document.createElement('section');banner.id='challengeSetup238';banner.className='story237-highlight challenge-setup238';picker.querySelector('.ui221-team-picker-head')?.after(banner)}
+ const rule=pendingChallenge==='rebuild'?'Only programs with 55 prestige or lower are shown.':pendingChallenge==='homegrown'?'Choose a program with a home state to build your local class.':'Choose a program with a scheduled rivalry opponent.';
+ banner.innerHTML=`<div><small>CHALLENGE SELECTED</small><h3>${esc(def.title)}</h3><p>${esc(rule)} ${eligible.length} eligible teams. Your challenge starts automatically when you create your coach.</p></div><div class="challenge-setup238-actions"><button type="button" class="btn neutral" data-change-challenge>Change challenge</button><button type="button" class="btn neutral" data-clear-challenge>Play without a challenge</button></div>`;
+ banner.querySelector('[data-change-challenge]').onclick=()=>open('challenge');
+ banner.querySelector('[data-clear-challenge]').onclick=()=>{clearPending();window.renderSchools?.()};
+ const grid=$('schoolGrid');if(grid&&!grid.children.length)grid.innerHTML='<p class="story237-note" role="status">No eligible teams match these filters. Try another conference, region or search.</p>';
+}
 function eligibility(s,type='rebuild'){
  if(!CHALLENGES[type])return'Choose one of the available challenges.';
  if(!s?.school)return'Start a fresh dynasty, then accept a challenge from Home → Dynasty story before your first game.';
@@ -8013,7 +8066,9 @@ function challengeProgress(s){
  return{best,season:Math.min(def.years,Math.max(1,num(s.year)-c.startYear+1)),target:def.target,unit:def.unit,title:def.title,status:c.status,remaining:Math.max(0,c.endYear-num(s.year)+1)};
 }
 function observe(s=current(),endingSeason=false){
- const c=s?.challengeV237;if(!c||c.status!=='active')return;
+ const c=s?.challengeV237;if(!c)return;
+ if(c.status==='complete'){if(awardCompletion(s))save('Challenge achievement awarded');return}
+ if(c.status!=='active')return;
  const prior=JSON.stringify(c);
  if(String(s.school.id)!==String(c.schoolId)){c.status='ended';c.reason='You moved to another program.'}
  else{
@@ -8022,6 +8077,7 @@ function observe(s=current(),endingSeason=false){
   if(p.best>=p.target&&(c.type!=='homegrown'||s.signingDayResolved||endingSeason)){c.status='complete';c.completedYear=num(s.year);c.reason=`${p.title} complete. You reached ${p.target} ${p.unit}.`}
   else if(num(s.year)>c.endYear||(endingSeason&&num(s.year)===c.endYear)){c.status='ended';c.reason='The challenge window is over. Your dynasty continues; try a fresh program for another run.'}
  }
+ if(c.status==='complete')awardCompletion(s);
  if(JSON.stringify(c)!==prior)save('Challenge progress');
 }
 function startChallenge(type='rebuild'){
@@ -8035,8 +8091,8 @@ function selectedRecap(s){const list=recaps(s);return list.find(r=>r.key===selec
 function recapHtml(r){return`<div class="story237-highlight"><small>${r.complete?'SEASON RECAP':'SEASON SO FAR'} · YEAR ${r.year}</small><h3>${esc(r.school)}</h3><strong class="story237-record">${r.wins}–${r.losses}</strong><p>${r.games} recorded game${r.games===1?'':'s'} · ${r.commits} recruiting commitment${r.commits===1?'':'s'}</p>${r.latest?`<p>Latest: ${esc(r.latest.result)} ${esc(r.latest.score)} vs ${esc(r.latest.opponent)}</p>`:'<p>Your first result starts the story.</p>'}</div>${r.trophies.length?`<h4>Trophy cabinet</h4><p>${r.trophies.map(esc).join(' · ')}</p>`:''}<h4>Season leaders</h4>${r.leaders.length?`<div class="story237-grid">${r.leaders.map(p=>`<article><small>${esc(p.label)}</small><b>${esc(p.name)}</b><span>${p.value.toLocaleString()} ${p.label==='Tackles'?'tackles':'yards'}</span></article>`).join('')}</div>`:'<p>Player leaders appear after recorded game stats are available.</p>'}<h4>Development worth remembering</h4>${r.developed.length?`<div class="story237-grid">${r.developed.map(p=>`<article><small>${esc(p.pos)} · +${p.gain} OVR</small><b>${esc(p.name)}</b><span>${p.baseline} → ${p.now} since first recorded</span></article>`).join('')}</div>`:'<p>Player development will appear here as ratings improve.</p>'}${r.rivalry.length?`<h4>Rivalry Saturdays</h4><ul>${r.rivalry.map(g=>`<li>${esc(g.result)} ${esc(g.score)} vs ${esc(g.opponent)}</li>`).join('')}</ul>`:''}${r.records.length?`<h4>National records broken</h4><ul>${r.records.map(x=>`<li>${esc(x.player)} · ${esc(x.label)} (${esc(x.level)}) · ${num(x.value).toLocaleString()}</li>`).join('')}</ul>`:''}<button class="btn primary" type="button" data-story-export>Save recap image</button><p class="story237-note">Recaps are saved before the offseason roster changes. Earlier seasons without a saved recap are not reconstructed.</p>`}
 function challengeHtml(s){
  const c=s?.challengeV237,p=c&&challengeProgress(s),def=c&&CHALLENGES[c.type];
- if(c)return`<div class="story237-highlight"><small>FREE COACHING CHALLENGE</small><h3>${esc(def.title)}</h3><p>${esc(def.intro)}</p><p>${esc(def.goal)}</p></div><h4>${c.status==='complete'?'CHALLENGE COMPLETE':c.status==='ended'?'RUN FINISHED':`SEASON ${p.season} OF ${def.years}`}</h4><p>${esc(c.school)} · <b>${p.best} / ${p.target} ${esc(p.unit)}</b></p><progress max="${p.target}" value="${Math.min(p.target,p.best)}" aria-label="${esc(def.title)} progress"></progress><p>${esc(c.reason||`${Math.max(0,p.target-p.best)} more ${p.unit} to reach your goal.`)}</p>${c.status==='active'?'<button class="btn neutral" type="button" data-story-stop>Leave challenge</button>':'<p>Your dynasty continues normally. Start a fresh dynasty to play another challenge.</p>'}<p class="story237-note">One challenge per dynasty. Stay with the starting program. Normal settings, sponsor rewards and owned editors remain available; this is a personal challenge with no leaderboard or gameplay bonus.</p>`;
- return`<div class="story237-highlight"><small>THREE FREE WAYS TO PLAY</small><h3>Choose your coaching challenge</h3><p>Each starts with a fresh Year 1, Week 1 dynasty before any games. Your challenge saves with that dynasty and never replaces a save.</p></div><div class="story237-grid story237-challenges">${Object.entries(CHALLENGES).map(([key,d])=>{const reason=eligibility(s,key);return`<article><small>${d.years===1?'ONE SEASON':d.years+' SEASONS'} · FREE</small><h3>${esc(d.title)}</h3><p>${esc(d.intro)}</p><p>${esc(d.goal)}</p>${reason?`<span>${esc(reason)}</span>`:`<button class="btn primary" type="button" data-story-start="${key}">Start ${esc(d.title)}</button>`}</article>`}).join('')}</div><p class="story237-note">One challenge per dynasty. Normal game settings, sponsor rewards and owned editors are available. No purchase, leaderboard or gameplay bonus is attached.</p>`;
+ if(c)return`<div class="story237-highlight"><small>FREE COACHING CHALLENGE</small>${c.status==='complete'?`<span class="challenge-trophy238">${trophyIcon}<b>Completed · Achievement unlocked</b></span>`:''}<h3>${esc(def.title)}</h3><p>${esc(def.intro)}</p><p>${esc(def.goal)}</p></div><h4>${c.status==='complete'?'CHALLENGE COMPLETE':c.status==='ended'?'RUN FINISHED':`SEASON ${p.season} OF ${def.years}`}</h4><p>${esc(c.school)} · <b>${p.best} / ${p.target} ${esc(p.unit)}</b></p><progress max="${p.target}" value="${Math.min(p.target,p.best)}" aria-label="${esc(def.title)} progress"></progress><p>${esc(c.reason||`${Math.max(0,p.target-p.best)} more ${p.unit} to reach your goal.`)}</p>${c.status==='active'?'<button class="btn neutral" type="button" data-story-stop>Leave challenge</button>':'<p>Your dynasty continues normally. Start a fresh dynasty to play another challenge.</p>'}<p class="story237-note">One challenge per dynasty. Stay with the starting program. Normal settings, sponsor rewards and owned editors remain available; this is a personal challenge with no leaderboard or gameplay bonus.</p>`;
+ return`<div class="story237-highlight"><small>THREE FREE WAYS TO PLAY</small><h3>Choose your coaching challenge</h3><p>Each starts with a fresh Year 1, Week 1 dynasty before any games. Choose a challenge, pick an eligible team, then create your coach. Your existing saves stay untouched until you confirm a new career.</p></div><div class="story237-grid story237-challenges">${Object.entries(CHALLENGES).map(([key,d])=>{const reason=eligibility(s,key);return`<article><small>${d.years===1?'ONE SEASON':d.years+' SEASONS'} · FREE</small><h3>${esc(d.title)}</h3>${completedBadge(key)}<p>${esc(d.intro)}</p><p>${esc(d.goal)}</p>${!s?.school?`<button class="btn primary" type="button" data-story-choose="${key}">Start ${esc(d.title)}</button>`:reason?`<span>${esc(reason)}</span>`:`<button class="btn primary" type="button" data-story-start="${key}">Start ${esc(d.title)}</button>`}</article>`}).join('')}</div><p class="story237-note">One challenge per dynasty. Normal game settings, sponsor rewards and owned editors are available. No purchase, leaderboard or gameplay bonus is attached.</p>`;
 }
 function drawDialog(){
  const dialog=$('dynastyStory237');if(!dialog)return;const s=current();
@@ -8055,6 +8111,7 @@ function open(tab='season'){
   const b=event.target.closest('button');if(!b)return;
   if(b.hasAttribute('data-story-close'))dialog.close();
   if(b.dataset.storyTab){selected=b.dataset.storyTab;drawDialog()}
+  if(b.hasAttribute('data-story-choose'))chooseChallenge(b.dataset.storyChoose);
   if(b.hasAttribute('data-story-start')){startChallenge(b.dataset.storyStart);drawDialog()}
   if(b.hasAttribute('data-story-stop')){const c=current()?.challengeV237;if(c){c.status='ended';c.reason='You ended this challenge run.';save('Challenge ended');render();drawDialog()}}
   if(b.dataset.storyPlayer){dialog.close();window.openPlayerProfile?.(b.dataset.storyPlayer);const shell=$('modalBody')?.querySelector('.player-profile-v225');window.SDF_UI_V225?.activatePlayerTab?.(shell,'story')}
@@ -8081,7 +8138,8 @@ function render(){
  const line=c?`${p.title} · ${c.status==='complete'?'Complete':c.status==='ended'?'Run finished':`${p.best}/${p.target} ${p.unit}`}`:top?.gain>0?`${top.name} has grown ${top.gain} OVR since first recorded.`:'Your players, season moments and next coaching challenge.';
  block.innerHTML=`<div><b>Your dynasty story</b><span>${esc(line)}</span></div><button class="btn neutral" type="button" data-story-open>Open story &amp; challenges</button>`;block.querySelector('button').onclick=()=>open(c?'challenge':'season');
 }
-window.SDF_DYNASTY_STORY={CHALLENGES,feedbackLines,recruitCardHtml,recruitProfileHtml,playerSummary,playerJourneyHtml,makeRecap,captureSeason,eligibility,challengeProgress,startChallenge,observe,open,render,exportRecap};
+installChallengeAchievements();
+window.SDF_DYNASTY_STORY={CHALLENGES,completions,completedBadge,awardCompletion,schoolEligible,chooseChallenge,clearPending,activatePending,renderTeamPicker,pending:()=>pendingChallenge,feedbackLines,recruitCardHtml,recruitProfileHtml,playerSummary,playerJourneyHtml,makeRecap,captureSeason,eligibility,challengeProgress,startChallenge,observe,open,render,exportRecap};
 })();
 
 (()=>{
