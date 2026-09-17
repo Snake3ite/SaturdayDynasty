@@ -7729,50 +7729,71 @@ window.SDF_UI_V232={version:VERSION,build:BUILD,refresh,scheduleRefresh,makeResp
 (()=>{
 'use strict';
 const KEY='SDF_USAGE_V236',URL='https://fwnvwkffxazwsmaiqayj.supabase.co/functions/v1/usage-reporting';
-const EVENTS=new Set(['session','dynasty_started','game_completed','season_completed','first_recruit','practice_chosen','first_game','second_season','guide_started','guide_dismissed','guide_completed','shop_opened','preview_opened','checkout_started','checkout_canceled','checkout_failed','checkout_pending','purchase_confirmed','reward_shown','reward_earned','reward_failed','interstitial_shown']);
+const EVENTS=new Set(['reporting_started','session','dynasty_started','game_completed','season_completed','first_recruit','practice_chosen','first_game','second_season','guide_started','guide_dismissed','guide_completed','shop_opened','preview_opened','checkout_started','checkout_canceled','checkout_failed','checkout_pending','purchase_confirmed','reward_shown','reward_earned','reward_failed','interstitial_shown']);
 const PRODUCTS=new Set(['commissioner_mode','remove_ads','player_editor','team_editor']);
 let data;try{data=JSON.parse(localStorage.getItem(KEY)||'null')}catch{}
 if(!data||!Array.isArray(data.queue))data={consent:null,queue:[]};
+// Preserve earlier refusals; new/unanswered installations default to basic totals.
+if(data.schema!==2){
+ data.basic=data.consent!==false;
+ data.queue=data.basic?data.queue.map(e=>({...e,trackingId:data.consent===true?data.id:undefined})):[];
+ data.started=data.consent===true;data.schema=2;
+}
 data.queue=data.queue.slice(-500);
-let busy=false,timer=null,retry=5000,lastSession=0;
+if(data.consent!==true)delete data.id;
+let busy=false,timer=null,retry=5000,lastSession=0,activeRequest=null;
 const uuid=()=>crypto.randomUUID();
 const native=()=>!!(window.Capacitor?.isNativePlatform?.()||window.Capacitor?.getPlatform?.()==='android');
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(data))}catch{}};
+const coarse=at=>new Date(Math.floor(new Date(at).getTime()/60000)*60000).toISOString();
 function record(event,product){
- if(data.consent!==true||!EVENTS.has(event))return;
- data.id ||= uuid();const item={id:uuid(),event,at:new Date().toISOString()};
+ if(data.basic!==true||!EVENTS.has(event))return;
+ const item={id:uuid(),event,at:new Date().toISOString()};
+ // Permission is captured now: later opt-in never links earlier activity.
+ if(data.consent===true){data.id ||= uuid();item.trackingId=data.id}else item.at=coarse(item.at);
  if(PRODUCTS.has(product))item.product=product;
  data.queue.push(item);data.queue=data.queue.slice(-500);save();schedule();
 }
-function schedule(ms=1500){if(timer||data.consent!==true||!data.queue.length)return;timer=setTimeout(()=>{timer=null;flush()},ms)}
+function schedule(ms=1500){if(timer||data.basic!==true||!data.queue.length)return;timer=setTimeout(()=>{timer=null;flush()},ms)}
 async function flush(){
- if(busy||data.consent!==true||!data.queue.length||navigator.onLine===false)return;
- busy=true;const id=data.id,batch=data.queue.slice(0,40),controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),10000);
+ if(busy||data.basic!==true||!data.queue.length||navigator.onLine===false)return;
+ busy=true;const trackingId=data.queue[0].trackingId,batch=[];
+ for(const item of data.queue){if(batch.length===40||item.trackingId!==trackingId)break;batch.push(item)}
+ const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),10000);activeRequest=controller;
  try{
-  const response=await fetch(URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'events',device:id,platform:native()?'android':'browser',build:236,qa:!native()&&location.hostname!=='saturdaydynasty.ctoolis.workers.dev',events:batch}),signal:controller.signal,credentials:'omit'});
+  const payload={action:'events',platform:native()?'android':'browser',build:236,qa:!native()&&location.hostname!=='saturdaydynasty.ctoolis.workers.dev',events:batch.map(({trackingId,...e})=>e)};
+  if(trackingId)payload.device=trackingId;
+  const response=await fetch(URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),signal:controller.signal,credentials:'omit',referrerPolicy:'no-referrer'});
   if(!response.ok)throw new Error('Usage delivery unavailable');
   const result=await response.json();if(result.ok!==true)throw new Error('Usage delivery not acknowledged');
-  if(data.id===id&&data.consent===true){const ids=new Set(batch.map(e=>e.id));data.queue=data.queue.filter(e=>!ids.has(e.id));save()}
+  {const ids=new Set(batch.map(e=>e.id));data.queue=data.queue.filter(e=>!ids.has(e.id));save()}
   retry=5000;
- }catch{retry=Math.min(retry*2,300000)}finally{clearTimeout(timeout);busy=false;schedule(retry)}
+ }catch{retry=Math.min(retry*2,300000)}finally{clearTimeout(timeout);activeRequest=null;busy=false;schedule(retry)}
 }
-function session(){const now=Date.now();if(data.consent===true&&now-lastSession>=1800000){lastSession=now;record('session')}}
+function session(){const now=Date.now();if(data.basic===true&&now-lastSession>=1800000){lastSession=now;record('session')}}
+function begin(){if(data.basic&&!data.started){data.started=true;record('reporting_started')}session();save();schedule()}
 function choose(value){
- data.consent=value===true;
- if(!data.consent){data.queue=[];delete data.id;clearTimeout(timer);timer=null;lastSession=0}
- save();if(data.consent)session();renderConsent();
+ data.consent=value===true&&data.basic===true;
+ if(!data.consent){activeRequest?.abort();delete data.id;data.queue=data.queue.map(({trackingId,...e})=>({...e,at:coarse(e.at)}))}
+ save();renderConsent();schedule();
+}
+function chooseBasic(value){
+ data.basic=value===true;
+ if(!data.basic){activeRequest?.abort();data.queue=[];delete data.id;data.consent=false;clearTimeout(timer);timer=null;lastSession=0}
+ save();if(data.basic)begin();renderConsent();
 }
 function renderConsent(){
  const settings=document.querySelector('#appSettingsModal .modal-body')||document.querySelector('#appSettingsModal .release-settings');
  if(settings&&!document.getElementById('usageSettingsV236')){
   const card=document.createElement('section');card.id='usageSettingsV236';card.className='settings-section';
-  card.innerHTML='<h3>Help improve Saturday Dynasty</h3><p>Optional usage reporting sends game and season completions, new dynasties, feature use, ad displays and purchase outcomes, with app version and a random device ID. It does not send your save, player names or account email. Reporting is separate from ad consent.</p><label><input type="checkbox" id="usageEnabledV236"> Share usage statistics</label><p>You can turn this off here at any time. <a href="usage-privacy.html" target="_blank" rel="noopener">Usage privacy details</a></p>';
-  settings.append(card);document.getElementById('usageEnabledV236').onchange=e=>choose(e.target.checked);
+  card.innerHTML='<h3>Usage &amp; privacy</h3><label><input type="checkbox" id="usageBasicV236"> Share basic game totals</label><p>On by default for new players. Reports games, seasons, dynasties, feature use, ad displays and purchase outcomes without a persistent reporting ID. Previous reporting opt-outs are respected.</p><label><input type="checkbox" id="usageEnabledV236"> Allow ID-based usage tracking</label><p>Optional. Adds a random installation ID to future activity so we can measure unique and returning players. Saves, player names, account emails and payment details are not included.</p><p>Both choices can be changed here. Ad privacy choices are separate. <a href="usage-privacy.html" target="_blank" rel="noopener">Usage privacy details</a></p>';
+  settings.append(card);document.getElementById('usageEnabledV236').onchange=e=>choose(e.target.checked);document.getElementById('usageBasicV236').onchange=e=>chooseBasic(e.target.checked);
  }
- const checkbox=document.getElementById('usageEnabledV236');if(checkbox)checkbox.checked=data.consent===true;
+ const checkbox=document.getElementById('usageEnabledV236');if(checkbox){checkbox.checked=data.consent===true;checkbox.disabled=!data.basic}
+ const basic=document.getElementById('usageBasicV236');if(basic)basic.checked=data.basic===true;
  const host=document.getElementById('gameCommandCenterV219')||document.querySelector('#schoolScreen .dynasty-start-actions')?.parentElement;let card=document.getElementById('usageConsentV236');
- if(data.consent!==null){card?.remove();return}
- if(host&&!card){card=document.createElement('section');card.id='usageConsentV236';card.className='journey-card';card.innerHTML='<div class="journey-heading"><div><small>HELP SHAPE THE GAME</small><h3>Share usage statistics?</h3><p>Send game activity, ad displays and purchase outcomes with a random device ID to help improve the game. Your dynasty save and account email stay out of reports.</p></div></div><div class="journey-actions"><button type="button" class="btn neutral" data-usage-no>No thanks</button><button type="button" class="btn primary" data-usage-yes>Allow reporting</button><a href="usage-privacy.html" target="_blank" rel="noopener">Details</a></div>';host.append(card);card.querySelector('[data-usage-no]').onclick=()=>choose(false);card.querySelector('[data-usage-yes]').onclick=()=>choose(true)}
+ if(data.consent!==null||!data.basic){card?.remove();return}
+ if(host&&!card){card=document.createElement('section');card.id='usageConsentV236';card.className='journey-card';card.innerHTML='<div class="journey-heading"><div><small>HELP SHAPE THE GAME</small><h3>Help measure returning players?</h3><p>Basic game totals are reported without a persistent ID. Optionally allow a random installation ID to measure unique and returning players. You can turn either kind of reporting off in Settings.</p></div></div><div class="journey-actions"><button type="button" class="btn neutral" data-usage-no>Keep basic only</button><button type="button" class="btn primary" data-usage-yes>Allow ID tracking</button><a href="usage-privacy.html" target="_blank" rel="noopener">Details</a></div>';host.append(card);card.querySelector('[data-usage-no]').onclick=()=>choose(false);card.querySelector('[data-usage-yes]').onclick=()=>choose(true)}
 }
 // Baseline historical saves on first observation. Reloads and old results are not new games.
 function observe(s){
@@ -7786,8 +7807,8 @@ function observe(s){
  if(s.seasonDone&&!mark.seasonDone){mark.seasonDone=true;record('season_completed');changed=true}
  if(changed)window.SDF_RELEASE_TEST?.scheduleSave?.('Usage progress checkpoint',200,false);
 }
-window.SDF_USAGE={record,observe,choose,flush,render:renderConsent,session,status:()=>({consent:data.consent,queued:data.queue.length})};
-function init(){renderConsent();session();schedule();window.addEventListener('online',()=>flush());document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){session();flush()}})}
+window.SDF_USAGE={record,observe,choose,chooseBasic,flush,render:renderConsent,session,status:()=>({basic:data.basic,consent:data.consent,queued:data.queue.length})};
+function init(){renderConsent();begin();window.addEventListener('online',()=>flush());document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){session();flush()}})}
 document.readyState==='loading'?document.addEventListener('DOMContentLoaded',init,{once:true}):init();
 })();
 
@@ -7880,7 +7901,7 @@ function practiceChosen(){const s=current();if(!s)return;const j=ensureJourney(s
 function installSettings(){
  const host=document.querySelector('#appSettingsModal .modal-body')||document.querySelector('#appSettingsModal .release-settings');if(!host||$('deviceDiagnosticsV236'))return;
  const panel=document.createElement('section');panel.id='deviceDiagnosticsV236';panel.className='settings-section';
- panel.innerHTML='<h3>Device diagnostics</h3><p>Keep a small activity and checkout log on this device. Nothing is uploaded automatically. Export it only if you want to share it for support.</p><label><input type="checkbox" id="journeyDiagnosticsEnabled"> Keep device diagnostics</label><div class="journey-actions"><button type="button" class="btn neutral" id="journeyExport">Export diagnostics</button><button type="button" class="btn neutral" id="journeyClear">Clear diagnostics</button><button type="button" class="btn neutral" id="journeyReplay">Open first-week guide</button></div><p id="journeyDiagnosticStatus" role="status"></p>';
+ panel.innerHTML='<h3>Device diagnostics</h3><p>Keep a support log on this device. This log stays local unless you export it. Usage reporting follows the separate settings above.</p><label><input type="checkbox" id="journeyDiagnosticsEnabled"> Keep device diagnostics</label><div class="journey-actions"><button type="button" class="btn neutral" id="journeyExport">Export diagnostics</button><button type="button" class="btn neutral" id="journeyClear">Clear diagnostics</button><button type="button" class="btn neutral" id="journeyReplay">Open first-week guide</button></div><p id="journeyDiagnosticStatus" role="status"></p>';
  host.append(panel);$('journeyDiagnosticsEnabled').checked=!!diagnostics.enabled;$('journeyDiagnosticsEnabled').onchange=e=>{diagnostics.enabled=e.target.checked;persistDiagnostics()};$('journeyExport').onclick=downloadReport;$('journeyClear').onclick=()=>{diagnostics.events=[];persistDiagnostics();$('journeyDiagnosticStatus').textContent='Device log cleared.'};$('journeyReplay').onclick=()=>{if(!current()){$('journeyDiagnosticStatus').textContent='Start or load a dynasty first.';return}const j=ensureJourney(current());if(Object.values(progress(current())).every(Boolean)){$('journeyDiagnosticStatus').textContent='You have completed the first-week steps. The full reference walkthroughs remain in Help.';return}j.completed=false;setGuide(true);window.SDF_SETTINGS?.close?.();window.showTab?.('dashboard')};
 }
 function previewModel(input={}){return{name:String(input.name||'Saturday State').slice(0,38),color:/^#[0-9a-f]{6}$/i.test(input.color||'')?input.color:'#38bfa7',player:String(input.player||'Jordan Carter').slice(0,32),ovr:Math.max(40,Math.min(99,Number(input.ovr)||76))}}
