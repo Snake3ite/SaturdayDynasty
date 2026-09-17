@@ -131,6 +131,7 @@ window.SDF_CLOUD_CONFIG={
    const r=await authedFetch(path,{headers:{Accept:'application/json'}});
    if(!r.ok)throw new Error(`Entitlements request failed (${r.status})`);
    const rows=await r.json(),e=rows[0]||{remove_ads:false,player_editor:false,team_editor:false,commissioner_mode:false};
+   const pending=sessionStorage.getItem('sdfCheckout236');if(pending&&e?.[pending]===true&&!new URL(location.href).searchParams.has('purchase')){window.SDF_JOURNEY?.record('purchase_confirmed',pending);sessionStorage.removeItem('sdfCheckout236')}
    render(e);if(!q)status(e.commissioner_mode?'Commissioner Mode is active on this account.':'Account connected. Purchases are permanent and sync across devices.','good');return e
   }catch(x){console.error(x);if(!q)status(x?.message==='NOT_SIGNED_IN'?'Sign in to your Saturday Dynasty account to purchase or restore upgrades.':'Could not load account purchases. Try again in a moment.','bad');return null}
  }
@@ -139,18 +140,32 @@ window.SDF_CLOUD_CONFIG={
    const s=await liveSession(false);
    if(!s?.user?.id)return status('Sign in before purchasing an account upgrade.','bad');
    if(own(E,k))return status('Your account already owns that upgrade.','good');
+   sessionStorage.setItem('sdfCheckout236',k);window.SDF_JOURNEY?.record('checkout_started',k);
    b.disabled=true;b.textContent='OPENING STRIPE…';status('Opening secure Stripe checkout…');
    const r=await authedFetch('/functions/v1/create-checkout-session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({productKey:k})});
    let data=null;try{data=await r.json()}catch{}
    if(!r.ok)throw new Error(data?.error||data?.message||`Checkout request failed (${r.status})`);
    if(!data?.url)throw new Error('Checkout URL missing.');
    location.assign(data.url)
-  }catch(x){console.error(x);b.disabled=false;b.textContent=`BUY ${b.closest('.sdfProd').dataset.p}`;status(`Checkout failed: ${x?.message==='NOT_SIGNED_IN'?'sign in required':x?.message||'Unknown error'}`,'bad')}
+  }catch(x){window.SDF_JOURNEY?.record('checkout_failed',k);sessionStorage.removeItem('sdfCheckout236');console.error(x);b.disabled=false;b.textContent=`BUY ${b.closest('.sdfProd').dataset.p}`;status(`Checkout failed: ${x?.message==='NOT_SIGNED_IN'?'sign in required':x?.message||'Unknown error'}`,'bad')}
  }
- function make(){if(document.querySelector('#sdfShop'))return;const st=document.createElement('style');st.textContent=css;document.head.append(st);const a=document.createElement('button');a.id='sdfShopBtn';a.innerHTML='★ DYNASTY SHOP<small>COMMISSIONER MODE & UPGRADES</small>';a.onclick=open;document.body.append(a);const o=document.createElement('div');o.id='sdfShop';o.innerHTML='<section id="sdfShopBox" role="dialog" aria-modal="true"><header class="sdfSH"><div><div class="sdfEy">SATURDAY DYNASTY FOOTBALL</div><h2>Dynasty Shop</h2><p class="sdfSub">Permanent browser account upgrades · Stripe secure checkout</p></div><button class="sdfClose">×</button></header><div id="sdfStatus">Checking your account…</div><div id="sdfProducts"></div></section>';document.body.append(o);const g=o.querySelector('#sdfProducts');P.forEach(([k,n,p,d,z])=>{const x=document.createElement('article');x.className='sdfProd'+(k==='commissioner_mode'?' featured':'');x.dataset.k=k;x.dataset.p=p;x.innerHTML=`${z?`<span class="sdfBadge">${z}</span>`:''}<h3>${n}</h3><div><span class="sdfPrice">${p}</span> <span class="sdfOnce">ONE-TIME</span></div><p>${d}</p><button class="sdfBuy">BUY ${p}</button>`;x.querySelector('.sdfBuy').onclick=e=>buy(k,e.currentTarget);g.append(x)});o.querySelector('.sdfClose').onclick=close;o.onclick=e=>{if(e.target===o)close()}}
- async function open(){make();document.querySelector('#sdfShop').classList.add('open');await refresh()}
+ function make(){if(document.querySelector('#sdfShop'))return;const st=document.createElement('style');st.textContent=css;document.head.append(st);const a=document.createElement('button');a.id='sdfShopBtn';a.innerHTML='★ DYNASTY SHOP<small>COMMISSIONER MODE & UPGRADES</small>';a.onclick=open;document.body.append(a);const o=document.createElement('div');o.id='sdfShop';o.innerHTML='<section id="sdfShopBox" role="dialog" aria-modal="true"><header class="sdfSH"><div><div class="sdfEy">SATURDAY DYNASTY FOOTBALL</div><h2>Dynasty Shop</h2><p class="sdfSub">Permanent browser account upgrades · Stripe secure checkout</p></div><button class="sdfClose">×</button></header><div id="sdfStatus">Checking your account…</div><button type="button" class="journey-preview-entry" id="sdfWebPreview236">Try the Commissioner preview — sample team</button><div id="sdfProducts"></div></section>';document.body.append(o);o.querySelector('#sdfWebPreview236').onclick=()=>window.SDF_JOURNEY?.openPreview();const g=o.querySelector('#sdfProducts');P.forEach(([k,n,p,d,z])=>{const x=document.createElement('article');x.className='sdfProd'+(k==='commissioner_mode'?' featured':'');x.dataset.k=k;x.dataset.p=p;x.innerHTML=`${z?`<span class="sdfBadge">${z}</span>`:''}<h3>${n}</h3><div><span class="sdfPrice">${p}</span> <span class="sdfOnce">ONE-TIME</span></div><p>${d}</p><button class="sdfBuy">BUY ${p}</button>`;x.querySelector('.sdfBuy').onclick=e=>buy(k,e.currentTarget);g.append(x)});o.querySelector('.sdfClose').onclick=close;o.onclick=e=>{if(e.target===o)close()}}
+ async function open(){window.SDF_JOURNEY?.record('shop_opened');make();document.querySelector('#sdfShop').classList.add('open');await refresh()}
  function close(){document.querySelector('#sdfShop')?.classList.remove('open')}
- async function ret(){const u=new URL(location.href),v=u.searchParams.get('purchase');if(!v)return;open();if(v==='cancelled')status('Checkout cancelled — nothing was charged.');else{status('Payment completed. Confirming your permanent unlock…');let e;for(let i=0;i<10;i++){e=await refresh(true);if(e&&Object.values(e).some(Boolean))break;await new Promise(r=>setTimeout(r,800))}render(e);if(e&&Object.values(e).some(Boolean))status('Purchase confirmed. Your account upgrade is active and syncs across devices.','good');else status('Payment returned successfully. Stripe is still confirming the entitlement; reopen the shop in a moment.')}u.searchParams.delete('purchase');u.searchParams.delete('session_id');history.replaceState({},'',u.pathname+(u.searchParams.size?'?'+u.searchParams:'')+u.hash)}
+ async function ret(){
+  const u=new URL(location.href),v=u.searchParams.get('purchase');if(!v)return;
+  const k=sessionStorage.getItem('sdfCheckout236');open();
+  if(v==='cancelled'){if(k)window.SDF_JOURNEY?.record('checkout_canceled',k);sessionStorage.removeItem('sdfCheckout236');status('Checkout cancelled — nothing was charged.')}
+  else{
+   status('Payment returned. Confirming your permanent unlock…');let e;
+   for(let i=0;i<10;i++){e=await refresh(true);if(k&&e?.[k]===true)break;await new Promise(r=>setTimeout(r,800))}
+   render(e);
+   if(k&&e?.[k]===true){window.SDF_JOURNEY?.record('purchase_confirmed',k);sessionStorage.removeItem('sdfCheckout236');status('Purchase confirmed. Your account upgrade is active.','good')}
+   else{if(k)window.SDF_JOURNEY?.record('checkout_pending',k);status('Your account purchases have been refreshed. If this payment is still pending, reopen the shop shortly.')}
+  }
+  u.searchParams.delete('purchase');u.searchParams.delete('session_id');history.replaceState({},'',u.pathname+(u.searchParams.size?'?'+u.searchParams:'')+u.hash)
+ }
+
  window.SDF_COMMERCE={openShop:open,closeShop:close,refreshEntitlements:refresh,getEntitlements:()=>E,owns:k=>own(E,k)};
  const init=()=>{make();ret();refresh(true)};document.readyState==='loading'?document.addEventListener('DOMContentLoaded',init):init();
 })();

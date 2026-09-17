@@ -50,7 +50,8 @@ html:has(#gameSimModal:not(.hidden)),body:has(#gameSimModal:not(.hidden)){overfl
 .gc-yard-bottom{top:auto;bottom:12%;transform:rotate(180deg)}
 .gc-hash{position:absolute;left:0;right:0;height:5px;background:repeating-linear-gradient(90deg,transparent 0%,transparent calc(1% - 1px),#d3e7dcb3 calc(1% - 1px),#d3e7dcb3 1%)}
 .gc-hash-top{top:36%}.gc-hash-bottom{bottom:36%}
-.gc-midfield-logo{position:absolute;width:54px;height:54px;object-fit:contain;left:50%;top:50%;transform:translate(-50%,-50%);opacity:.25;filter:grayscale(1) brightness(2)}
+.gc-midfield-logo{position:absolute;width:68px;height:68px;max-width:19%;object-fit:contain;left:50%;top:50%;transform:translate(-50%,-50%);opacity:.6;pointer-events:none;filter:drop-shadow(0 1px 1px #001b1355)}
+.gc-playing-area:before,.gc-yard-numbers,.gc-hash{z-index:1}
 .gc-first-down,.gc-scrimmage{position:absolute;top:0;bottom:0;width:3px;transform:translateX(-50%);z-index:2;box-shadow:0 0 3px #001a0e80}
 .gc-first-down{background:#f7cc5c}.gc-scrimmage{background:#67cef2}
 .gc-football{position:absolute;z-index:3;top:50%;transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 2px 3px #000b);width:29px;height:29px;border:1px solid #eef4ee;border-radius:50%;background:#10271fdc}
