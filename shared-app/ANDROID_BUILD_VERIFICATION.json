@@ -1,853 +1,863 @@
 {
-  "version": "27.4.34",
-  "release": "Android V27.4.34 · Build 235 · Home & Navigation",
-  "versionCode": 235,
-  "fileCount": 169,
+  "version": "27.4.35",
+  "versionCode": 236,
+  "release": "Android V27.4.35 \u00b7 Build 236 \u00b7 Coach Journey",
   "files": [
     {
       "path": "ad-config.js",
-      "sha256": "1fe45f8bca0660b7402e809fec00c3c6cbb00f4ff07a60882718bf5134711d90",
-      "bytes": 641
+      "bytes": 641,
+      "sha256": "1fe45f8bca0660b7402e809fec00c3c6cbb00f4ff07a60882718bf5134711d90"
     },
     {
       "path": "app-bundle.js",
-      "sha256": "6d7723755fbf0226d5a01878011701a73e08a1702cefa6d631e8476d8e8d8e02",
-      "bytes": 1214699
+      "bytes": 1240764,
+      "sha256": "8ceaef5af22ce64f38b0d7220192408cd4d7e231de9b803a8a49fc6313da4a8e"
     },
     {
       "path": "app-shell.css",
-      "sha256": "993f5b7acaf5caf2856aa16f60c786816158fe942faff8b3f200a0363da98222",
-      "bytes": 4709
+      "bytes": 4709,
+      "sha256": "993f5b7acaf5caf2856aa16f60c786816158fe942faff8b3f200a0363da98222"
     },
     {
       "path": "assets/logos/team-1.svg",
-      "sha256": "157223f73accc8de4006ddf9c99e8e16e2033e211b953581c96c2f491ab2c564",
-      "bytes": 860
+      "bytes": 860,
+      "sha256": "157223f73accc8de4006ddf9c99e8e16e2033e211b953581c96c2f491ab2c564"
     },
     {
       "path": "assets/logos/team-10.svg",
-      "sha256": "790e2ec9a35d8889585d918cb0334879ab7bdcc51c29f59a9dff6195011ed655",
-      "bytes": 782
+      "bytes": 782,
+      "sha256": "790e2ec9a35d8889585d918cb0334879ab7bdcc51c29f59a9dff6195011ed655"
     },
     {
       "path": "assets/logos/team-100.svg",
-      "sha256": "efa26c1b77de710fb0111f7a887dc4ff57c27905b39022e3e90f6efc544dbc94",
-      "bytes": 884
+      "bytes": 884,
+      "sha256": "efa26c1b77de710fb0111f7a887dc4ff57c27905b39022e3e90f6efc544dbc94"
     },
     {
       "path": "assets/logos/team-101.svg",
-      "sha256": "037cf32122a91620c89accbb7e04c6ca8e066e158e74439bdf24fb343a5b2a70",
-      "bytes": 820
+      "bytes": 820,
+      "sha256": "037cf32122a91620c89accbb7e04c6ca8e066e158e74439bdf24fb343a5b2a70"
     },
     {
       "path": "assets/logos/team-102.svg",
-      "sha256": "a91aa2e7cdc17d691ca885d0ad9688f38f49e69f0583d0635ba7150a2890b206",
-      "bytes": 769
+      "bytes": 769,
+      "sha256": "a91aa2e7cdc17d691ca885d0ad9688f38f49e69f0583d0635ba7150a2890b206"
     },
     {
       "path": "assets/logos/team-103.svg",
-      "sha256": "6e51666f80ac859eb9e3a017ea624b3580cb9d653562128b65b70495f7011c53",
-      "bytes": 869
+      "bytes": 869,
+      "sha256": "6e51666f80ac859eb9e3a017ea624b3580cb9d653562128b65b70495f7011c53"
     },
     {
       "path": "assets/logos/team-104.svg",
-      "sha256": "a01dce8f24c36ee4d7137d18847d187f5af21f77fede264ebc22cd46a41b50a4",
-      "bytes": 881
+      "bytes": 881,
+      "sha256": "a01dce8f24c36ee4d7137d18847d187f5af21f77fede264ebc22cd46a41b50a4"
     },
     {
       "path": "assets/logos/team-105.svg",
-      "sha256": "e4cfa3b0e183a61d8cc3095a3a0627004a22825834ca2dd003bb339422d82978",
-      "bytes": 760
+      "bytes": 760,
+      "sha256": "e4cfa3b0e183a61d8cc3095a3a0627004a22825834ca2dd003bb339422d82978"
     },
     {
       "path": "assets/logos/team-106.svg",
-      "sha256": "66a4d6fe5447d6763b6f1fc09b62d7cb5be42ab7ee899567c3c016a6fb806900",
-      "bytes": 764
+      "bytes": 764,
+      "sha256": "66a4d6fe5447d6763b6f1fc09b62d7cb5be42ab7ee899567c3c016a6fb806900"
     },
     {
       "path": "assets/logos/team-107.svg",
-      "sha256": "aa9d8d0b8d18c3748bc83100fe825f36f870638ab9abc08d31744634e3c405f1",
-      "bytes": 768
+      "bytes": 768,
+      "sha256": "aa9d8d0b8d18c3748bc83100fe825f36f870638ab9abc08d31744634e3c405f1"
     },
     {
       "path": "assets/logos/team-108.svg",
-      "sha256": "342bcdf94ee1eed0323fb48ab71cc8fbe661c6e44f6578db3c48fe4403b86e37",
-      "bytes": 757
+      "bytes": 757,
+      "sha256": "342bcdf94ee1eed0323fb48ab71cc8fbe661c6e44f6578db3c48fe4403b86e37"
     },
     {
       "path": "assets/logos/team-109.svg",
-      "sha256": "996552d4735719f5453879f1a5bb4029022299bf2a62d95d3b444afefdc7a747",
-      "bytes": 781
+      "bytes": 781,
+      "sha256": "996552d4735719f5453879f1a5bb4029022299bf2a62d95d3b444afefdc7a747"
     },
     {
       "path": "assets/logos/team-11.svg",
-      "sha256": "f75fc9bf8d3b6c8b20c6430a06d8d312aa0d0f0f1866b5a7bced2dec8540f1ac",
-      "bytes": 775
+      "bytes": 775,
+      "sha256": "f75fc9bf8d3b6c8b20c6430a06d8d312aa0d0f0f1866b5a7bced2dec8540f1ac"
     },
     {
       "path": "assets/logos/team-110.svg",
-      "sha256": "22e1f1db6b765bb553d5c3149416f7bfb4bf0c4cb29a9226462d5fcd7e5ce6d2",
-      "bytes": 800
+      "bytes": 800,
+      "sha256": "22e1f1db6b765bb553d5c3149416f7bfb4bf0c4cb29a9226462d5fcd7e5ce6d2"
     },
     {
       "path": "assets/logos/team-111.svg",
-      "sha256": "3d3afecb44d82f9c44c106f5c693592d40f874f289ce40624c300de2b1944cc2",
-      "bytes": 770
+      "bytes": 770,
+      "sha256": "3d3afecb44d82f9c44c106f5c693592d40f874f289ce40624c300de2b1944cc2"
     },
     {
       "path": "assets/logos/team-112.svg",
-      "sha256": "37e6fe62eedbd2252e3255fbba330695d86ff35d30e43793925045aba3b030fe",
-      "bytes": 769
+      "bytes": 769,
+      "sha256": "37e6fe62eedbd2252e3255fbba330695d86ff35d30e43793925045aba3b030fe"
     },
     {
       "path": "assets/logos/team-113.svg",
-      "sha256": "776d332ed0688fc292a5530abbd76ef7c12abde40a7c04c7a1eb93b12cf9033d",
-      "bytes": 825
+      "bytes": 825,
+      "sha256": "776d332ed0688fc292a5530abbd76ef7c12abde40a7c04c7a1eb93b12cf9033d"
     },
     {
       "path": "assets/logos/team-114.svg",
-      "sha256": "e56885e3d3faff400727400dfcdb9fc0778ba8f8d716104e847566ed14269f10",
-      "bytes": 860
+      "bytes": 860,
+      "sha256": "e56885e3d3faff400727400dfcdb9fc0778ba8f8d716104e847566ed14269f10"
     },
     {
       "path": "assets/logos/team-115.svg",
-      "sha256": "cdbc7af9d37d22b3c81214b86c3daedf18af1a40319efa9b25832cd5cd6a61b2",
-      "bytes": 838
+      "bytes": 838,
+      "sha256": "cdbc7af9d37d22b3c81214b86c3daedf18af1a40319efa9b25832cd5cd6a61b2"
     },
     {
       "path": "assets/logos/team-116.svg",
-      "sha256": "fd4ca7d07953816e264011d1bd77154cebd1ec6e9e2a76691a603795126ce203",
-      "bytes": 820
+      "bytes": 820,
+      "sha256": "fd4ca7d07953816e264011d1bd77154cebd1ec6e9e2a76691a603795126ce203"
     },
     {
       "path": "assets/logos/team-117.svg",
-      "sha256": "50c1f539338a8b58a3737f726fce18364786b6b3a26b1bd815bfddcb69d95669",
-      "bytes": 793
+      "bytes": 793,
+      "sha256": "50c1f539338a8b58a3737f726fce18364786b6b3a26b1bd815bfddcb69d95669"
     },
     {
       "path": "assets/logos/team-118.svg",
-      "sha256": "68363a19e431308bc22c3a85dbb2d35e470174aa6ed7c1db5b872f7401c60de9",
-      "bytes": 775
+      "bytes": 775,
+      "sha256": "68363a19e431308bc22c3a85dbb2d35e470174aa6ed7c1db5b872f7401c60de9"
     },
     {
       "path": "assets/logos/team-119.svg",
-      "sha256": "f706295ea8822bbc0edae1b85a686338c2294b09c0e24f140851a5657b445886",
-      "bytes": 769
+      "bytes": 769,
+      "sha256": "f706295ea8822bbc0edae1b85a686338c2294b09c0e24f140851a5657b445886"
     },
     {
       "path": "assets/logos/team-12.svg",
-      "sha256": "a1064023aa3f4ddbe78cb8c0c7a04395414cebb162f0528f42e20ad996bbd92e",
-      "bytes": 784
+      "bytes": 784,
+      "sha256": "a1064023aa3f4ddbe78cb8c0c7a04395414cebb162f0528f42e20ad996bbd92e"
     },
     {
       "path": "assets/logos/team-13.svg",
-      "sha256": "6d745bc29747f26dcc70561a57c6740d7fa2c6e3efbde191e1d3b29ebf359f1c",
-      "bytes": 783
+      "bytes": 783,
+      "sha256": "6d745bc29747f26dcc70561a57c6740d7fa2c6e3efbde191e1d3b29ebf359f1c"
     },
     {
       "path": "assets/logos/team-14.svg",
-      "sha256": "71f5d5783045314ad0c71b97b6fb6bad302addc97f506f949661050083b3b0d5",
-      "bytes": 863
+      "bytes": 863,
+      "sha256": "71f5d5783045314ad0c71b97b6fb6bad302addc97f506f949661050083b3b0d5"
     },
     {
       "path": "assets/logos/team-15.svg",
-      "sha256": "7c5fe58ded7590625f6959f38d44dfd5023bf8e5b25c523e2dcca98407d7d3e4",
-      "bytes": 781
+      "bytes": 781,
+      "sha256": "7c5fe58ded7590625f6959f38d44dfd5023bf8e5b25c523e2dcca98407d7d3e4"
     },
     {
       "path": "assets/logos/team-16.svg",
-      "sha256": "373ed01dde4aa2b1b625c1382c41ecc58b1195ac996b6edc2a9cfe7ce08c20fe",
-      "bytes": 863
+      "bytes": 863,
+      "sha256": "373ed01dde4aa2b1b625c1382c41ecc58b1195ac996b6edc2a9cfe7ce08c20fe"
     },
     {
       "path": "assets/logos/team-17.svg",
-      "sha256": "eb4890e6af3886efe70649c9775241fa7449311dfad2ad7f2c7e65cae928d73c",
-      "bytes": 791
+      "bytes": 791,
+      "sha256": "eb4890e6af3886efe70649c9775241fa7449311dfad2ad7f2c7e65cae928d73c"
     },
     {
       "path": "assets/logos/team-18.svg",
-      "sha256": "2774096f1416263c949984f4857c1178d5b4bc8ad3c90277e78eb45690691238",
-      "bytes": 775
+      "bytes": 775,
+      "sha256": "2774096f1416263c949984f4857c1178d5b4bc8ad3c90277e78eb45690691238"
     },
     {
       "path": "assets/logos/team-19.svg",
-      "sha256": "f82794a78cd610cfcb707ce42cc47f4063abb2c1db8d5ec5edb50817d19279f4",
-      "bytes": 785
+      "bytes": 785,
+      "sha256": "f82794a78cd610cfcb707ce42cc47f4063abb2c1db8d5ec5edb50817d19279f4"
     },
     {
       "path": "assets/logos/team-2.svg",
-      "sha256": "5a2360fbc4a3f7e4404c218efadf02b37f1b74137cdc0ae0d16ce0b253fa5c89",
-      "bytes": 846
+      "bytes": 846,
+      "sha256": "5a2360fbc4a3f7e4404c218efadf02b37f1b74137cdc0ae0d16ce0b253fa5c89"
     },
     {
       "path": "assets/logos/team-20.svg",
-      "sha256": "ff561d9592c46a9f00e70f2cfafdaea585a432691efb5a1f181757fe641d2a5b",
-      "bytes": 778
+      "bytes": 778,
+      "sha256": "ff561d9592c46a9f00e70f2cfafdaea585a432691efb5a1f181757fe641d2a5b"
     },
     {
       "path": "assets/logos/team-200.svg",
-      "sha256": "f060c0c875b7ea6bf8f791044d5bc54738805762fcb0b27369641645e5479e0e",
-      "bytes": 801
+      "bytes": 801,
+      "sha256": "f060c0c875b7ea6bf8f791044d5bc54738805762fcb0b27369641645e5479e0e"
     },
     {
       "path": "assets/logos/team-201.svg",
-      "sha256": "c3d12d11461824964aaa52cab1d54689cbacd893db94ff72f58c08fe4cc4b0ed",
-      "bytes": 788
+      "bytes": 788,
+      "sha256": "c3d12d11461824964aaa52cab1d54689cbacd893db94ff72f58c08fe4cc4b0ed"
     },
     {
       "path": "assets/logos/team-202.svg",
-      "sha256": "93b0053a5d5a8468db696b3e0eb477c1060e5eb9c09d169029ef1b8c3bc9436a",
-      "bytes": 830
+      "bytes": 830,
+      "sha256": "93b0053a5d5a8468db696b3e0eb477c1060e5eb9c09d169029ef1b8c3bc9436a"
     },
     {
       "path": "assets/logos/team-203.svg",
-      "sha256": "2a6e338cd9ad6b4fd64782dd18d323820de416fc491e87fef1ccb904d08b8eb8",
-      "bytes": 779
+      "bytes": 779,
+      "sha256": "2a6e338cd9ad6b4fd64782dd18d323820de416fc491e87fef1ccb904d08b8eb8"
     },
     {
       "path": "assets/logos/team-204.svg",
-      "sha256": "d8369d480b980138d583d551554815599f619739e01dd383f4c971f00edc2527",
-      "bytes": 781
+      "bytes": 781,
+      "sha256": "d8369d480b980138d583d551554815599f619739e01dd383f4c971f00edc2527"
     },
     {
       "path": "assets/logos/team-205.svg",
-      "sha256": "e2519bd1c994f3d710eb2db3fb36a7a253cbddd5c9490a2a04fc576e05d3cf1f",
-      "bytes": 806
+      "bytes": 806,
+      "sha256": "e2519bd1c994f3d710eb2db3fb36a7a253cbddd5c9490a2a04fc576e05d3cf1f"
     },
     {
       "path": "assets/logos/team-206.svg",
-      "sha256": "fe01455ea96fa8f7cb9b3bbf4180ba6af3b5846893855113df5e7047dfa3724e",
-      "bytes": 758
+      "bytes": 758,
+      "sha256": "fe01455ea96fa8f7cb9b3bbf4180ba6af3b5846893855113df5e7047dfa3724e"
     },
     {
       "path": "assets/logos/team-207.svg",
-      "sha256": "1afe8ea6c2f889774a73138e1a843d97122ac13ce6490605ab4d353fbe8443fd",
-      "bytes": 880
+      "bytes": 880,
+      "sha256": "1afe8ea6c2f889774a73138e1a843d97122ac13ce6490605ab4d353fbe8443fd"
     },
     {
       "path": "assets/logos/team-208.svg",
-      "sha256": "33a7b28f79f1f2bd9732cbcdf38b4ee0b3e6a41c9242de233802beb4fa03ade2",
-      "bytes": 844
+      "bytes": 844,
+      "sha256": "33a7b28f79f1f2bd9732cbcdf38b4ee0b3e6a41c9242de233802beb4fa03ade2"
     },
     {
       "path": "assets/logos/team-209.svg",
-      "sha256": "0f21bf3efcb5f1ca7bb69c340df0684fa86fb8f95e6f795779169bbc93018322",
-      "bytes": 773
+      "bytes": 773,
+      "sha256": "0f21bf3efcb5f1ca7bb69c340df0684fa86fb8f95e6f795779169bbc93018322"
     },
     {
       "path": "assets/logos/team-21.svg",
-      "sha256": "8d486edc7e6f098db2a7fef711d25e0109e47e1fb493669e58e59632fa223b20",
-      "bytes": 849
+      "bytes": 849,
+      "sha256": "8d486edc7e6f098db2a7fef711d25e0109e47e1fb493669e58e59632fa223b20"
     },
     {
       "path": "assets/logos/team-210.svg",
-      "sha256": "0e9db241ec45763c49f684dbbb6118cb013cd4ebb0054671995f8211ce298021",
-      "bytes": 792
+      "bytes": 792,
+      "sha256": "0e9db241ec45763c49f684dbbb6118cb013cd4ebb0054671995f8211ce298021"
     },
     {
       "path": "assets/logos/team-211.svg",
-      "sha256": "34bac8a7b3a3b3f30ac9edf85f993f2189f5fd80ce1fa9ba75fbb991b01970da",
-      "bytes": 874
+      "bytes": 874,
+      "sha256": "34bac8a7b3a3b3f30ac9edf85f993f2189f5fd80ce1fa9ba75fbb991b01970da"
     },
     {
       "path": "assets/logos/team-212.svg",
-      "sha256": "6645cc07b09ad0f8b1966345af715b52ed4afc36d960afccb2eea045969e7792",
-      "bytes": 754
+      "bytes": 754,
+      "sha256": "6645cc07b09ad0f8b1966345af715b52ed4afc36d960afccb2eea045969e7792"
     },
     {
       "path": "assets/logos/team-213.svg",
-      "sha256": "e2894c3ce4487c9fa7ac879bc4ef4598b0aff94302e0165c90e2c13df348c2e6",
-      "bytes": 792
+      "bytes": 792,
+      "sha256": "e2894c3ce4487c9fa7ac879bc4ef4598b0aff94302e0165c90e2c13df348c2e6"
     },
     {
       "path": "assets/logos/team-214.svg",
-      "sha256": "ff6ef21c12ec46633b5593b8f42c7b026c651e16ec81b46c98d968d4e8d97687",
-      "bytes": 849
+      "bytes": 849,
+      "sha256": "ff6ef21c12ec46633b5593b8f42c7b026c651e16ec81b46c98d968d4e8d97687"
     },
     {
       "path": "assets/logos/team-215.svg",
-      "sha256": "c9df400cc120a4a3fc36f892372000cab6ebcfb046dc268ba447a9302022dae6",
-      "bytes": 761
+      "bytes": 761,
+      "sha256": "c9df400cc120a4a3fc36f892372000cab6ebcfb046dc268ba447a9302022dae6"
     },
     {
       "path": "assets/logos/team-216.svg",
-      "sha256": "45dbf0860d0ccea4bd9aea3b3fe662310a62491429a9c35479b7edc12b5805a7",
-      "bytes": 826
+      "bytes": 826,
+      "sha256": "45dbf0860d0ccea4bd9aea3b3fe662310a62491429a9c35479b7edc12b5805a7"
     },
     {
       "path": "assets/logos/team-217.svg",
-      "sha256": "106f489844e2286c86f2b89a0e6a7ec888188dd6945769f0d3f8ff08029b401d",
-      "bytes": 791
+      "bytes": 791,
+      "sha256": "106f489844e2286c86f2b89a0e6a7ec888188dd6945769f0d3f8ff08029b401d"
     },
     {
       "path": "assets/logos/team-218.svg",
-      "sha256": "d1fd25771cf48481512e8a09f8b3bbf436a223526479dc26f84920cce29c3a3d",
-      "bytes": 795
+      "bytes": 795,
+      "sha256": "d1fd25771cf48481512e8a09f8b3bbf436a223526479dc26f84920cce29c3a3d"
     },
     {
       "path": "assets/logos/team-219.svg",
-      "sha256": "52ea506b31ecf300394e4e43b1f5f5b268cf53b0032324671986c4854176248a",
-      "bytes": 843
+      "bytes": 843,
+      "sha256": "52ea506b31ecf300394e4e43b1f5f5b268cf53b0032324671986c4854176248a"
     },
     {
       "path": "assets/logos/team-22.svg",
-      "sha256": "890a566362a46884bc5851461e3597d982002e7bc2aec2a5bb1957dab58132c5",
-      "bytes": 779
+      "bytes": 779,
+      "sha256": "890a566362a46884bc5851461e3597d982002e7bc2aec2a5bb1957dab58132c5"
     },
     {
       "path": "assets/logos/team-220.svg",
-      "sha256": "cbc626ea6594cb0403abdcb5fbb99709896eafe6dbb30da6277f6be2914b458d",
-      "bytes": 816
+      "bytes": 816,
+      "sha256": "cbc626ea6594cb0403abdcb5fbb99709896eafe6dbb30da6277f6be2914b458d"
     },
     {
       "path": "assets/logos/team-221.svg",
-      "sha256": "ce61d91b6d0b928baac0cdcba6052300391f7ad31e31dc74b3ab1ebf62be36ec",
-      "bytes": 780
+      "bytes": 780,
+      "sha256": "ce61d91b6d0b928baac0cdcba6052300391f7ad31e31dc74b3ab1ebf62be36ec"
     },
     {
       "path": "assets/logos/team-222.svg",
-      "sha256": "7c9f4e74aafae162e17fd273f4e77e0134b9631a77e6b5710bb248dca36625b5",
-      "bytes": 814
+      "bytes": 814,
+      "sha256": "7c9f4e74aafae162e17fd273f4e77e0134b9631a77e6b5710bb248dca36625b5"
     },
     {
       "path": "assets/logos/team-223.svg",
-      "sha256": "803bc5053cc1519b42ef52a7d8a55b3faa8347e707f70fd7e2fa73ecfd5c5eb9",
-      "bytes": 777
+      "bytes": 777,
+      "sha256": "803bc5053cc1519b42ef52a7d8a55b3faa8347e707f70fd7e2fa73ecfd5c5eb9"
     },
     {
       "path": "assets/logos/team-224.svg",
-      "sha256": "655dbebef635c140c5f103a4ae3599313372bd3a8481902f03d5839d19161927",
-      "bytes": 812
+      "bytes": 812,
+      "sha256": "655dbebef635c140c5f103a4ae3599313372bd3a8481902f03d5839d19161927"
     },
     {
       "path": "assets/logos/team-225.svg",
-      "sha256": "cdba2dc3d70b1d14ec6246d0d4fccf07e74f6a859c8b1f2fb567dddc7aff2ce3",
-      "bytes": 783
+      "bytes": 783,
+      "sha256": "cdba2dc3d70b1d14ec6246d0d4fccf07e74f6a859c8b1f2fb567dddc7aff2ce3"
     },
     {
       "path": "assets/logos/team-226.svg",
-      "sha256": "aa87b71202b44cad74e4a10dda1dd3f0121d8e8a8da9649500c550bafe127bf2",
-      "bytes": 820
+      "bytes": 820,
+      "sha256": "aa87b71202b44cad74e4a10dda1dd3f0121d8e8a8da9649500c550bafe127bf2"
     },
     {
       "path": "assets/logos/team-227.svg",
-      "sha256": "319434ba4cef65d10d5b306a06dbb9fd6dc96a86ada10e291f31ce9db78221d0",
-      "bytes": 785
+      "bytes": 785,
+      "sha256": "319434ba4cef65d10d5b306a06dbb9fd6dc96a86ada10e291f31ce9db78221d0"
     },
     {
       "path": "assets/logos/team-228.svg",
-      "sha256": "f5ef87a831176eedea4fad3dabb3b63bdc2fa13248df6015726565c3940f19a6",
-      "bytes": 850
+      "bytes": 850,
+      "sha256": "f5ef87a831176eedea4fad3dabb3b63bdc2fa13248df6015726565c3940f19a6"
     },
     {
       "path": "assets/logos/team-229.svg",
-      "sha256": "3ebdbae34a44bf23425a8ac16d47013de8f182cdf7ee7118350fd570242ce136",
-      "bytes": 760
+      "bytes": 760,
+      "sha256": "3ebdbae34a44bf23425a8ac16d47013de8f182cdf7ee7118350fd570242ce136"
     },
     {
       "path": "assets/logos/team-23.svg",
-      "sha256": "586be70dfb2316f82c071c254cce68db419d68700e3da2bbaa87c611c7d16a64",
-      "bytes": 774
+      "bytes": 774,
+      "sha256": "586be70dfb2316f82c071c254cce68db419d68700e3da2bbaa87c611c7d16a64"
     },
     {
       "path": "assets/logos/team-230.svg",
-      "sha256": "043b85ce5f673e1958fe9c278cfee23292ec6132052109e367800c852211e4b5",
-      "bytes": 769
+      "bytes": 769,
+      "sha256": "043b85ce5f673e1958fe9c278cfee23292ec6132052109e367800c852211e4b5"
     },
     {
       "path": "assets/logos/team-231.svg",
-      "sha256": "df6c1fff030641b01cb85212a3a1490e4b112152403e0711a62117497968a717",
-      "bytes": 772
+      "bytes": 772,
+      "sha256": "df6c1fff030641b01cb85212a3a1490e4b112152403e0711a62117497968a717"
     },
     {
       "path": "assets/logos/team-232.svg",
-      "sha256": "1b47da17092d22057f83176eaf61a564e74396b1d4993dcbadc34ee4eef543eb",
-      "bytes": 793
+      "bytes": 793,
+      "sha256": "1b47da17092d22057f83176eaf61a564e74396b1d4993dcbadc34ee4eef543eb"
     },
     {
       "path": "assets/logos/team-233.svg",
-      "sha256": "352159c5905146c90bf7893d8a03982b9754202410efeb4306f722bc27a78154",
-      "bytes": 839
+      "bytes": 839,
+      "sha256": "352159c5905146c90bf7893d8a03982b9754202410efeb4306f722bc27a78154"
     },
     {
       "path": "assets/logos/team-234.svg",
-      "sha256": "c3d3739584e90a15fefa90692480ac7a140dfd285b74169d0ba71720d77eb141",
-      "bytes": 859
+      "bytes": 859,
+      "sha256": "c3d3739584e90a15fefa90692480ac7a140dfd285b74169d0ba71720d77eb141"
     },
     {
       "path": "assets/logos/team-235.svg",
-      "sha256": "b235877b3ed2b61c9824b83da0e952a5e66b397e45e9042e12266051c8462315",
-      "bytes": 853
+      "bytes": 853,
+      "sha256": "b235877b3ed2b61c9824b83da0e952a5e66b397e45e9042e12266051c8462315"
     },
     {
       "path": "assets/logos/team-236.svg",
-      "sha256": "c3c25fd6f97ddfbb1c68190dff0fb6819dfb631ce893b3b4eb483a1b66a47ffc",
-      "bytes": 800
+      "bytes": 800,
+      "sha256": "c3c25fd6f97ddfbb1c68190dff0fb6819dfb631ce893b3b4eb483a1b66a47ffc"
     },
     {
       "path": "assets/logos/team-237.svg",
-      "sha256": "79ad96bbd84b726079c319f3b0d83d4c7a452e736b57be324c8183659aa0564d",
-      "bytes": 778
+      "bytes": 778,
+      "sha256": "79ad96bbd84b726079c319f3b0d83d4c7a452e736b57be324c8183659aa0564d"
     },
     {
       "path": "assets/logos/team-238.svg",
-      "sha256": "d411d9d0ddea700890075ab3428ff5ad8396f56065adc485c849a9e8f337800f",
-      "bytes": 857
+      "bytes": 857,
+      "sha256": "d411d9d0ddea700890075ab3428ff5ad8396f56065adc485c849a9e8f337800f"
     },
     {
       "path": "assets/logos/team-239.svg",
-      "sha256": "64101d1b0c9f35682f47d881f2574c77b2dbbdd31cbec01b1082ec3cd65f3c8a",
-      "bytes": 833
+      "bytes": 833,
+      "sha256": "64101d1b0c9f35682f47d881f2574c77b2dbbdd31cbec01b1082ec3cd65f3c8a"
     },
     {
       "path": "assets/logos/team-24.svg",
-      "sha256": "d800ea63c301e10a937d83110008d4097ae39f796e4992e0abc170ccc17ec42c",
-      "bytes": 820
+      "bytes": 820,
+      "sha256": "d800ea63c301e10a937d83110008d4097ae39f796e4992e0abc170ccc17ec42c"
     },
     {
       "path": "assets/logos/team-240.svg",
-      "sha256": "58c36b46b997557fab7bd11b15cc7b83ea553dbca0a02c3ca27dc4b3ebc07735",
-      "bytes": 780
+      "bytes": 780,
+      "sha256": "58c36b46b997557fab7bd11b15cc7b83ea553dbca0a02c3ca27dc4b3ebc07735"
     },
     {
       "path": "assets/logos/team-241.svg",
-      "sha256": "9f8cfce6c1ff2fa231ca8440f0a8d0d04a65aeced443dc02f842bbc0bfa009b7",
-      "bytes": 868
+      "bytes": 868,
+      "sha256": "9f8cfce6c1ff2fa231ca8440f0a8d0d04a65aeced443dc02f842bbc0bfa009b7"
     },
     {
       "path": "assets/logos/team-242.svg",
-      "sha256": "5b42fe9c9fccfcbfec65933d4e6e40bddbe571896a8d375c1f11e7d183eba8d7",
-      "bytes": 780
+      "bytes": 780,
+      "sha256": "5b42fe9c9fccfcbfec65933d4e6e40bddbe571896a8d375c1f11e7d183eba8d7"
     },
     {
       "path": "assets/logos/team-243.svg",
-      "sha256": "57133c3f9a4cb75de61e6e0c1fe8c146ee6f71eb8fa202c715cb2ae56f9ad047",
-      "bytes": 781
+      "bytes": 781,
+      "sha256": "57133c3f9a4cb75de61e6e0c1fe8c146ee6f71eb8fa202c715cb2ae56f9ad047"
     },
     {
       "path": "assets/logos/team-244.svg",
-      "sha256": "ba675eee3252b375ba59d99c6ced81c449acabb446b9294a4382c6938758f7a4",
-      "bytes": 780
+      "bytes": 780,
+      "sha256": "ba675eee3252b375ba59d99c6ced81c449acabb446b9294a4382c6938758f7a4"
     },
     {
       "path": "assets/logos/team-245.svg",
-      "sha256": "e60b734e9a72047d5ecc4499190a004b7aeeb5ff2be5a06ac2390c4ff5755b76",
-      "bytes": 856
+      "bytes": 856,
+      "sha256": "e60b734e9a72047d5ecc4499190a004b7aeeb5ff2be5a06ac2390c4ff5755b76"
     },
     {
       "path": "assets/logos/team-246.svg",
-      "sha256": "26c646e138e35de00cd2143c1112cb0a359e11ed8b81671ab2563703c324b6ac",
-      "bytes": 826
+      "bytes": 826,
+      "sha256": "26c646e138e35de00cd2143c1112cb0a359e11ed8b81671ab2563703c324b6ac"
     },
     {
       "path": "assets/logos/team-247.svg",
-      "sha256": "2604429d1b0e285d98a2f5d41e8c1b6e4297e59dd99f546c75bea376908a8e89",
-      "bytes": 865
+      "bytes": 865,
+      "sha256": "2604429d1b0e285d98a2f5d41e8c1b6e4297e59dd99f546c75bea376908a8e89"
     },
     {
       "path": "assets/logos/team-248.svg",
-      "sha256": "7fbb3726b0485cbe3c142ecfca599ed0e0d489326a12812ce677467dd51b66bc",
-      "bytes": 759
+      "bytes": 759,
+      "sha256": "7fbb3726b0485cbe3c142ecfca599ed0e0d489326a12812ce677467dd51b66bc"
     },
     {
       "path": "assets/logos/team-249.svg",
-      "sha256": "c79e47e58b943244082c7f3fb6352917c747c337856ce231b541b4658336cc80",
-      "bytes": 766
+      "bytes": 766,
+      "sha256": "c79e47e58b943244082c7f3fb6352917c747c337856ce231b541b4658336cc80"
     },
     {
       "path": "assets/logos/team-250.svg",
-      "sha256": "0b664adc0dc8a0d39b4eae1c31e7d81c96fb6b0e86809daf3950224b2968d748",
-      "bytes": 774
+      "bytes": 774,
+      "sha256": "0b664adc0dc8a0d39b4eae1c31e7d81c96fb6b0e86809daf3950224b2968d748"
     },
     {
       "path": "assets/logos/team-251.svg",
-      "sha256": "9d1801c0cea33b6c159c792a82d975cd984b843fa7f91cc0cdcda9b6688d8fe4",
-      "bytes": 779
+      "bytes": 779,
+      "sha256": "9d1801c0cea33b6c159c792a82d975cd984b843fa7f91cc0cdcda9b6688d8fe4"
     },
     {
       "path": "assets/logos/team-252.svg",
-      "sha256": "60bbd5c0fb4fa4785e886123697af42332a9d33763d2c843f048aab5a0e581ee",
-      "bytes": 866
+      "bytes": 866,
+      "sha256": "60bbd5c0fb4fa4785e886123697af42332a9d33763d2c843f048aab5a0e581ee"
     },
     {
       "path": "assets/logos/team-253.svg",
-      "sha256": "66b4abe5488f43c141288a9951455b8c41459214f31101b895d42da2addf84a9",
-      "bytes": 774
+      "bytes": 774,
+      "sha256": "66b4abe5488f43c141288a9951455b8c41459214f31101b895d42da2addf84a9"
     },
     {
       "path": "assets/logos/team-254.svg",
-      "sha256": "9cf361549305feb11c457748ba2479d9686b9fb59a5d65501cc883219412a15e",
-      "bytes": 876
+      "bytes": 876,
+      "sha256": "9cf361549305feb11c457748ba2479d9686b9fb59a5d65501cc883219412a15e"
     },
     {
       "path": "assets/logos/team-255.svg",
-      "sha256": "85c049b4a297222cfa1189a8dbc32b93e2b87b4c0cbba7c97fd3e9cff86cbff1",
-      "bytes": 783
+      "bytes": 783,
+      "sha256": "85c049b4a297222cfa1189a8dbc32b93e2b87b4c0cbba7c97fd3e9cff86cbff1"
     },
     {
       "path": "assets/logos/team-256.svg",
-      "sha256": "3c487f250c51da1aa3c24971e04f9d424504f2e121b3780ec51cbc4bb3cc3fdd",
-      "bytes": 765
+      "bytes": 765,
+      "sha256": "3c487f250c51da1aa3c24971e04f9d424504f2e121b3780ec51cbc4bb3cc3fdd"
     },
     {
       "path": "assets/logos/team-257.svg",
-      "sha256": "79699cef3630c65821bf82fdcbec579f6e47983c84fb44c275aad45b6f54121d",
-      "bytes": 782
+      "bytes": 782,
+      "sha256": "79699cef3630c65821bf82fdcbec579f6e47983c84fb44c275aad45b6f54121d"
     },
     {
       "path": "assets/logos/team-258.svg",
-      "sha256": "78682bce8c6c8ec8590c4364346c828502134c79e9abfb1cb47075b985e64b88",
-      "bytes": 772
+      "bytes": 772,
+      "sha256": "78682bce8c6c8ec8590c4364346c828502134c79e9abfb1cb47075b985e64b88"
     },
     {
       "path": "assets/logos/team-259.svg",
-      "sha256": "1efba9394d065f8ff152664e4838c0e51748434149b12f41b34f870cf0d53d6f",
-      "bytes": 854
+      "bytes": 854,
+      "sha256": "1efba9394d065f8ff152664e4838c0e51748434149b12f41b34f870cf0d53d6f"
     },
     {
       "path": "assets/logos/team-260.svg",
-      "sha256": "e7b914432da3c8c4ab13e86f3a0327a7a39578f9748b3cf8564d99343bb2fbd7",
-      "bytes": 800
+      "bytes": 800,
+      "sha256": "e7b914432da3c8c4ab13e86f3a0327a7a39578f9748b3cf8564d99343bb2fbd7"
     },
     {
       "path": "assets/logos/team-261.svg",
-      "sha256": "9ed4c83e9ef255572d7e43706df131a975a1d69b17b20081c6910ecaca737638",
-      "bytes": 857
+      "bytes": 857,
+      "sha256": "9ed4c83e9ef255572d7e43706df131a975a1d69b17b20081c6910ecaca737638"
     },
     {
       "path": "assets/logos/team-262.svg",
-      "sha256": "d9e60acb452d67ab781eec183480bafc85fbf327daaaa0b78e5d43f02a95d9d1",
-      "bytes": 825
+      "bytes": 825,
+      "sha256": "d9e60acb452d67ab781eec183480bafc85fbf327daaaa0b78e5d43f02a95d9d1"
     },
     {
       "path": "assets/logos/team-263.svg",
-      "sha256": "f55cdc795235c29a63c61ea14a2591fe88d38fcbff020a2ad78b3389c2922256",
-      "bytes": 857
+      "bytes": 857,
+      "sha256": "f55cdc795235c29a63c61ea14a2591fe88d38fcbff020a2ad78b3389c2922256"
     },
     {
       "path": "assets/logos/team-264.svg",
-      "sha256": "3322f9514e0825c04008e8489ac73efa49d0fd07784f79b79a47691a582808f0",
-      "bytes": 805
+      "bytes": 805,
+      "sha256": "3322f9514e0825c04008e8489ac73efa49d0fd07784f79b79a47691a582808f0"
     },
     {
       "path": "assets/logos/team-265.svg",
-      "sha256": "d12895a3b3d4f05a336526f780bf451e5dcbff8cf8d5de328bff652e5ebb87da",
-      "bytes": 854
+      "bytes": 854,
+      "sha256": "d12895a3b3d4f05a336526f780bf451e5dcbff8cf8d5de328bff652e5ebb87da"
     },
     {
       "path": "assets/logos/team-266.svg",
-      "sha256": "4ef4c7907333bcee1f283cd6529051d4dd7ab392c64fc8907e7c48e9ad26c59d",
-      "bytes": 811
+      "bytes": 811,
+      "sha256": "4ef4c7907333bcee1f283cd6529051d4dd7ab392c64fc8907e7c48e9ad26c59d"
     },
     {
       "path": "assets/logos/team-267.svg",
-      "sha256": "7a315c338c1063d25f72b1439611562cc26e83f1101a5ea63fd48bdb6219d7ef",
-      "bytes": 840
+      "bytes": 840,
+      "sha256": "7a315c338c1063d25f72b1439611562cc26e83f1101a5ea63fd48bdb6219d7ef"
     },
     {
       "path": "assets/logos/team-268.svg",
-      "sha256": "5bca47fe75691967e61dc31499c6bc098fc210801ede36d859e7131aee71906a",
-      "bytes": 760
+      "bytes": 760,
+      "sha256": "5bca47fe75691967e61dc31499c6bc098fc210801ede36d859e7131aee71906a"
     },
     {
       "path": "assets/logos/team-269.svg",
-      "sha256": "172fb778f32199980992feb632222f48c39c329d44f0276497cb371b3b241b10",
-      "bytes": 787
+      "bytes": 787,
+      "sha256": "172fb778f32199980992feb632222f48c39c329d44f0276497cb371b3b241b10"
     },
     {
       "path": "assets/logos/team-270.svg",
-      "sha256": "b46e4ab2293c1cdb51613c6b330cfb47dc06fb9a86faf2a1f9a97168a04d70fb",
-      "bytes": 761
+      "bytes": 761,
+      "sha256": "b46e4ab2293c1cdb51613c6b330cfb47dc06fb9a86faf2a1f9a97168a04d70fb"
     },
     {
       "path": "assets/logos/team-271.svg",
-      "sha256": "888c5b2ce4e2883515029f0b9f07a610b8b5d5768e002cbab5f6e035e11b141f",
-      "bytes": 760
+      "bytes": 760,
+      "sha256": "888c5b2ce4e2883515029f0b9f07a610b8b5d5768e002cbab5f6e035e11b141f"
     },
     {
       "path": "assets/logos/team-272.svg",
-      "sha256": "437782ff4d3b3868d412669afa0a1f4c81b1058cd56a04f078c6c1917b52160e",
-      "bytes": 780
+      "bytes": 780,
+      "sha256": "437782ff4d3b3868d412669afa0a1f4c81b1058cd56a04f078c6c1917b52160e"
     },
     {
       "path": "assets/logos/team-273.svg",
-      "sha256": "6eb1a6595b6040fa51ec8ad07e4f58a3f8cf4969f79f887a52083ecf1b4bacb5",
-      "bytes": 804
+      "bytes": 804,
+      "sha256": "6eb1a6595b6040fa51ec8ad07e4f58a3f8cf4969f79f887a52083ecf1b4bacb5"
     },
     {
       "path": "assets/logos/team-274.svg",
-      "sha256": "6a91ef82af80d8eb5f74f4a66693d3cfc81c289b7f05bac27477a25ccf3056e8",
-      "bytes": 867
+      "bytes": 867,
+      "sha256": "6a91ef82af80d8eb5f74f4a66693d3cfc81c289b7f05bac27477a25ccf3056e8"
     },
     {
       "path": "assets/logos/team-275.svg",
-      "sha256": "44d83d6fbf53afad53d2116348ea24123faba1cb7b12af45d22dbe11130bb02c",
-      "bytes": 793
+      "bytes": 793,
+      "sha256": "44d83d6fbf53afad53d2116348ea24123faba1cb7b12af45d22dbe11130bb02c"
     },
     {
       "path": "assets/logos/team-276.svg",
-      "sha256": "c163f176ed557a9dcc098daa647e1eb2cd3f191122a26153974a17963521c4e8",
-      "bytes": 809
+      "bytes": 809,
+      "sha256": "c163f176ed557a9dcc098daa647e1eb2cd3f191122a26153974a17963521c4e8"
     },
     {
       "path": "assets/logos/team-277.svg",
-      "sha256": "fda8aa0dfcc26d4a68498bca839d72d829ba0422eefb1786ea6bcd5c9abb8821",
-      "bytes": 876
+      "bytes": 876,
+      "sha256": "fda8aa0dfcc26d4a68498bca839d72d829ba0422eefb1786ea6bcd5c9abb8821"
     },
     {
       "path": "assets/logos/team-278.svg",
-      "sha256": "8d58a56322d832e5d523f49c2525b055641f2f37d3663d72b5fd2fa0ed885427",
-      "bytes": 783
+      "bytes": 783,
+      "sha256": "8d58a56322d832e5d523f49c2525b055641f2f37d3663d72b5fd2fa0ed885427"
     },
     {
       "path": "assets/logos/team-279.svg",
-      "sha256": "76c750722441a28177a178c23411d6df4ada342ce362b1a8f925e6ddb36e41eb",
-      "bytes": 806
+      "bytes": 806,
+      "sha256": "76c750722441a28177a178c23411d6df4ada342ce362b1a8f925e6ddb36e41eb"
     },
     {
       "path": "assets/logos/team-280.svg",
-      "sha256": "56ea596bb1bfbb13bdfce2676af0ef6f91a4e449609ca341057489b4ac459e30",
-      "bytes": 812
+      "bytes": 812,
+      "sha256": "56ea596bb1bfbb13bdfce2676af0ef6f91a4e449609ca341057489b4ac459e30"
     },
     {
       "path": "assets/logos/team-281.svg",
-      "sha256": "8c3a074705f04f05c28798d28d20e3a16ab4ded1573d3147f4a67936cce1ef3f",
-      "bytes": 817
+      "bytes": 817,
+      "sha256": "8c3a074705f04f05c28798d28d20e3a16ab4ded1573d3147f4a67936cce1ef3f"
     },
     {
       "path": "assets/logos/team-282.svg",
-      "sha256": "218d4ce6a21ca34f987d89c6a77ccb47810a0f7ef6a5eb53e22955322cdc40f8",
-      "bytes": 866
+      "bytes": 866,
+      "sha256": "218d4ce6a21ca34f987d89c6a77ccb47810a0f7ef6a5eb53e22955322cdc40f8"
     },
     {
       "path": "assets/logos/team-283.svg",
-      "sha256": "87cd1ca4047c92f315d07a7e26cd80e32e7d056521d3e2bfb980ff0cfbb6d3d0",
-      "bytes": 762
+      "bytes": 762,
+      "sha256": "87cd1ca4047c92f315d07a7e26cd80e32e7d056521d3e2bfb980ff0cfbb6d3d0"
     },
     {
       "path": "assets/logos/team-3.svg",
-      "sha256": "cacf73dce40321e14df6ea7c8dfbfbbf03c303280040d2c33c4fa4284a840af4",
-      "bytes": 782
+      "bytes": 782,
+      "sha256": "cacf73dce40321e14df6ea7c8dfbfbbf03c303280040d2c33c4fa4284a840af4"
     },
     {
       "path": "assets/logos/team-4.svg",
-      "sha256": "822290b6b450e8fa413d0924c60fdd883e86bfadabb3883ef45dcd56ad1072ab",
-      "bytes": 795
+      "bytes": 795,
+      "sha256": "822290b6b450e8fa413d0924c60fdd883e86bfadabb3883ef45dcd56ad1072ab"
     },
     {
       "path": "assets/logos/team-5.svg",
-      "sha256": "04309b112c46db9cf7abd1bdc5796d98147ac4870c8f184a882b9f5a75f7df4f",
-      "bytes": 825
+      "bytes": 825,
+      "sha256": "04309b112c46db9cf7abd1bdc5796d98147ac4870c8f184a882b9f5a75f7df4f"
     },
     {
       "path": "assets/logos/team-6.svg",
-      "sha256": "a05b7042fb22807216a4fd91229ea8106707fc67061a9fca70750a2f6293d88f",
-      "bytes": 862
+      "bytes": 862,
+      "sha256": "a05b7042fb22807216a4fd91229ea8106707fc67061a9fca70750a2f6293d88f"
     },
     {
       "path": "assets/logos/team-7.svg",
-      "sha256": "45d367dc10d871a0f1245aacda274d6a5c86b2ad64fc82b41d61031c12e9c225",
-      "bytes": 758
+      "bytes": 758,
+      "sha256": "45d367dc10d871a0f1245aacda274d6a5c86b2ad64fc82b41d61031c12e9c225"
     },
     {
       "path": "assets/logos/team-8.svg",
-      "sha256": "f3d092ee2c58f06a3f6804d7fea23b6597501e6c2edf4fd64dd8ac210b473834",
-      "bytes": 791
+      "bytes": 791,
+      "sha256": "f3d092ee2c58f06a3f6804d7fea23b6597501e6c2edf4fd64dd8ac210b473834"
     },
     {
       "path": "assets/logos/team-9.svg",
-      "sha256": "5a3b57336acf48510a6133d17a3faf0a50a5439353a6b4dce1e8e5695e79f435",
-      "bytes": 765
+      "bytes": 765,
+      "sha256": "5a3b57336acf48510a6133d17a3faf0a50a5439353a6b4dce1e8e5695e79f435"
     },
     {
       "path": "assets/music/big-game.mp3",
-      "sha256": "05b93a7fe2b1ef1ca1faba2bbc9822c49d2eaef73653839265ee220abbe29ecf",
-      "bytes": 1661849
+      "bytes": 1661849,
+      "sha256": "05b93a7fe2b1ef1ca1faba2bbc9822c49d2eaef73653839265ee220abbe29ecf"
     },
     {
       "path": "assets/music/championship.mp3",
-      "sha256": "17d5133f6b5ad3156b31c9155ec6f5e3fc07e8870dc02301ef48c474e4c0ae7f",
-      "bytes": 2256283
+      "bytes": 2256283,
+      "sha256": "17d5133f6b5ad3156b31c9155ec6f5e3fc07e8870dc02301ef48c474e4c0ae7f"
     },
     {
       "path": "assets/music/dynasty-theme.mp3",
-      "sha256": "89a61c0c311f93c9122da68a69b8b8ea65c7073f3d21238426cca011815633eb",
-      "bytes": 1933522
+      "bytes": 1933522,
+      "sha256": "89a61c0c311f93c9122da68a69b8b8ea65c7073f3d21238426cca011815633eb"
     },
     {
       "path": "assets/music/game-day-rock.mp3",
-      "sha256": "417bfe50e286c7255487e8c708b2094b3820d927ed9d85a834e554862fb0bef6",
-      "bytes": 1735503
+      "bytes": 1735503,
+      "sha256": "417bfe50e286c7255487e8c708b2094b3820d927ed9d85a834e554862fb0bef6"
     },
     {
       "path": "assets/music/playoff.mp3",
-      "sha256": "f21c2b11425f81afb5cee1832535d37cb006d485b5fb057ffb1cad45cc5acbae",
-      "bytes": 1988310
+      "bytes": 1988310,
+      "sha256": "f21c2b11425f81afb5cee1832535d37cb006d485b5fb057ffb1cad45cc5acbae"
     },
     {
       "path": "assets/music/season-recap.mp3",
-      "sha256": "11c678b482837f42266841fe2166842c45f7cfb9c031461d6da991c3c3482885",
-      "bytes": 4147244
+      "bytes": 4147244,
+      "sha256": "11c678b482837f42266841fe2166842c45f7cfb9c031461d6da991c3c3482885"
+    },
+    {
+      "path": "coach-journey.css",
+      "bytes": 5314,
+      "sha256": "b4a8621f0ab1ebc86896d640261ef121f4512a9c8a850d4ae545579e68f23fd2"
     },
     {
       "path": "icon-1024.png",
-      "sha256": "6ef6915c1e1cdcfcf2e26aee1f75ada869ad877c355588d048a01bbefef09148",
-      "bytes": 999033
+      "bytes": 999033,
+      "sha256": "6ef6915c1e1cdcfcf2e26aee1f75ada869ad877c355588d048a01bbefef09148"
     },
     {
       "path": "icon-192.png",
-      "sha256": "78c51e79e4fb6156063b3b94e273392d67fae24a36e98079c128803658d8d806",
-      "bytes": 70544
+      "bytes": 70544,
+      "sha256": "78c51e79e4fb6156063b3b94e273392d67fae24a36e98079c128803658d8d806"
     },
     {
       "path": "icon-512.png",
-      "sha256": "0b5e056dda9f1c4aa21d4d22e140b14fb0923ff6f75acea11195845f4a9d4a90",
-      "bytes": 356286
+      "bytes": 356286,
+      "sha256": "0b5e056dda9f1c4aa21d4d22e140b14fb0923ff6f75acea11195845f4a9d4a90"
     },
     {
       "path": "index.html",
-      "sha256": "833d0d1134361f28133d153cb47ff0150e9b955699c0819de637f3f6b5b59f63",
-      "bytes": 43245
+      "bytes": 43296,
+      "sha256": "a9462c192e83fb15fbf4c78b8fd70ed708efa995d52ec9b8402bc8398c4c1459"
     },
     {
       "path": "live-game.css",
-      "sha256": "5b3a7cbd4a27690190357bb73d84a131fdd2c5208d64292c7a22242b4a1a7b25",
-      "bytes": 19506
+      "bytes": 19606,
+      "sha256": "7f9d156cd826bdb4377657f837a2479950d93e361c8424610564184706d807e1"
     },
     {
       "path": "manifest.json",
-      "sha256": "c6305a69539366f42f11d4c5aa05dd75ea1bb7d38717cb2b1838b538d75022d8",
-      "bytes": 797
+      "bytes": 724,
+      "sha256": "6e8befd83369c452a45a5f5e84983067af8a21931ad362560e7a1f50cb9bc0f8"
     },
     {
       "path": "navigation.css",
-      "sha256": "7cbbc3bd625f41a4bb597b34c5935ab54e260727192782a7b71b6c4a4ba34e3f",
-      "bytes": 8958
+      "bytes": 8958,
+      "sha256": "7cbbc3bd625f41a4bb597b34c5935ab54e260727192782a7b71b6c4a4ba34e3f"
     },
     {
       "path": "release.css",
-      "sha256": "231a02bf66b643c03c961fba16ee4a20b08aa0c93f0a05d98edcc8e5c9e31e9a",
-      "bytes": 16535
+      "bytes": 16535,
+      "sha256": "231a02bf66b643c03c961fba16ee4a20b08aa0c93f0a05d98edcc8e5c9e31e9a"
     },
     {
       "path": "styles.css",
-      "sha256": "648c417d70115639d5edf4d5aa2bd8572816a6ecc107d5218e396b7fa9fdbd7b",
-      "bytes": 54096
+      "bytes": 54096,
+      "sha256": "648c417d70115639d5edf4d5aa2bd8572816a6ecc107d5218e396b7fa9fdbd7b"
+    },
+    {
+      "path": "usage-privacy.html",
+      "bytes": 2662,
+      "sha256": "94277e07a47de74f82c4d9a477fff22ae942fa2d3c6627d96bd328af1d1a0c64"
     },
     {
       "path": "v103.css",
-      "sha256": "d7c1f25f5e4a3c40c20a33908ceea0aee6e1520d7a53ae90d2ff600ca2220e48",
-      "bytes": 7363
+      "bytes": 7363,
+      "sha256": "d7c1f25f5e4a3c40c20a33908ceea0aee6e1520d7a53ae90d2ff600ca2220e48"
     },
     {
       "path": "v105.css",
-      "sha256": "eca3eaa7558ab92267d34fd400880d6900c0db3f2056949ae6a700e5f4fc0c8f",
-      "bytes": 2045
+      "bytes": 2045,
+      "sha256": "eca3eaa7558ab92267d34fd400880d6900c0db3f2056949ae6a700e5f4fc0c8f"
     },
     {
       "path": "v11.css",
-      "sha256": "d44a811182831b27223eb4c2eda84fa731ad8baeb0a2476d13c54649eaf4833c",
-      "bytes": 3586
+      "bytes": 3586,
+      "sha256": "d44a811182831b27223eb4c2eda84fa731ad8baeb0a2476d13c54649eaf4833c"
     },
     {
       "path": "v111.css",
-      "sha256": "147eb6ec455ac2622ce133fd77e012120a7e605bcdd4442a1acb04dc69e28abb",
-      "bytes": 1743
+      "bytes": 1743,
+      "sha256": "147eb6ec455ac2622ce133fd77e012120a7e605bcdd4442a1acb04dc69e28abb"
     },
     {
       "path": "v113.css",
-      "sha256": "54b7e31eb5bba8641c021057e7d6d5b6aae2c009527fa0ef4cbcb630aa8dd5fa",
-      "bytes": 2572
+      "bytes": 2572,
+      "sha256": "54b7e31eb5bba8641c021057e7d6d5b6aae2c009527fa0ef4cbcb630aa8dd5fa"
     },
     {
       "path": "v114.css",
-      "sha256": "269718e87e95d6d0c2778065732997e2af93e28d30cc30ab32c56205fe50ca5f",
-      "bytes": 1634
+      "bytes": 1634,
+      "sha256": "269718e87e95d6d0c2778065732997e2af93e28d30cc30ab32c56205fe50ca5f"
     },
     {
       "path": "v12.css",
-      "sha256": "57558492570a76340de4879deeea1193f78e0d5a1c32429c4dd940f110544c5d",
-      "bytes": 10534
+      "bytes": 10534,
+      "sha256": "57558492570a76340de4879deeea1193f78e0d5a1c32429c4dd940f110544c5d"
     },
     {
       "path": "v13.css",
-      "sha256": "f6ff8844942a5e5866fc7ad4632dbbf74f0214cebd95c77f1b22eb57893026cd",
-      "bytes": 12810
+      "bytes": 12810,
+      "sha256": "f6ff8844942a5e5866fc7ad4632dbbf74f0214cebd95c77f1b22eb57893026cd"
     },
     {
       "path": "v131.css",
-      "sha256": "3d11882c4e5aa92ef361d6bb59d41b7bfce3f9a560ce39bfe66fe9dedbc81dd1",
-      "bytes": 1052
+      "bytes": 1052,
+      "sha256": "3d11882c4e5aa92ef361d6bb59d41b7bfce3f9a560ce39bfe66fe9dedbc81dd1"
     },
     {
       "path": "v140-monetization.css",
-      "sha256": "9ff63ce4455075714413788b9025662a0df892c881b60942209a09577f47893e",
-      "bytes": 3306
+      "bytes": 3306,
+      "sha256": "9ff63ce4455075714413788b9025662a0df892c881b60942209a09577f47893e"
     },
     {
       "path": "v144.css",
-      "sha256": "6b64c94a63e5bfff6cd83e9a4a488750904ff42bec658e188b52fe94520e6d23",
-      "bytes": 2347
+      "bytes": 2347,
+      "sha256": "6b64c94a63e5bfff6cd83e9a4a488750904ff42bec658e188b52fe94520e6d23"
     },
     {
       "path": "v160.css",
-      "sha256": "1ad2b76d943edf8f051b7c581ac7021ad0c16186a59617513619d54d49190e12",
-      "bytes": 1941
+      "bytes": 1941,
+      "sha256": "1ad2b76d943edf8f051b7c581ac7021ad0c16186a59617513619d54d49190e12"
     },
     {
       "path": "v163.css",
-      "sha256": "352498369203f1bf6719f4945d9b30d531b2f1c2fcd37873c06526126c26286d",
-      "bytes": 2531
+      "bytes": 2531,
+      "sha256": "352498369203f1bf6719f4945d9b30d531b2f1c2fcd37873c06526126c26286d"
     },
     {
       "path": "v170.css",
-      "sha256": "62ca988a2713f76219df53e889408c649d149fac27cc3db68a95cc1eee1d6b68",
-      "bytes": 2983
+      "bytes": 2983,
+      "sha256": "62ca988a2713f76219df53e889408c649d149fac27cc3db68a95cc1eee1d6b68"
     },
     {
       "path": "v219.css",
-      "sha256": "94f49da89a4dd420e1b50279eef8b8451630d76a1522aa374a5df8f2a40fe747",
-      "bytes": 11432
+      "bytes": 11432,
+      "sha256": "94f49da89a4dd420e1b50279eef8b8451630d76a1522aa374a5df8f2a40fe747"
     },
     {
       "path": "v220.css",
-      "sha256": "eda6eb65ffe1a2fca2e1cf5346cae4f7e0796bb8d3f64d21310d73070daee81a",
-      "bytes": 7079
+      "bytes": 7079,
+      "sha256": "eda6eb65ffe1a2fca2e1cf5346cae4f7e0796bb8d3f64d21310d73070daee81a"
     },
     {
       "path": "v221.css",
-      "sha256": "4e848237ca3ef146ef1faf037d25cb098a8ac875d6a83846e004799fd633707b",
-      "bytes": 5233
+      "bytes": 5233,
+      "sha256": "4e848237ca3ef146ef1faf037d25cb098a8ac875d6a83846e004799fd633707b"
     },
     {
       "path": "v223.css",
-      "sha256": "7998339f2073df439d1708b3cc3cc98b835e95f9ebd5484b28d6ffc4e9bba24b",
-      "bytes": 9281
+      "bytes": 9281,
+      "sha256": "7998339f2073df439d1708b3cc3cc98b835e95f9ebd5484b28d6ffc4e9bba24b"
     },
     {
       "path": "v224.css",
-      "sha256": "7d23ab2352f2eecb5f51b5ff1911f656c30e8ee0bc1299135cc840c3f1807798",
-      "bytes": 9631
+      "bytes": 9631,
+      "sha256": "7d23ab2352f2eecb5f51b5ff1911f656c30e8ee0bc1299135cc840c3f1807798"
     },
     {
       "path": "v225.css",
-      "sha256": "ba322614fc0a7e1794abaec741f271d099e074479cdd3d97b95817326ce22703",
-      "bytes": 9026
+      "bytes": 9026,
+      "sha256": "ba322614fc0a7e1794abaec741f271d099e074479cdd3d97b95817326ce22703"
     },
     {
       "path": "v226.css",
-      "sha256": "9ff642bef0c80fb5e732aa5aabcb55ecb1da1e82db9831ceacb7f2c94bf37fe4",
-      "bytes": 5426
+      "bytes": 5426,
+      "sha256": "9ff642bef0c80fb5e732aa5aabcb55ecb1da1e82db9831ceacb7f2c94bf37fe4"
     },
     {
       "path": "v227.css",
-      "sha256": "8ce8259908a71c3d73a3973d02847047a892ee512868ab795a74f4929ae7208b",
-      "bytes": 4348
+      "bytes": 4348,
+      "sha256": "8ce8259908a71c3d73a3973d02847047a892ee512868ab795a74f4929ae7208b"
     },
     {
       "path": "v232.css",
-      "sha256": "14d1c25fe97a69b34cb497fb95821747a6029f1c29ba7f6492b58f36135f2473",
-      "bytes": 41831
+      "bytes": 41831,
+      "sha256": "14d1c25fe97a69b34cb497fb95821747a6029f1c29ba7f6492b58f36135f2473"
     }
-  ]
+  ],
+  "fileCount": 171
 }

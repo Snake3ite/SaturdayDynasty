@@ -1290,7 +1290,7 @@ if(location.protocol==="http:"||location.protocol==="https:"){
 
 (()=>{
 'use strict';
-const RELEASE='Android V27.4.34 · Build 235 · Home & Navigation';
+const RELEASE='Android V27.4.35 · Build 236 · Coach Journey';
 const SAVE_PREFIX='SaturdayDynastyFootballAndroidV1';
 const LEGACY_PREFIXES=['SaturdayArchitectAndroidV1','SaturdayArchitectCompleteV9','SaturdayArchitectStatsV82','SaturdayArchitectDynastyV81','SaturdayArchitectRealignmentV74','SaturdayArchitectRecruitingV73','SaturdayArchitect128V72','SaturdayArchitectMobileV71'];
 const ui={activeTab:'dashboard',recruitPage:1,recruitPageSize:window.innerWidth<=760?30:75,rosterQuery:'',recruitQuery:''};
@@ -3236,10 +3236,11 @@ function renderScoreboard(game){
  return `${gameCenterTeam(game,'us')}<div class="gc-clock"><span>${game.complete?'FINAL':game.quarter<=4?'Q'+game.quarter:'OT '+(game.quarter-4)}</span><strong>${game.complete?'—':game.quarter<=4?clockText(game.clock):'OT'}</strong><small>${game.complete?'Game complete':game.simulatingToFinal?'Finishing game':game.paused?'Paused':'In progress'}</small></div>${gameCenterTeam(game,'them')}`
 }
 function renderField(game){
+ const midfieldLogo=game.neutral?'icon-192.png':logo(game.home?state.school.id:game.oppId);
  const pos=pct(game.ball),first=pct(game.ball+direction(game)*game.distance),yards=[10,20,30,40,50,40,30,20,10];
  const own=compactTeam(state.school.id,state.school.name),opp=compactTeam(game.oppId,game.opponent),offense=game.possession==='us'?own:opp;
  const spot=Math.round(game.ball)===50?'MIDFIELD':`${Math.round(game.ball)<50?own:opp} ${Math.min(Math.round(game.ball),100-Math.round(game.ball))}`,distance=toGoal(game)<=game.distance?'Goal':Math.max(1,Math.round(game.distance));
- return `<div class="gc-field-card"><div class="gc-situation"><div><small>DOWN & DISTANCE</small><b>${ordinal(game.down)} & ${distance}</b></div><div><small>BALL ON</small><b>${safe(spot)}</b></div><div class="gc-drive-direction"><small>ON OFFENSE</small><b>${safe(offense)} <span aria-label="driving ${game.possession==='us'?'right':'left'}">${game.possession==='us'?'→':'←'}</span></b></div></div><div class="gc-field" role="img" aria-label="${safe(possessionTeam(game))} possession. ${safe(situation(game))}. Driving ${game.possession==='us'?'right':'left'}."><div class="gc-endzone gc-endzone-us">${safe(own)}</div><div class="gc-endzone gc-endzone-them">${safe(opp)}</div><div class="gc-playing-area"><div class="gc-yard-numbers">${yards.map((yard,index)=>`<span style="left:${10+index*10}%">${yard}</span>`).join('')}</div><div class="gc-yard-numbers gc-yard-bottom">${yards.map((yard,index)=>`<span style="left:${10+index*10}%">${yard}</span>`).join('')}</div><div class="gc-hash gc-hash-top"></div><div class="gc-hash gc-hash-bottom"></div><img class="gc-midfield-logo" src="${safe(logo(state.school.id))}" alt=""><div class="gc-first-down" style="left:${first}%"></div><div class="gc-scrimmage" style="left:${pos}%"></div><div class="gc-football ${game.possession==='them'?'drives-left':''}" style="left:${pos}%"><i></i><span>${game.possession==='us'?'→':'←'}</span></div></div></div><div class="gc-field-key"><span><i class="gc-key-ball"></i>Ball position</span><span><i class="gc-key-first"></i>First down</span></div></div>`
+ return `<div class="gc-field-card"><div class="gc-situation"><div><small>DOWN & DISTANCE</small><b>${ordinal(game.down)} & ${distance}</b></div><div><small>BALL ON</small><b>${safe(spot)}</b></div><div class="gc-drive-direction"><small>ON OFFENSE</small><b>${safe(offense)} <span aria-label="driving ${game.possession==='us'?'right':'left'}">${game.possession==='us'?'→':'←'}</span></b></div></div><div class="gc-field" role="img" aria-label="${safe(possessionTeam(game))} possession. ${safe(situation(game))}. Driving ${game.possession==='us'?'right':'left'}."><div class="gc-endzone gc-endzone-us">${safe(own)}</div><div class="gc-endzone gc-endzone-them">${safe(opp)}</div><div class="gc-playing-area"><div class="gc-yard-numbers">${yards.map((yard,index)=>`<span style="left:${10+index*10}%">${yard}</span>`).join('')}</div><div class="gc-yard-numbers gc-yard-bottom">${yards.map((yard,index)=>`<span style="left:${10+index*10}%">${yard}</span>`).join('')}</div><div class="gc-hash gc-hash-top"></div><div class="gc-hash gc-hash-bottom"></div><img class="gc-midfield-logo" src="${safe(midfieldLogo)}" alt=""><div class="gc-first-down" style="left:${first}%"></div><div class="gc-scrimmage" style="left:${pos}%"></div><div class="gc-football ${game.possession==='them'?'drives-left':''}" style="left:${pos}%"><i></i><span>${game.possession==='us'?'→':'←'}</span></div></div></div><div class="gc-field-key"><span><i class="gc-key-ball"></i>Ball position</span><span><i class="gc-key-first"></i>First down</span></div></div>`
 }
 function renderTeamStats(game){
  const a=game.stats.us,b=game.stats.them,rows=[['Total yards',a.totalYds,b.totalYds],['Passing yards',a.passYds,b.passYds],['Rushing yards',a.rushYds,b.rushYds],['First downs',a.firstDowns,b.firstDowns],['Turnovers',a.turnovers,b.turnovers],['3rd down',`${a.thirdConv}/${a.thirdAtt}`,`${b.thirdConv}/${b.thirdAtt}`],['4th down',`${a.fourthConv}/${a.fourthAtt}`,`${b.fourthConv}/${b.fourthAtt}`],['Penalties / yards',`${a.penalties} / ${a.penaltyYds}`,`${b.penalties} / ${b.penaltyYds}`],['Possession',clockText(a.timePossession),clockText(b.timePossession)]];
@@ -3623,6 +3624,8 @@ function summarizeReward(reward){
  return amount?`${type} × ${amount}`:type;
 }
 function setRewardStatus(stage,detail=''){
+ if(stage==='REWARDED'&&!cfg().useTestAds)window.SDF_JOURNEY?.record('reward_earned');
+ if(stage==='LOAD FAILED'||stage==='SHOW FAILED')window.SDF_JOURNEY?.record('reward_failed');
  lastRewardStatus=detail?`${stage}: ${detail}`:stage;
  if(typeof state!=='undefined'&&state?.school){
   ensureState();
@@ -3702,7 +3705,7 @@ async function installRewardListeners(){
   setRewardStatus('LOADED',info?.adUnitId||'rewarded ad ready');
  });
  await add('onRewardedVideoAdShowed',()=>{
-  const a=currentAttempt();if(a)a.shown=true;
+  const a=currentAttempt();if(a&&!a.shown&&!cfg().useTestAds)window.SDF_JOURNEY?.record('reward_shown');if(a)a.shown=true;
   setRewardStatus('SHOWN','Watch until Google confirms the reward');
  });
  await add('onRewardedVideoAdReward',reward=>{
@@ -3724,6 +3727,7 @@ async function installRewardListeners(){
   setRewardStatus('SHOW FAILED',error?.message||'Google could not show the ad');
   settleAttempt('failed',error);
  });
+ await add('interstitialAdShowed',()=>{if(!cfg().useTestAds)window.SDF_USAGE?.record('interstitial_shown')});
  rewardListenersInstalled=true;
 }
 function statusText(){
@@ -5006,6 +5010,9 @@ const PRODUCTS=[
  ['team_editor','Team Editor','$4.99','Customize all 128 programs: identity, branding, conference, ratings and stadium.','']
 ];
 let billing={ready:false,status:'Connecting to Google Play…',owned:[],prices:{}};
+let pendingProduct=null,lastOutcome=null;
+try{const p=JSON.parse(localStorage.getItem('SDF_PENDING_CHECKOUT236')||'null');if(p&&PRODUCTS.some(x=>x[0]===p.product)&&Date.now()-p.at<7*86400000)pendingProduct=p.product}catch{}
+function savePendingCheckout(){try{if(pendingProduct)localStorage.setItem('SDF_PENDING_CHECKOUT236',JSON.stringify({product:pendingProduct,at:Date.now()}));else localStorage.removeItem('SDF_PENDING_CHECKOUT236')}catch{}}
 let work=null,activePlayerId=null,profilePlayerId=null,profileWrapped=false;
 const native=()=>window.SDFBillingNative||null;
 const ownedSet=()=>new Set(Array.isArray(billing.owned)?billing.owned:[]);
@@ -5037,18 +5044,19 @@ function applyAdPolicy(){
 function normalizeState(next){
  if(!next||typeof next!=='object')return;
  billing={ready:!!next.ready,status:String(next.status||'Google Play Billing'),owned:Array.isArray(next.owned)?next.owned:[],prices:next.prices&&typeof next.prices==='object'?next.prices:{}};
+ if(pendingProduct){const status=billing.status;let outcome=billing.owned.includes(pendingProduct)?'purchase_confirmed':/cancel/i.test(status)?'checkout_canceled':/pending/i.test(status)?'checkout_pending':/error|unavailable|could not|not available|No eligible/i.test(status)?'checkout_failed':null;if(outcome&&outcome!==lastOutcome){window.SDF_JOURNEY?.record(outcome,pendingProduct);lastOutcome=outcome;if(outcome!=='checkout_pending'){pendingProduct=null;savePendingCheckout();}}}
  applyAdPolicy();renderShop();updateButtons();
  window.dispatchEvent(new CustomEvent('sdf:play-entitlements',{detail:{...billing}}));
 }
 window.onSDFBillingState=normalizeState;
 function refreshBilling(){try{const n=native();if(!n)return normalizeState({ready:false,status:'Google Play Billing is available only in the installed Android app.',owned:[],prices:{}});normalizeState(JSON.parse(n.getState()||'{}'))}catch(err){console.warn('Play Billing state unavailable',err)}}
 
-function ensureShop(){if($p('#sdfPlayShop'))return;const o=document.createElement('div');o.id='sdfPlayShop';o.innerHTML=`<section class="sdf-premium-box"><header class="sdf-premium-head"><div><div class="sdf-premium-ey">GOOGLE PLAY · PERMANENT UPGRADES</div><h2>Dynasty Shop</h2><p>Purchases restore automatically through the Google account used by Play Store.</p></div><button class="sdf-premium-close" aria-label="Close">×</button></header><div class="sdf-premium-body"><div id="sdfPlayStatus" class="sdf-play-status"></div><div id="sdfPlayProducts" class="sdf-product-grid"></div><button id="sdfRestorePurchases" class="sdf-restore">Restore Google Play Purchases</button></div></section>`;document.body.append(o);$p('.sdf-premium-close',o).onclick=closeShop;o.onclick=e=>{if(e.target===o)closeShop()};$p('#sdfRestorePurchases').onclick=()=>{const n=native();if(n){n.restore();setShopStatus('Checking your Google Play account…')}else setShopStatus('Google Play Billing is unavailable in this build.',true)}}
+function ensureShop(){if($p('#sdfPlayShop'))return;const o=document.createElement('div');o.id='sdfPlayShop';o.innerHTML=`<section class="sdf-premium-box"><header class="sdf-premium-head"><div><div class="sdf-premium-ey">GOOGLE PLAY · PERMANENT UPGRADES</div><h2>Dynasty Shop</h2><p>Purchases restore automatically through the Google account used by Play Store.</p></div><button class="sdf-premium-close" aria-label="Close">×</button></header><div class="sdf-premium-body"><div id="sdfPlayStatus" class="sdf-play-status"></div><button type="button" class="journey-preview-entry" id="sdfCommissionerPreview">Try the Commissioner preview — sample team</button><div id="sdfPlayProducts" class="sdf-product-grid"></div><button id="sdfRestorePurchases" class="sdf-restore">Restore Google Play Purchases</button></div></section>`;document.body.append(o);$p('#sdfCommissionerPreview').onclick=()=>window.SDF_JOURNEY?.openPreview();$p('.sdf-premium-close',o).onclick=closeShop;o.onclick=e=>{if(e.target===o)closeShop()};$p('#sdfRestorePurchases').onclick=()=>{const n=native();if(n){n.restore();setShopStatus('Checking your Google Play account…')}else setShopStatus('Google Play Billing is unavailable in this build.',true)}}
 function setShopStatus(t,bad=false){const x=$p('#sdfPlayStatus');if(!x)return;x.textContent=t;x.className='sdf-play-status '+(bad?'bad':billing.ready?'good':'')}
 function renderShop(){const grid=$p('#sdfPlayProducts');if(!grid)return;setShopStatus(billing.status,!billing.ready&&/error|unavailable|could not/i.test(billing.status));grid.innerHTML='';for(const [k,n,fallback,d,badge] of PRODUCTS){const own=owns(k),card=document.createElement('article');card.className='sdf-product'+(k==='commissioner_mode'?' featured':'');card.innerHTML=`${badge?`<span class="sdf-product-badge">${badge}</span>`:''}<h3>${n}</h3><div><span class="sdf-product-price">${esc(price(k,fallback))}</span> <span class="sdf-product-once">ONE-TIME</span></div><p>${esc(d)}</p><button ${own?'disabled':''}>${own?'OWNED':`BUY ${esc(price(k,fallback))}`}</button>${own?'<div class="sdf-owned">✓ Google Play account unlock</div>':''}`;card.querySelector('button').onclick=()=>purchase(k);grid.append(card)}}
-function openShop(){ensureShop();refreshBilling();$p('#sdfPlayShop').classList.add('open');renderShop()}
+function openShop(){window.SDF_JOURNEY?.record('shop_opened');ensureShop();refreshBilling();$p('#sdfPlayShop').classList.add('open');renderShop()}
 function closeShop(){$p('#sdfPlayShop')?.classList.remove('open')}
-function purchase(k){if(owns(k))return;const n=native();if(!n)return setShopStatus('Google Play Billing is unavailable in this build.',true);setShopStatus('Opening Google Play checkout…');n.purchase(k)}
+function purchase(k){if(owns(k))return;const n=native();if(!n)return setShopStatus('Google Play Billing is unavailable in this build.',true);pendingProduct=k;lastOutcome=null;savePendingCheckout();window.SDF_JOURNEY?.record('checkout_started',k);setShopStatus('Opening Google Play checkout…');try{n.purchase(k)}catch{pendingProduct=null;savePendingCheckout();window.SDF_JOURNEY?.record('checkout_failed',k);setShopStatus('Could not open Google Play checkout. Please try again.',true)}}
 
 function ensureEditor(){if($p('#sdfAndroidEditor'))return;const o=document.createElement('div');o.id='sdfAndroidEditor';o.innerHTML=`<section class="sdf-premium-box"><header class="sdf-premium-head"><div><div class="sdf-premium-ey">COMMISSIONER TOOLS</div><h2 id="sdfEditorTitle"></h2><p id="sdfEditorSubtitle"></p></div><button class="sdf-premium-close" aria-label="Close">×</button></header><div class="sdf-premium-body"><div id="sdfEditorToast" class="sdf-editor-toast"></div><div id="sdfEditorContent"></div></div></section>`;document.body.append(o);$p('.sdf-premium-close',o).onclick=closeEditor;o.onclick=e=>{if(e.target===o)closeEditor()}}
 function showEditor(title,sub,html){ensureEditor();$p('#sdfEditorTitle').textContent=title;$p('#sdfEditorSubtitle').textContent=sub;$p('#sdfEditorContent').innerHTML=html;$p('#sdfEditorToast').textContent='';$p('#sdfAndroidEditor').classList.add('open')}
@@ -5095,8 +5103,8 @@ const SUPABASE_URL='https://fwnvwkffxazwsmaiqayj.supabase.co';
 const PUBLISHABLE_KEY='sb_publishable_MeNnZ-PoF0cKlhfcvcL6Rg_xIJajlhW';
 const ENDPOINT=`${SUPABASE_URL}/functions/v1/send-feedback`;
 const MAX_FILE_BYTES=4*1024*1024;
-const APP_VERSION='V27.4.34';
-const BUILD_CODE=235;
+const APP_VERSION='V27.4.35';
+const BUILD_CODE=236;
 const $f=(s,r=document)=>r.querySelector(s);
 
 const style=document.createElement('style');
@@ -5404,7 +5412,7 @@ function finishWelcome(completed=false){
 }
 function currentTab(){return String(window.SDF_RELEASE_TEST?.ui?.activeTab||document.querySelector('.nav-tab.active')?.dataset.tab||'dashboard')}
 function requestPageGuide(tab){
- if(!GUIDES[tab])return;clearTimeout(guideTimer);
+ if(window.SDF_JOURNEY?.isGuided?.()||!GUIDES[tab])return;clearTimeout(guideTimer);
  guideTimer=setTimeout(()=>{if(activeLayer||!state?.school||currentTab()!==tab||document.body.classList.contains('app-building')||!$h('#gameSimModal')?.classList.contains('hidden')||!$h('#modal')?.classList.contains('hidden'))return;openGuide(tab)},180);
 }
 function injectHelpEntryPoints(){
@@ -6951,6 +6959,7 @@ function refreshGameUi(force=false){
  if(!state?.school)return;
  window.SDF_UI_V219?.refresh?.(force);
  window.SDF_UI_V220?.refresh?.(force);
+ window.SDF_JOURNEY?.render?.();
 }
 function scheduleUi(force=false){
  if(!force&&document.body.classList.contains('app-building'))return;
@@ -7719,6 +7728,181 @@ window.SDF_UI_V232={version:VERSION,build:BUILD,refresh,scheduleRefresh,makeResp
 
 (()=>{
 'use strict';
+const KEY='SDF_USAGE_V236',URL='https://fwnvwkffxazwsmaiqayj.supabase.co/functions/v1/usage-reporting';
+const EVENTS=new Set(['session','dynasty_started','game_completed','season_completed','first_recruit','practice_chosen','first_game','second_season','guide_started','guide_dismissed','guide_completed','shop_opened','preview_opened','checkout_started','checkout_canceled','checkout_failed','checkout_pending','purchase_confirmed','reward_shown','reward_earned','reward_failed','interstitial_shown']);
+const PRODUCTS=new Set(['commissioner_mode','remove_ads','player_editor','team_editor']);
+let data;try{data=JSON.parse(localStorage.getItem(KEY)||'null')}catch{}
+if(!data||!Array.isArray(data.queue))data={consent:null,queue:[]};
+data.queue=data.queue.slice(-500);
+let busy=false,timer=null,retry=5000,lastSession=0;
+const uuid=()=>crypto.randomUUID();
+const native=()=>!!(window.Capacitor?.isNativePlatform?.()||window.Capacitor?.getPlatform?.()==='android');
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(data))}catch{}};
+function record(event,product){
+ if(data.consent!==true||!EVENTS.has(event))return;
+ data.id ||= uuid();const item={id:uuid(),event,at:new Date().toISOString()};
+ if(PRODUCTS.has(product))item.product=product;
+ data.queue.push(item);data.queue=data.queue.slice(-500);save();schedule();
+}
+function schedule(ms=1500){if(timer||data.consent!==true||!data.queue.length)return;timer=setTimeout(()=>{timer=null;flush()},ms)}
+async function flush(){
+ if(busy||data.consent!==true||!data.queue.length||navigator.onLine===false)return;
+ busy=true;const id=data.id,batch=data.queue.slice(0,40),controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),10000);
+ try{
+  const response=await fetch(URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'events',device:id,platform:native()?'android':'browser',build:236,qa:!native()&&location.hostname!=='saturdaydynasty.ctoolis.workers.dev',events:batch}),signal:controller.signal,credentials:'omit'});
+  if(!response.ok)throw new Error('Usage delivery unavailable');
+  const result=await response.json();if(result.ok!==true)throw new Error('Usage delivery not acknowledged');
+  if(data.id===id&&data.consent===true){const ids=new Set(batch.map(e=>e.id));data.queue=data.queue.filter(e=>!ids.has(e.id));save()}
+  retry=5000;
+ }catch{retry=Math.min(retry*2,300000)}finally{clearTimeout(timeout);busy=false;schedule(retry)}
+}
+function session(){const now=Date.now();if(data.consent===true&&now-lastSession>=1800000){lastSession=now;record('session')}}
+function choose(value){
+ data.consent=value===true;
+ if(!data.consent){data.queue=[];delete data.id;clearTimeout(timer);timer=null;lastSession=0}
+ save();if(data.consent)session();renderConsent();
+}
+function renderConsent(){
+ const settings=document.querySelector('#appSettingsModal .modal-body')||document.querySelector('#appSettingsModal .release-settings');
+ if(settings&&!document.getElementById('usageSettingsV236')){
+  const card=document.createElement('section');card.id='usageSettingsV236';card.className='settings-section';
+  card.innerHTML='<h3>Help improve Saturday Dynasty</h3><p>Optional usage reporting sends game and season completions, new dynasties, feature use, ad displays and purchase outcomes, with app version and a random device ID. It does not send your save, player names or account email. Reporting is separate from ad consent.</p><label><input type="checkbox" id="usageEnabledV236"> Share usage statistics</label><p>You can turn this off here at any time. <a href="usage-privacy.html" target="_blank" rel="noopener">Usage privacy details</a></p>';
+  settings.append(card);document.getElementById('usageEnabledV236').onchange=e=>choose(e.target.checked);
+ }
+ const checkbox=document.getElementById('usageEnabledV236');if(checkbox)checkbox.checked=data.consent===true;
+ const host=document.getElementById('gameCommandCenterV219')||document.querySelector('#schoolScreen .dynasty-start-actions')?.parentElement;let card=document.getElementById('usageConsentV236');
+ if(data.consent!==null){card?.remove();return}
+ if(host&&!card){card=document.createElement('section');card.id='usageConsentV236';card.className='journey-card';card.innerHTML='<div class="journey-heading"><div><small>HELP SHAPE THE GAME</small><h3>Share usage statistics?</h3><p>Send game activity, ad displays and purchase outcomes with a random device ID to help improve the game. Your dynasty save and account email stay out of reports.</p></div></div><div class="journey-actions"><button type="button" class="btn neutral" data-usage-no>No thanks</button><button type="button" class="btn primary" data-usage-yes>Allow reporting</button><a href="usage-privacy.html" target="_blank" rel="noopener">Details</a></div>';host.append(card);card.querySelector('[data-usage-no]').onclick=()=>choose(false);card.querySelector('[data-usage-yes]').onclick=()=>choose(true)}
+}
+// Baseline historical saves on first observation. Reloads and old results are not new games.
+function observe(s){
+ if(!s?.school)return;
+ const keys=(s.schedule||[]).filter(g=>g.result).map(g=>String(g.week));
+ let mark=s.usageProgressV236;
+ if(!mark){s.usageProgressV236={year:s.year,games:keys,seasonDone:!!s.seasonDone};return}
+ if(Number(mark.year)!==Number(s.year)){mark=s.usageProgressV236={year:s.year,games:[],seasonDone:false}}
+ let changed=false;
+ for(const key of keys)if(!mark.games.includes(key)){mark.games.push(key);record('game_completed');changed=true}
+ if(s.seasonDone&&!mark.seasonDone){mark.seasonDone=true;record('season_completed');changed=true}
+ if(changed)window.SDF_RELEASE_TEST?.scheduleSave?.('Usage progress checkpoint',200,false);
+}
+window.SDF_USAGE={record,observe,choose,flush,render:renderConsent,session,status:()=>({consent:data.consent,queued:data.queue.length})};
+function init(){renderConsent();session();schedule();window.addEventListener('online',()=>flush());document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){session();flush()}})}
+document.readyState==='loading'?document.addEventListener('DOMContentLoaded',init,{once:true}):init();
+})();
+
+(()=>{
+'use strict';
+const $=id=>document.getElementById(id);
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const current=()=>typeof state!=='undefined'&&state?.school?state:null;
+const KEY='SDF_DEVICE_DIAGNOSTICS_V236';
+const EVENTS=new Set(['session','dynasty_started','first_recruit','practice_chosen','first_game','second_season','guide_started','guide_dismissed','guide_completed','shop_opened','preview_opened','checkout_started','checkout_canceled','checkout_failed','checkout_pending','purchase_confirmed','reward_shown','reward_earned','reward_failed']);
+const PRODUCTS=new Set(['commissioner_mode','remove_ads','player_editor','team_editor']);
+let diagnostics;try{diagnostics=JSON.parse(localStorage.getItem(KEY)||'null')}catch{}
+if(!diagnostics||!Array.isArray(diagnostics.events))diagnostics={version:1,enabled:true,events:[]};
+diagnostics.events=diagnostics.events.slice(-400);
+function persistDiagnostics(){try{localStorage.setItem(KEY,JSON.stringify(diagnostics))}catch{}}
+function record(event,product){
+ if(event!=='session')window.SDF_USAGE?.record(event,product);
+ if(!diagnostics.enabled||!EVENTS.has(event))return;
+ const entry={event,at:new Date().toISOString()};if(PRODUCTS.has(product))entry.product=product;
+ diagnostics.events.push(entry);diagnostics.events=diagnostics.events.slice(-400);persistDiagnostics();
+}
+let lastSession=0;
+function session(){const now=Date.now();if(now-lastSession>=1800000){record('session');lastSession=now}}
+function diagnosticReport(){return{build:236,scope:'This device only; no online reporting',enabled:diagnostics.enabled,counts:diagnostics.events.reduce((a,e)=>(a[e.event]=(a[e.event]||0)+1,a),{}),events:diagnostics.events.map(e=>({...e}))}}
+function downloadReport(){const url=URL.createObjectURL(new Blob([JSON.stringify(diagnosticReport(),null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='Saturday-Dynasty-Device-Diagnostics.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+function ensureJourney(s){
+ if(!s.coachJourneyV236)s.coachJourneyV236={eligible:Number(s.year)===1&&Number(s.week)===1&&!(s.schedule||[]).some(g=>g.result),active:false,dismissed:false,done:{},observed:{}};
+ return s.coachJourneyV236;
+}
+function progress(s){
+ const j=ensureJourney(s);return{
+ recruit:!!j.done.recruit||(s.recruits||[]).some(r=>r.onBoard)||(s.commits||[]).length>0,
+ practice:!!j.done.practice,
+ game:!!j.done.game||(s.schedule||[]).some(g=>!!g.result)
+ };
+}
+function observe(s){
+ const j=ensureJourney(s),p=progress(s);let changed=false;
+ for(const [key,event] of [['recruit','first_recruit'],['game','first_game']])if(p[key]&&!j.done[key]){j.done[key]=true;changed=true;if(j.eligible)record(event)}
+ if(Number(s.year)>=2&&!j.observed.secondSeason){j.observed.secondSeason=true;changed=true;if(j.observed.started)record('second_season')}
+ if(j.active&&Object.values(p).every(Boolean)&&!j.completed){j.completed=true;j.active=false;changed=true;record('guide_completed')}
+ if(changed)window.SDF_RELEASE_TEST?.scheduleSave?.('Coach journey updated',200,false);
+ return p;
+}
+function briefing(s){
+ const cards=[],uid=String(s.school.id),board=(s.recruits||[]).filter(r=>r.onBoard&&!r.committedTo);
+ const mover=board.filter(r=>Number.isFinite(Number(r.interestTrend?.[uid]))&&Math.abs(Number(r.interestTrend[uid]))>=1).sort((a,b)=>Math.abs(b.interestTrend[uid])-Math.abs(a.interestTrend[uid]))[0];
+ if(mover){const change=Number(mover.interestTrend[uid]);cards.push({label:'Recruiting movement',title:mover.name,text:`${mover.pos||'Prospect'} · Interest ${change>0?'up':'down'} ${Math.abs(change).toFixed(1)} points since the last race update. Review the competition before your next move.`,tab:'recruiting'})}
+ else cards.push({label:'Recruiting',title:board.length?`${board.length} active targets`:'Build your recruiting board',text:`${Number(s.weeklyHours)||0} hours available. Focus on team needs and prospects whose priorities fit your program.`,tab:'recruiting'});
+ const hurt=(s.roster||[]).filter(p=>!!p.injury),unhappy=(s.roster||[]).filter(p=>Number.isFinite(p.morale)&&p.morale<50).sort((a,b)=>a.morale-b.morale)[0];
+ if(hurt.length)cards.push({label:'Roster watch',title:`${hurt.length} player${hurt.length===1?'':'s'} unavailable`,text:`${hurt.slice(0,2).map(p=>p.name).join(', ')}. Check injuries and your rotation before kickoff.`,tab:'roster'});
+ else if(unhappy)cards.push({label:'Player check-in',title:unhappy.name,text:`Morale ${Math.round(unhappy.morale)}/99. Review playing time, goals and any promises before deciding what to change.`,tab:'roster'});
+ else cards.push({label:'Preparation',title:s.weeklyPractice||'Balanced',text:'Your current practice focus. Review the opponent and choose the preparation that fits this matchup.',tab:'gameplan'});
+ const next=(s.schedule||[]).find(g=>!g.result&&Number(g.week)>=Number(s.week));
+ cards.push(next?{label:`Next up · Week ${next.week}`,title:next.opponent||'Next matchup',text:`${next.home?'Home':'Away'}${next.conference?' · Conference game':''}. ${next.weather||'Check the matchup'} · Your next chance to move the season forward.`,tab:'gameday'}:{label:'Keep building',title:'Your next chapter',text:'Review your season, development and the next offseason decision in the Season Hub.',tab:'postseason'});
+ return cards;
+}
+function saveJourney(reason){window.SDF_RELEASE_TEST?.scheduleSave?.(reason,100,false)}
+function setGuide(active){const s=current();if(!s)return;const j=ensureJourney(s);j.active=active;j.dismissed=!active;if(active){j.eligible=true;record('guide_started')}else record('guide_dismissed');saveJourney('First-week guide');render()}
+function renderGuide(s,host){
+ const j=ensureJourney(s),p=progress(s);let panel=$('coachFirstWeekV236');
+ if(!j.eligible||j.dismissed||j.completed){panel?.remove();return}
+ if(!panel){panel=document.createElement('section');panel.id='coachFirstWeekV236';panel.className='journey-card';host.prepend(panel)}
+ const done=Object.values(p).filter(Boolean).length;
+ const steps=[['recruit','Choose a recruit','Add a prospect to your board.','recruiting'],['practice','Prepare your team','Choose a weekly practice focus.','gameplan'],['game','Play your first game','Watch or simulate a game to its final score.','gameday']];
+ panel.innerHTML=`<div class="journey-heading"><div><small>COACH’S FIRST WEEK</small><h3>${j.active?'Learn by coaching':'Three decisions. Your first Saturday.'}</h3><p>${j.active?`${done} of 3 complete · Your progress saves with this dynasty.`:'An optional guide through recruiting, preparation and your first game.'}</p></div><button type="button" class="journey-text" data-journey-dismiss>${j.active?'Stop guide':'Not now'}</button></div>${j.active?`<ol class="journey-steps">${steps.map(([key,title,copy,tab],i)=>`<li class="${p[key]?'complete':''}"><span class="journey-number" aria-hidden="true">${p[key]?'✓':i+1}</span><div><b>${esc(title)}${p[key]?' · Done':''}</b><p>${esc(copy)}</p></div><button type="button" class="btn neutral" data-journey-tab="${tab}">${p[key]?'Review':'Open'}</button></li>`).join('')}</ol>`:'<button type="button" class="btn primary" data-journey-start>Guide my first week</button>'}`;
+ panel.querySelector('[data-journey-dismiss]').onclick=()=>setGuide(false);panel.querySelector('[data-journey-start]')?.addEventListener('click',()=>setGuide(true));
+ panel.querySelectorAll('[data-journey-tab]').forEach(b=>b.onclick=()=>navigate(b.dataset.journeyTab));
+}
+function navigate(tab){window.SDF_HELP?.close?.();window.showTab?.(tab);if(tab==='gameplan')setTimeout(()=>{const button=[...document.querySelectorAll('#gameplanTab .ui-section-chip')].find(b=>b.textContent.trim()==='Practice');button?.click()},50)}
+function render(){
+ const s=current();if(!s)return;observe(s);window.SDF_USAGE?.observe(s);
+ const host=$('gameCommandCenterV219');if(!host)return;
+ renderGuide(s,host);
+ let panel=$('coachBriefV236');if(!panel){panel=document.createElement('section');panel.id='coachBriefV236';panel.className='journey-card journey-brief';host.append(panel)}
+ const html=`<div class="journey-heading"><div><small>YOUR WEEK AT A GLANCE</small><h3>Coach’s briefing</h3></div><span class="journey-week">Year ${Number(s.year)||1} · Week ${Number(s.week)||1}</span></div><div class="journey-brief-grid">${briefing(s).map(c=>`<button type="button" class="journey-brief-item" data-brief-tab="${c.tab}"><small>${esc(c.label)}</small><b>${esc(c.title)}</b><span>${esc(c.text)}</span><em>Review →</em></button>`).join('')}</div>`;
+ if(panel.innerHTML!==html){panel.innerHTML=html;panel.querySelectorAll('[data-brief-tab]').forEach(b=>b.onclick=()=>navigate(b.dataset.briefTab))}
+ renderGuideHint(s);
+ window.SDF_USAGE?.render();
+}
+function renderGuideHint(s){
+ document.querySelectorAll('.journey-inline-hint').forEach(n=>n.remove());
+ if(!ensureJourney(s).active)return;
+ const p=progress(s),active=String(window.SDF_RELEASE_TEST?.ui?.activeTab||'dashboard');
+ const copy={recruiting:p.recruit?'Recruit selected. Next, choose your practice focus in Game Plan.':'First-week guide: add a prospect using Add Board. Look for a position your roster needs.',gameplan:p.practice?'Practice chosen. You’re ready for Game Day.':'First-week guide: open Practice and choose a focus. Balanced is a valid choice.',gameday:p.game?'First game complete. Return Home to review your progress.':'First-week guide: watch or simulate your matchup. The step completes at the final score.'}[active];
+ if(!copy)return;const screen=$(active+'Tab');if(!screen)return;const hint=document.createElement('aside');hint.className='journey-inline-hint';hint.innerHTML=`<p>${esc(copy)}</p><button type="button" class="journey-text">Stop guide</button>`;hint.querySelector('button').onclick=()=>{setGuide(false);document.querySelectorAll('.journey-inline-hint').forEach(n=>n.remove())};screen.prepend(hint);
+}
+function newDynasty(){const s=current();if(!s)return;const j=ensureJourney(s);if(!j.observed.started){j.observed.started=true;record('dynasty_started');saveJourney('Dynasty journey started')}render()}
+function practiceChosen(){const s=current();if(!s)return;const j=ensureJourney(s);if(!j.done.practice){j.done.practice=true;record('practice_chosen');saveJourney('Practice preparation complete')}render()}
+function installSettings(){
+ const host=document.querySelector('#appSettingsModal .modal-body')||document.querySelector('#appSettingsModal .release-settings');if(!host||$('deviceDiagnosticsV236'))return;
+ const panel=document.createElement('section');panel.id='deviceDiagnosticsV236';panel.className='settings-section';
+ panel.innerHTML='<h3>Device diagnostics</h3><p>Keep a small activity and checkout log on this device. Nothing is uploaded automatically. Export it only if you want to share it for support.</p><label><input type="checkbox" id="journeyDiagnosticsEnabled"> Keep device diagnostics</label><div class="journey-actions"><button type="button" class="btn neutral" id="journeyExport">Export diagnostics</button><button type="button" class="btn neutral" id="journeyClear">Clear diagnostics</button><button type="button" class="btn neutral" id="journeyReplay">Open first-week guide</button></div><p id="journeyDiagnosticStatus" role="status"></p>';
+ host.append(panel);$('journeyDiagnosticsEnabled').checked=!!diagnostics.enabled;$('journeyDiagnosticsEnabled').onchange=e=>{diagnostics.enabled=e.target.checked;persistDiagnostics()};$('journeyExport').onclick=downloadReport;$('journeyClear').onclick=()=>{diagnostics.events=[];persistDiagnostics();$('journeyDiagnosticStatus').textContent='Device log cleared.'};$('journeyReplay').onclick=()=>{if(!current()){$('journeyDiagnosticStatus').textContent='Start or load a dynasty first.';return}const j=ensureJourney(current());if(Object.values(progress(current())).every(Boolean)){$('journeyDiagnosticStatus').textContent='You have completed the first-week steps. The full reference walkthroughs remain in Help.';return}j.completed=false;setGuide(true);window.SDF_SETTINGS?.close?.();window.showTab?.('dashboard')};
+}
+function previewModel(input={}){return{name:String(input.name||'Saturday State').slice(0,38),color:/^#[0-9a-f]{6}$/i.test(input.color||'')?input.color:'#38bfa7',player:String(input.player||'Jordan Carter').slice(0,32),ovr:Math.max(40,Math.min(99,Number(input.ovr)||76))}}
+function openPreview(){
+ record('preview_opened');let dialog=$('commissionerPreviewV236');if(!dialog){dialog=document.createElement('dialog');dialog.id='commissionerPreviewV236';dialog.className='journey-preview';document.body.append(dialog)}
+ dialog.innerHTML='<header class="journey-heading"><div><small>COMMISSIONER MODE</small><h2>Make the program yours.</h2></div><button type="button" class="journey-text" id="previewClose" aria-label="Close Commissioner preview">Close</button></header><p class="journey-preview-note">Interactive sample · Changes stay here. Your dynasty is untouched.</p><div class="journey-preview-grid"><div class="journey-preview-card" id="previewCard"><div class="journey-sample-crest" aria-hidden="true">SD</div><small>SAMPLE PROGRAM</small><h3 id="previewTeamName"></h3><div class="journey-sample-field" aria-hidden="true"><span>50</span></div><div class="journey-sample-player"><div><small>SAMPLE QUARTERBACK</small><b id="previewPlayerName"></b></div><strong id="previewRating"></strong></div></div><div class="journey-preview-fields"><label>Program name<input id="previewName" maxlength="38" value="Saturday State"></label><label>Team color<input id="previewColor" type="color" value="#38bfa7"></label><label>Player name<input id="previewPlayer" maxlength="32" value="Jordan Carter"></label><label>Player overall <output id="previewRatingLabel">76</output><input id="previewOvr" type="range" min="40" max="99" value="76"></label></div></div><ul class="journey-preview-benefits"><li>Customize team identity, colors, stadium and league alignment.</li><li>Edit player names, ratings and development.</li><li>Remove forced ads. Optional sponsor videos remain available.</li></ul><div class="journey-actions"><button type="button" class="btn primary" id="previewShop">See permanent upgrades</button><button type="button" class="btn neutral" id="previewReset">Reset sample</button></div><p class="journey-preview-note">Preview artwork illustrates your choices; it is not a new 3D game view. Prices and ownership are shown in the shop.</p>';
+ const paint=()=>{const m=previewModel({name:$('previewName').value,color:$('previewColor').value,player:$('previewPlayer').value,ovr:$('previewOvr').value});$('previewTeamName').textContent=m.name;$('previewPlayerName').textContent=m.player;$('previewRating').textContent=m.ovr;$('previewRatingLabel').textContent=m.ovr;$('previewCard').style.setProperty('--preview-accent',m.color)};
+ dialog.querySelectorAll('input').forEach(n=>n.oninput=paint);$('previewClose').onclick=()=>dialog.close();$('previewShop').onclick=()=>{dialog.close();window.SDF_ANDROID_COMMERCE?.openShop?.()};$('previewReset').onclick=()=>{$('previewName').value='Saturday State';$('previewColor').value='#38bfa7';$('previewPlayer').value='Jordan Carter';$('previewOvr').value='76';paint()};paint();dialog.showModal();$('previewClose').focus();
+}
+function refreshAfterAction(){setTimeout(()=>{const s=current();if(s)render()},0)}
+for(const name of ['toggleBoard','recruitAction','setPlan']){const original=window[name];if(typeof original==='function')window[name]=function(...args){const result=original.apply(this,args);refreshAfterAction();return result}}
+const originalPractice=window.choosePracticeFocus;if(typeof originalPractice==='function')window.choosePracticeFocus=function(...args){const result=originalPractice.apply(this,args);practiceChosen();return result};
+const originalShow=window.showTab;if(typeof originalShow==='function')window.showTab=function(...args){const result=originalShow.apply(this,args);refreshAfterAction();return result};
+// Automatic startup offers an action-based guide; the full reference tour remains in Help.
+window.startTutorial=()=>{const s=current();if(s){ensureJourney(s);render()}return false};
+window.SDF_JOURNEY={render,newDynasty,isGuided:()=>!!current()?.coachJourneyV236?.active,record,diagnosticReport,openPreview,previewModel,briefing,progress};
+function init(){session();installSettings();render();document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')session()})}
+document.readyState==='loading'?document.addEventListener('DOMContentLoaded',init,{once:true}):init();
+})();
+
+(()=>{
+'use strict';
 const VERSION='1.7.6';
 const v163=window.SDF_V163||{};
 const v170=window.SDF_V170||{};
@@ -7773,6 +7957,7 @@ install('start',function(...args){
   v170.lifecycle?.afterStart?.(value);
   v197.ensureWorldParity?.();
   v198.ensure?.();
+  window.SDF_JOURNEY?.newDynasty?.();
   window.renderAll?.();
   return value
  })
@@ -7858,6 +8043,7 @@ install('renderAll',function(...args){
   result=v194.lifecycle?.afterRender?.(result)??result;
   result=clean.lifecycle?.afterRender?.(result)??result;
   window.SDF_UI_V221?.afterRender?.();
+  window.SDF_JOURNEY?.render?.();
   return result
  }finally{rendering=false}
 });

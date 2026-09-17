@@ -6,3 +6,6 @@ verify_jwt = false
 
 [functions.send-feedback]
 verify_jwt = false
+
+[functions.usage-reporting]
+verify_jwt = false
