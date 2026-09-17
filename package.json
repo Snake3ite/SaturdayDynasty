@@ -1,0 +1,10 @@
+{
+  "name": "saturday-dynasty-web",
+  "private": true,
+  "scripts": {
+    "test": "node tests/browser-saves.cjs"
+  },
+  "devDependencies": {
+    "fake-indexeddb": "6.2.4"
+  }
+}

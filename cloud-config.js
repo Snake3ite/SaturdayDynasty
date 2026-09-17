@@ -25,11 +25,14 @@ window.SDF_CLOUD_CONFIG={
  let owner=get(OWNER_KEY);
  if(initialUid&&!owner){owner=initialUid;set(OWNER_KEY,owner)}
  const accountKey=()=>uidFrom(get(SESSION_KEY))||get(OWNER_KEY)||'guest';
+ let activeAccount=accountKey();
+ window.SDF_ACCOUNT_SCOPE={databaseName:()=>`${DB_NAME}:${activeAccount}`,switching:false};
+ window.addEventListener('storage',event=>{if((event.key===SESSION_KEY||event.key===OWNER_KEY)&&accountKey()!==activeAccount){window.SDF_ACCOUNT_SCOPE.switching=true;Promise.resolve(window.SDF_BROWSER_SAVE_BRIDGE?.flush()).finally(()=>location.reload())}});
  const idbProto=typeof indexedDB!=='undefined'?Object.getPrototypeOf(indexedDB):null;
  const rawOpen=idbProto?.open;
  if(rawOpen){
   idbProto.open=function(name,version){
-   const scoped=name===DB_NAME?`${DB_NAME}:${accountKey()}`:name;
+   const scoped=name===DB_NAME?`${DB_NAME}:${activeAccount}`:name;
    return version===undefined?rawOpen.call(this,scoped):rawOpen.call(this,scoped,version);
   };
  }
@@ -46,15 +49,16 @@ window.SDF_CLOUD_CONFIG={
    const nextUid=uidFrom(value),prevOwner=get(OWNER_KEY);
    if(nextUid){
     if(prevOwner&&prevOwner!==nextUid){
-     for(const slot of ['1','2','3'])remove(`${PREFIX}_slot${slot}`);
+     window.SDF_ACCOUNT_SCOPE.switching=true;
+     for(const slot of ['1','2','3']){remove(`${PREFIX}_slot${slot}`);remove(`${PREFIX}_slot${slot}_backup`);remove(`sdf-v170-recovery-${slot}`)}
      set(OWNER_KEY,nextUid);
      rawSet.call(this,key,value);
      // web-shell immediately starts a cloud sync. Reload before its first network read
      // completes, then restore only the newly signed-in account's scoped mirror/cloud slots.
-     setTimeout(()=>location.reload(),0);
+     Promise.resolve(window.SDF_BROWSER_SAVE_BRIDGE?.flush()).finally(()=>location.reload());
      return;
     }
-    if(!prevOwner)set(OWNER_KEY,nextUid);
+    if(!prevOwner){set(OWNER_KEY,nextUid);activeAccount=nextUid;rawSet.call(this,key,value);window.SDF_BROWSER_SAVE_BRIDGE?.persistCurrent();return;}
    }
   }
   return rawSet.call(this,key,value);

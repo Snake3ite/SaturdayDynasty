@@ -7,15 +7,17 @@ const STORE='saves';
 const SESSION_KEY='SDF_SUPABASE_SESSION';
 const DELETED_KEY='SDF_CLOUD_DELETED_SLOTS';
 const cfg=()=>window.SDF_CLOUD_CONFIG||{};
-let dbPromise=null;
+let dbPromise=null;let dbScope=null;
 let session=null;
 let cloudBusy=false;
 let cloudTimer=null;
 
 function openDb(){
- if(dbPromise)return dbPromise;
+ const scope=window.SDF_ACCOUNT_SCOPE?.databaseName()||DB_NAME;
+ if(dbPromise&&dbScope===scope)return dbPromise;
+ dbScope=scope;
  dbPromise=new Promise((resolve,reject)=>{
-  const req=indexedDB.open(DB_NAME,DB_VERSION);
+  const req=indexedDB.open(scope,DB_VERSION);
   req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains(STORE))db.createObjectStore(STORE,{keyPath:'slot'})};
   req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);
  });
@@ -39,8 +41,11 @@ async function refreshSession(force=false){
  if(!force&&expiresAt&&expiresAt-Date.now()>60000)return true;
  try{const r=await rawApi('/auth/v1/token?grant_type=refresh_token',{method:'POST',skipAuth:true,body:JSON.stringify({refresh_token:session.refresh_token})});if(!r.ok){saveSession(null);return false}saveSession(await r.json());return true}catch{return false}
 }
+function assertAccount(){if(window.SDF_ACCOUNT_SCOPE?.switching)throw new Error('Account changed; reloading saved dynasties.')}
 async function api(path,options={}){
+ assertAccount();
  if(session?.refresh_token&&!path.startsWith('/auth/v1/'))await refreshSession(false);
+ assertAccount();
  let r=await rawApi(path,options);
  if(r.status===401&&session?.refresh_token&&!path.startsWith('/auth/v1/')){if(await refreshSession(true))r=await rawApi(path,options)}
  return r;
@@ -61,8 +66,10 @@ async function putCloudSlot(slot,local){if(!session?.user?.id||!local)return;con
 let cloudReloadNeeded=false;
 async function applyCloudSlot(slot,row){const raw=JSON.stringify(row.save_data);localStorage.setItem(`${PREFIX}_slot${slot}`,raw);await idbPut(slot,raw);clearDeleted(slot);try{window.SDF_RELEASE_TEST?.renderSaveManager?.()}catch{}if(typeof state!=='undefined'&&state?.school&&String(state.saveSlot||'1')===String(slot))cloudReloadNeeded=true}
 async function syncSlot(slot,{preferLocal=false}={}){
+ assertAccount();
  if(!session?.user?.id)return;
  const local=getLocal(slot),remote=await getCloudSlot(slot),localTime=Number(local?.savedAt||0),remoteTime=Number(remote?.saved_at||0),deletedAt=tombstone(slot);
+ assertAccount();
  if(deletedAt){if(!remote){clearDeleted(slot);return}if(deletedAt>=remoteTime){await deleteCloudSlot(slot);return}clearDeleted(slot)}
  if(local&&!remote)return putCloudSlot(slot,local);
  if(!local&&remote)return applyCloudSlot(slot,remote);

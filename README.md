@@ -4,7 +4,7 @@ Browser/PWA edition of Saturday Dynasty Football for desktop and mobile browsers
 
 ## Cloudflare Pages
 
-The repository uses `build_web.py` to unpack the configured browser package into `dist/` for Cloudflare Pages.
+The repository uses `build_web.py` to assemble the Build235 assets in `shared-app/` with browser-specific integrations into `dist/`. The existing `wrangler.jsonc` serves that output through the Saturday Dynasty Cloudflare Worker.
 
 Cloudflare settings:
 
@@ -14,9 +14,7 @@ Cloudflare settings:
 - Build output directory: `dist`
 - Root directory: leave blank / repository root
 
-The configured browser package must be uploaded to the repository root with this exact filename:
-
-`SaturdayDynasty_Web_Beta_Configured.zip`
+Run `python build_web.py` to build. Run `npm ci` and `npm test` for browser-save regression tests. The old configured ZIP and delta builders are retained as historical sources; they are no longer inputs to the active builder.
 
 ## Supabase
 
