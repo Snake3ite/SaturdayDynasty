@@ -1,0 +1,58 @@
+/* V27.4.19 Build 220 — Home Flow & Coach Creation Polish */
+.ui-dashboard-detail-nav-v220{margin-top:0;margin-bottom:10px;align-items:center;border-color:color-mix(in srgb,var(--team-secondary,#22d3ee) 22%,#193447);background:linear-gradient(180deg,rgba(7,24,36,.98),rgba(5,16,25,.96))}
+.ui220-nav-kicker{flex:0 0 auto;padding:0 4px;color:#6f91a4;font-size:.52rem;font-weight:950;letter-spacing:.14em}
+#dashboardTab .ui-command-center-v219{margin-bottom:8px}
+#dashboardTab .stack>.ui-dashboard-detail-nav-v220+section.surface{margin-top:0}
+
+/* Coach goals remain easy to find without taking over the whole Home screen. */
+#seasonGoalsV170.ui220-compact-goals{padding:11px 12px}
+#seasonGoalsV170.ui220-compact-goals .section-head{margin-bottom:8px;align-items:center}
+#seasonGoalsV170.ui220-compact-goals .section-head p{display:none}
+#seasonGoalsV170.ui220-compact-goals .section-head h2{margin:2px 0 0;font-size:1rem}
+#seasonGoalsV170.ui220-compact-goals .section-head .eyebrow{font-size:.56rem}
+#seasonGoalsV170.ui220-compact-goals .viz-badge{font-size:.61rem;padding:5px 8px;white-space:nowrap}
+#seasonGoalsV170.ui220-compact-goals .v170-goal-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+#seasonGoalsV170.ui220-compact-goals .v170-goal{position:relative;gap:6px;min-height:54px;padding:8px;border-radius:9px;align-items:flex-start;overflow:hidden}
+#seasonGoalsV170.ui220-compact-goals .v170-goal>span{font-size:.86rem;line-height:1.15;margin-top:1px}
+#seasonGoalsV170.ui220-compact-goals .v170-goal b{display:block;font-size:.68rem;line-height:1.22}
+#seasonGoalsV170.ui220-compact-goals .v170-goal small{font-size:.54rem;line-height:1.18;margin-top:3px}
+#seasonGoalsV170.ui220-compact-goals:after{content:"Goals complete  " attr(data-goal-progress);display:block;margin-top:7px;color:#7899aa;font-size:.52rem;font-weight:850;letter-spacing:.04em}
+
+/* Coach creation is now a compact setup sheet instead of one long stack of duplicate cards. */
+.coach-create-modal-v220 .modal-card{display:flex!important;flex-direction:column!important;overflow:hidden!important}
+.coach-create-modal-v220 #modalBody{flex:1 1 auto;min-height:0;overflow-y:auto!important;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding-bottom:14px!important;scroll-padding:18px 0}
+.coach-create-modal-v220 .new-dynasty-setup{display:grid;gap:12px;min-height:0!important;padding-bottom:2px}
+.coach-create-modal-v220 .new-dynasty-team-head{gap:10px;padding:2px 34px 10px 0}
+.coach-create-modal-v220 .new-dynasty-team-head img{width:52px;height:52px}
+.coach-create-modal-v220 .new-dynasty-team-head h2{font-size:1.42rem;margin:2px 0}
+.coach-create-modal-v220 .new-dynasty-team-head p{font-size:.75rem}
+.coach-create-modal-v220 .new-dynasty-name{position:static!important;padding:8px!important;background:#0b1c2a!important;box-shadow:none!important;gap:5px}
+.coach-create-modal-v220 .new-dynasty-name input{min-height:43px;padding:8px 10px}
+.coach-create-modal-v220 .new-dynasty-fieldset{padding:0!important;gap:7px}
+.coach-create-modal-v220 .new-dynasty-fieldset legend{margin-bottom:5px}
+.coach-create-modal-v220 .coach-style-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px}
+.coach-create-modal-v220 .coach-style-grid .setup-choice span{position:relative;min-height:83px;padding:9px 9px 8px 38px}
+.coach-create-modal-v220 .coach-style-grid .setup-choice span:before{position:absolute;left:9px;top:10px;display:grid;place-items:center;width:23px;height:23px;border-radius:7px;background:color-mix(in srgb,var(--team-primary,#2563eb) 28%,#091725);color:var(--team-secondary,#22d3ee);font-weight:950}
+.coach-create-modal-v220 .coach-style-grid input[value="RECRUITER"]+span:before{content:"★"}.coach-create-modal-v220 .coach-style-grid input[value="DEVELOPER"]+span:before{content:"↑"}.coach-create-modal-v220 .coach-style-grid input[value="STRATEGIST"]+span:before{content:"⌁"}.coach-create-modal-v220 .coach-style-grid input[value="BUILDER"]+span:before{content:"◆"}
+.coach-create-modal-v220 .coach-style-grid .setup-choice b{font-size:.79rem;line-height:1.15}.coach-create-modal-v220 .coach-style-grid .setup-choice small{font-size:.62rem;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.coach-create-modal-v220 .setup-explanation{padding:8px 10px;border-left-width:3px}.coach-create-modal-v220 .setup-explanation-kicker{display:block!important;color:var(--team-secondary,var(--cyan))!important;font-size:.55rem!important;font-weight:950;letter-spacing:.11em;margin:0!important}.coach-create-modal-v220 .setup-benefit-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin:6px 0 0!important;padding:0!important;list-style:none}.coach-create-modal-v220 .setup-benefit-list li{padding:6px;border:1px solid rgba(255,255,255,.07);border-radius:7px;background:rgba(255,255,255,.025);font-size:.56rem;line-height:1.2;color:#9fb5c3}
+.coach-create-modal-v220 .difficulty-choice-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.coach-create-modal-v220 .difficulty-choice-grid .setup-choice span{padding:8px;min-height:58px}.coach-create-modal-v220 .difficulty-choice-grid .setup-choice b{font-size:.72rem}.coach-create-modal-v220 .difficulty-choice-grid .setup-choice small{font-size:.56rem;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.coach-create-modal-v220 .new-dynasty-summary{padding:9px}.coach-create-modal-v220 .new-dynasty-summary-grid{margin-top:5px;gap:6px}.coach-create-modal-v220 .new-dynasty-summary-grid b{font-size:.68rem}
+.coach-create-modal-v220 .new-dynasty-footer-v220{position:static!important;flex:0 0 auto;z-index:8;display:grid;grid-template-columns:1fr 1.35fr;gap:7px;margin:0!important;padding:9px 10px max(9px,env(safe-area-inset-bottom))!important;background:#07131f!important;border-top:1px solid #234152;box-shadow:0 -8px 22px rgba(0,0,0,.32)!important}
+.coach-create-modal-v220 .new-dynasty-footer-v220 .btn{min-height:44px;margin:0;font-size:.7rem}
+
+@media(max-width:760px){
+ .ui-dashboard-detail-nav-v220{top:104px}
+ #seasonGoalsV170.ui220-compact-goals .v170-goal-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .coach-create-modal-v220 .modal-card{height:calc(100dvh - max(7px,env(safe-area-inset-top)));max-height:none;padding:10px 8px 0}
+ .coach-create-modal-v220 .coach-style-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ .coach-create-modal-v220 .difficulty-choice-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ .coach-create-modal-v220 .difficulty-choice-grid .setup-choice:last-child{grid-column:1/-1}
+ .coach-create-modal-v220 .setup-benefit-list{grid-template-columns:1fr}
+ .coach-create-modal-v220 .new-dynasty-summary{display:none}
+}
+@media(max-width:380px){
+ #seasonGoalsV170.ui220-compact-goals .v170-goal-grid{grid-template-columns:1fr}
+ .coach-create-modal-v220 .coach-style-grid{grid-template-columns:1fr 1fr!important}
+ .coach-create-modal-v220 .coach-style-grid .setup-choice span{padding-left:34px;min-height:88px}
+}

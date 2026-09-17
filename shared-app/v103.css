@@ -1,0 +1,68 @@
+
+/* Saturday Dynasty Football V1.0.3 — usability, game day and facilities */
+.coach-checklist{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:9px;margin:0 0 14px}.checklist-card{background:#102334;border:1px solid rgba(255,255,255,.08);border-radius:13px;padding:12px;display:flex;flex-direction:column;gap:5px}.checklist-card.done{border-color:rgba(74,222,128,.35)}.checklist-card.attention{border-color:rgba(250,204,21,.42)}.checklist-card h4{margin:0}.checklist-card p{font-size:.68rem;color:var(--muted);line-height:1.45;margin:0;flex:1}.checklist-card .btn{margin-top:7px}.check-icon{font-size:1.25rem}
+.tab-section-nav{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;margin:0 0 10px;padding:4px;position:sticky;top:116px;z-index:18;background:rgba(7,17,27,.96);backdrop-filter:blur(12px);border-radius:12px}.tab-section-nav::-webkit-scrollbar{display:none}.tab-section-btn{flex:0 0 auto;border:1px solid rgba(255,255,255,.09);background:#112435;color:#b8c8d8;border-radius:999px;padding:9px 12px;font-weight:800;font-size:.7rem}.tab-section-btn.active{background:linear-gradient(135deg,var(--team-primary),var(--team-secondary));color:#fff}.tab-section-help{font-size:.64rem;color:var(--muted);margin:0 0 10px}
+.facility-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:9px;margin:12px 0}.facility-card-v103{background:linear-gradient(145deg,#14293b,#0e1d2a);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:13px;display:flex;flex-direction:column;gap:7px}.facility-card-v103.active-project{border-color:rgba(34,211,238,.5)}.facility-card-v103 h3{margin:0}.facility-level-row{display:flex;justify-content:space-between;align-items:center}.facility-level-dots{display:flex;gap:4px}.facility-level-dots span{width:18px;height:7px;border-radius:999px;background:#203548}.facility-level-dots span.on{background:linear-gradient(90deg,var(--team-primary),var(--team-secondary))}.facility-benefit{font-size:.68rem;line-height:1.45;color:#d9e8f5}.facility-recruit-impact{background:#0b1924;border-radius:9px;padding:8px;font-size:.63rem;color:#b8c8d8}.facility-project-banner{background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.3);border-radius:12px;padding:11px;margin-bottom:11px}.facility-project-banner b,.facility-project-banner span{display:block}.facility-project-banner span{color:var(--muted);font-size:.7rem}.program-path{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin-top:12px}.program-path-card{background:#102131;border-radius:12px;padding:11px}.program-path-card b,.program-path-card span{display:block}.program-path-card span{font-size:.66rem;color:var(--muted);margin-top:4px}
+.game-result-modal{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;padding:16px}.game-result-card{width:min(760px,100%);max-height:92dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;background:linear-gradient(155deg,#142b3e,#08131e);border:1px solid rgba(255,255,255,.13);border-radius:20px;padding:20px;box-shadow:0 28px 90px rgba(0,0,0,.62);position:relative}.game-final-head{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:12px;text-align:center;margin:13px 0}.game-final-team img{width:76px;height:76px;object-fit:contain}.game-final-team b{display:block}.game-final-score strong{display:block;font-size:2.6rem;line-height:1}.game-final-score span{font-size:.7rem;color:var(--muted)}.quarter-table{width:100%;min-width:0!important;margin:12px 0}.quarter-table th,.quarter-table td{text-align:center;padding:8px 5px}.quarter-table th:first-child,.quarter-table td:first-child{text-align:left}.result-summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.result-summary-grid>div{background:#0b1924;border-radius:10px;padding:9px;text-align:center}.result-summary-grid small{display:block;color:var(--muted);font-size:.58rem}.postgame-stars{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin:12px 0}.postgame-star{background:#102334;border-radius:11px;padding:10px}.postgame-actions{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:14px}
+.postseason-hero{background:linear-gradient(140deg,color-mix(in srgb,var(--team-primary) 28%,#13283b),#091722)}.postseason-guide{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:13px 0}.postseason-step{background:#102334;border:1px solid rgba(255,255,255,.07);border-radius:11px;padding:10px}.postseason-step.active{border-color:var(--team-secondary)}.postseason-step.complete{border-color:rgba(74,222,128,.4)}.postseason-step b,.postseason-step span{display:block}.postseason-step span{font-size:.61rem;color:var(--muted);margin-top:4px}.postseason-empty{padding:16px;border:1px dashed rgba(255,255,255,.15);border-radius:13px;text-align:center;color:var(--muted)}
+.recruit-program-link{background:#102334;border:1px solid rgba(34,211,238,.22);border-radius:12px;padding:11px;margin-top:10px}.recruit-program-link b,.recruit-program-link span{display:block}.recruit-program-link span{font-size:.66rem;color:var(--muted);margin:4px 0 8px}
+@media(min-width:761px){.tab-section-nav,.tab-section-help{display:none}.subview-hidden{display:block!important}}
+@media(max-width:760px){.subview-hidden{display:none!important}.tab-section-nav{top:106px;margin-left:-3px;margin-right:-3px}.coach-checklist{grid-template-columns:1fr 1fr}.game-result-modal{align-items:flex-end;padding:0}.game-result-card{max-height:94dvh;border-radius:20px 20px 0 0;padding:17px 13px calc(18px + var(--safe-bottom))}.game-final-team img{width:57px;height:57px}.game-final-team b{font-size:.72rem}.game-final-score strong{font-size:2rem}.result-summary-grid{grid-template-columns:repeat(3,1fr)}.postgame-actions{grid-template-columns:1fr}.postseason-guide{grid-template-columns:1fr 1fr}.facility-summary{grid-template-columns:1fr}.program-path{grid-template-columns:1fr 1fr}}
+
+.dynasty-start-panel{
+  background:linear-gradient(145deg,rgba(24,48,69,.96),rgba(10,24,36,.98));
+  border:1px solid rgba(34,211,238,.2);
+  border-radius:18px;
+  padding:16px;
+  margin-bottom:16px;
+}
+.save-slot-cards{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+}
+.save-slot-card{
+  border:1px solid rgba(255,255,255,.09);
+  border-radius:14px;
+  background:#0e2030;
+  padding:13px;
+  cursor:pointer;
+  min-height:134px;
+  text-align:left;
+  color:inherit;
+}
+.save-slot-card.selected{
+  border-color:var(--cyan);
+  box-shadow:0 0 0 2px rgba(34,211,238,.14);
+  background:linear-gradient(145deg,#13344a,#102332);
+}
+.save-slot-card.empty{opacity:.82}
+.save-slot-card h3{margin:3px 0 7px}
+.save-slot-card .slot-school{
+  display:flex;
+  gap:9px;
+  align-items:center;
+  margin-bottom:7px;
+}
+.save-slot-card .slot-logo{
+  width:42px;
+  height:42px;
+  object-fit:contain;
+  border-radius:9px;
+  background:rgba(255,255,255,.04);
+  padding:3px;
+}
+.save-slot-card small,.save-slot-card span{display:block}
+.dynasty-start-actions{
+  display:flex;
+  gap:9px;
+  flex-wrap:wrap;
+  margin-top:12px;
+}
+.save-slot-message{margin:10px 0 0}
+@media(max-width:760px){
+  .save-slot-cards{grid-template-columns:1fr}
+  .save-slot-card{min-height:auto}
+  .dynasty-start-actions .btn{width:100%}
+  .dynasty-start-panel{padding:13px}
+}

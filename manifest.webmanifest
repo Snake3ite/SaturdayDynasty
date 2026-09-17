@@ -1,0 +1,14 @@
+{
+  "name": "Saturday Dynasty Football",
+  "short_name": "Saturday Dynasty",
+  "description": "College football dynasty management simulation.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#061019",
+  "theme_color": "#07131f",
+  "orientation": "any",
+  "icons": [
+    {"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}
+  ]
+}

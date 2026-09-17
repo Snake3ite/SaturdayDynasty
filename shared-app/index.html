@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Saturday Dynasty Football — Broadcast Edition</title>
+<meta name="theme-color" content="#07131f">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png" sizes="192x192">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="styles.css?v=235">
+<link rel="stylesheet" href="release.css?v=216">
+<link rel="stylesheet" href="v103.css?v=215">
+<link rel="stylesheet" href="v105.css?v=215">
+<link rel="stylesheet" href="v11.css?v=215"><link rel="stylesheet" href="v111.css?v=215"><link rel="stylesheet" href="v113.css?v=215">
+<link rel="stylesheet" href="v114.css?v=215">
+<link rel="stylesheet" href="v12.css?v=215">
+<link rel="stylesheet" href="v13.css?v=215">
+<link rel="stylesheet" href="v131.css?v=215">
+<link rel="stylesheet" href="v140-monetization.css?v=215">
+<link rel="stylesheet" href="v144.css?v=215">
+<link rel="stylesheet" href="v160.css?v=215">
+<link rel="stylesheet" href="v163.css?v=215">
+<link rel="stylesheet" href="v170.css?v=215">
+<link rel="stylesheet" href="v219.css?v=219">
+<link rel="stylesheet" href="v220.css?v=220">
+<link rel="stylesheet" href="v221.css?v=221">
+<link rel="stylesheet" href="v223.css?v=223">
+<link rel="stylesheet" href="v224.css?v=224">
+<link rel="stylesheet" href="v225.css?v=225">
+<link rel="stylesheet" href="v226.css?v=226">
+<link rel="stylesheet" href="v227.css?v=227">
+<link rel="stylesheet" href="v232.css?v=235">
+<link rel="stylesheet" href="app-shell.css?v=235">
+<link rel="stylesheet" href="live-game.css?v=235">
+<link rel="stylesheet" href="navigation.css?v=235">
+</head>
+<body class="ui221-startup-mode">
+<header class="topbar">
+  <div class="brand"><img id="appTeamLogo" class="logo-img" src="icon-192.png" alt="Saturday Dynasty Football"><div><h1>Saturday Dynasty Football</h1><p id="releaseLabel">Android V27.4.34 · Build 235 · Home & Navigation</p></div></div>
+  <div class="broadcast-context"><small id="activeSectionKicker">DYNASTY FOOTBALL</small><strong id="activeSectionTitle">Select a Program</strong></div>
+  <div class="top-status">
+    <span>YEAR <b id="yearLabel">1</b></span>
+    <span>WEEK <b id="weekLabel">1</b></span>
+    <span>RECORD <b id="recordLabel">0-0</b></span>
+  </div><div id="autosaveStatus" class="autosave-status" aria-live="polite"><span class="save-dot"></span><span>Autosave ready</span></div>
+</header>
+<div id="mobileStatus" class="mobile-status hidden"><img id="mobileTeamLogo" class="mobile-team-logo" src="icon-192.png" alt="Team logo">
+  <div><small>YEAR</small><b id="mobileYear">1</b></div>
+  <div><small>WEEK</small><b id="mobileWeek">1</b></div>
+  <div><small>RECORD</small><b id="mobileRecord">0-0</b></div>
+  <button id="mobileAdvance" class="btn primary">Advance</button>
+</div>
+<main>
+<section id="schoolScreen" class="surface hero-panel">
+  <section class="launch-brand" aria-label="Saturday Dynasty Football">
+    <img src="icon-192.png" alt="Saturday Dynasty Football app logo">
+    <div>
+      <span class="eyebrow">SATURDAY DYNASTY FOOTBALL</span>
+      <h2>Build a Program. Own Saturdays.</h2>
+      <p>The new broadcast interface keeps every fictional school logo and color while giving the entire dynasty a unified football-game presentation.</p>
+    </div>
+  </section>
+  <section class="dynasty-start-panel" aria-labelledby="dynastyStartTitle">
+    <div class="section-head">
+      <div>
+        <span class="eyebrow">DYNASTY MENU</span>
+        <h2 id="dynastyStartTitle">Start or Load a Dynasty</h2>
+        <p class="muted">Nothing loads automatically. Pick a slot, then load its save—or choose a program below to begin a new dynasty.</p>
+      </div>
+    </div>
+    <div id="saveSlotCards" class="save-slot-cards"></div>
+    <div class="dynasty-start-actions">
+      <button id="loadSelectedSaveBtn" class="btn primary">Load Selected Save</button>
+      <button id="deleteSelectedSaveBtn" class="btn danger">Delete Selected Save</button>
+      <button id="newDynastyBtn" class="btn neutral">Choose a Team for New Dynasty</button>
+      <button id="openSettingsStartupBtn" class="btn neutral">⚙ Settings</button>
+    </div>
+    <p id="saveSlotMessage" class="muted save-slot-message" aria-live="polite"></p>
+  </section>
+
+  <!-- Legacy controls remain available to the startup/save engine, but the player now
+       chooses these through the save-slot cards and Create Your Coach popup. -->
+  <div class="setup-strip hidden" aria-hidden="true">
+    <label>Difficulty
+      <select id="difficultyPicker" tabindex="-1">
+        <option value="CASUAL">Casual</option>
+        <option value="STANDARD" selected>Standard</option>
+        <option value="DYNASTY">Dynasty</option>
+        <option value="COMMISSIONER">Commissioner</option>
+      </select>
+    </label>
+    <label>Save slot
+      <select id="saveSlotPicker" tabindex="-1">
+        <option value="1">Slot 1</option>
+        <option value="2">Slot 2</option>
+        <option value="3">Slot 3</option>
+      </select>
+    </label>
+  </div>
+  <div class="hero-copy">
+    <span class="eyebrow">NEW DYNASTY</span>
+    <h2>Take Control of a Program</h2>
+    <p>Recruit nationally, build pipelines, manage scholarships, develop players, survive the portal and chase championships.</p>
+  </div>
+  <div class="team-count-banner"><strong id="visibleTeamCount">128</strong><span>selectable programs</span></div>
+  <div class="toolbar team-filters">
+    <input id="teamSearch" type="search" placeholder="Search team, city, or state">
+    <select id="conferencePicker"><option value="ALL">All conferences</option></select>
+    <select id="regionPicker"><option value="ALL">All regions</option></select>
+    <select id="prestigePicker">
+      <option value="ALL">All prestige levels</option>
+      <option value="ELITE">Elite programs</option>
+      <option value="POWER">Power programs</option>
+      <option value="BUILD">Rebuilds</option>
+    </select>
+  </div>
+  <div id="schoolGrid" class="school-grid"></div>
+</section>
+
+<section id="gameScreen" class="hidden">
+  <nav class="nav-tabs" id="mainTabs">
+    <button data-tab="dashboard" class="nav-tab active">Overview</button>
+    <button data-tab="recruiting" class="nav-tab">Recruiting</button>
+    <button data-tab="roster" class="nav-tab">Roster</button>
+    <button data-tab="team" class="nav-tab">Team</button><button data-tab="gameplan" class="nav-tab">Game Plan</button><button data-tab="gameday" class="nav-tab">Game Day</button><button data-tab="coach" class="nav-tab">Coach</button><button data-tab="stats" class="nav-tab">Stats</button>
+    <button data-tab="season" class="nav-tab">Season</button><button data-tab="postseason" class="nav-tab">Postseason</button>
+    <button data-tab="program" class="nav-tab">Program</button>
+    <button data-tab="rankings" class="nav-tab">Rankings</button>
+    <button data-tab="dynasty" class="nav-tab">Dynasty</button><button data-tab="history" class="nav-tab">History</button>
+  </nav>
+
+  <section id="dashboardTab" class="tab-page">
+    <div class="dashboard-layout">
+      <aside class="surface program-card">
+        <img id="programLogo" class="program-logo" src="icon-192.png" alt="Program logo"><div class="program-mark sr-only" id="programMark">GL</div>
+        <h2 id="schoolName"></h2>
+        <div id="schoolMeta" class="muted center"></div>
+        <div id="schoolSummary"></div>
+        <button id="saveBtn" class="btn neutral full">Save Dynasty</button>
+        <button id="dynastyMenuBtn" class="btn neutral full">Dynasty Menu</button>
+        <button id="settingsBtn" class="btn neutral full settings-launch-btn">⚙ Settings</button>
+        <button id="resetBtn" class="btn danger full">Delete Current Dynasty</button>
+      </aside>
+
+      <div class="stack">
+        <section class="surface feature-panel">
+          <div class="section-head">
+            <div><span class="eyebrow">PROGRAM STATUS</span><h2>Dynasty Overview</h2></div>
+            <div class="dashboard-game-actions"><button id="openSponsorDashboardBtn" class="btn neutral">Sponsor Rewards</button><button id="watchLiveDashboardBtn" class="btn success">Watch Game Live</button><button id="advanceWeekBtn" class="btn primary">Watch This Week’s Game →</button></div>
+          </div>
+          <div id="nextGameCard" class="app-week-card"></div>
+          <div id="nextStepsPanel" class="coach-checklist"></div>
+          <div id="programCards" class="metric-grid"></div>
+        </section>
+
+        <section class="surface">
+          <div class="section-head"><div><span class="eyebrow">STAFF</span><h2>Coaching Staff</h2></div></div>
+          <div id="staffGrid" class="coach-grid"></div><div id="staffAssignments" class="assignment-grid"></div>
+        </section>
+
+        <section class="surface">
+          <div class="section-head"><div><span class="eyebrow">ROSTER BUILDING</span><h2>Team Needs</h2></div></div>
+          <div id="needsGrid" class="needs-grid"></div>
+        </section>
+
+        <section class="surface">
+          <div class="section-head"><div><span class="eyebrow">LATEST</span><h2>Program News</h2></div></div>
+          <div id="newsFeed"></div>
+        </section>
+      </div>
+    </div>
+  </section>
+
+  <section id="recruitingTab" class="tab-page hidden">
+    <div class="recruiting-mode-nav" id="recruitingModeNav">
+      <button id="highSchoolRecruitingBtn" class="btn primary">High School Recruiting</button>
+      <button id="transferPortalRecruitingBtn" class="btn neutral">Transfer Portal</button>
+    </div>
+    <section id="highSchoolRecruitingBoard" class="surface">
+      <div class="recruiting-rules">
+        <div><b>Program tiers matter.</b><span>Elite recruits expect elite opportunities, exposure, facilities, and competition.</span></div>
+        <div><b>Dealbreakers develop over time.</b><span>Early in the cycle they are warnings and interest caps; unmet dealbreakers become hard locks only when recruits narrow their lists.</span></div>
+        <div><b>Repeated pitches have diminishing returns.</b><span>Visits, pipelines, scheme fit, and promises now matter more.</span></div>
+      </div>
+      <div class="section-head recruiting-head">
+        <div>
+          <span class="eyebrow">RECRUITING CENTRAL</span>
+          <h2>National Prospect Board</h2>
+          <p class="muted">Recruiting is a school-by-school race. Interest scores are not commitment percentages: fit, location, playing time, prestige, pipelines, NIL and competing schools all matter.</p>
+        </div>
+        <div class="recruit-controls">
+          <div class="hour-box"><small>HOURS LEFT</small><strong id="hoursLabel">0</strong></div>
+          <div class="hour-box"><small>SCHOLARSHIPS</small><strong id="scholarshipLabel">0</strong></div>
+          <button id="recruitAdvanceBtn" class="btn primary">Watch This Week’s Game →</button>
+        </div>
+      </div>
+
+      <div class="recruit-inline-ad-buttons" aria-label="Weekly sponsor rewards">
+        <button id="recruitRewardHoursAdBtn" class="recruit-inline-ad-btn" type="button">
+          <span aria-hidden="true">▶</span>
+          <span>Watch for +25 Recruiting Hrs</span>
+        </button>
+        <button id="recruitRewardNilAdBtn" class="recruit-inline-ad-btn" type="button">
+          <span aria-hidden="true">▶</span>
+          <span>Watch for +$10K NIL</span>
+        </button>
+      </div>
+
+      <div id="recruitingOverview" class="metric-grid"></div>
+      <div id="cleanCoreVerification" class="android-build-verification" aria-live="polite"></div><div id="recruitingResourceGuide" class="recruiting-resource-guide"></div><div id="schoolRecruitingGrades" class="school-grade-grid"></div><div id="recruitRosterForecast" class="recruit-forecast-panel"></div>
+
+      <div class="toolbar wrap recruit-toolbar">
+        <input id="recruitSearch" type="search" placeholder="Search prospect or hometown">
+        <select id="positionFilter"><option value="ALL">All positions</option></select>
+        <select id="starFilter"><option value="ALL">All stars</option><option value="5">5-star</option><option value="4">4-star</option><option value="3">3-star</option><option value="2">2-star</option></select>
+        <select id="recruitRegionFilter"><option value="ALL">All regions</option></select>
+        <select id="statusFilter"><option value="AVAILABLE">All uncommitted</option><option value="RECRUITABLE">Recruitable now</option><option value="UNCONTACTED">Uncontacted prospects</option><option value="LATE">Late opportunities</option><option value="BOARD">My board</option><option value="OFFERED">Scholarship offered</option><option value="COMMITTED">Committed</option></select>
+        <select id="sortFilter"><option value="RANK">National rank</option><option value="INTEREST">My interest</option><option value="NEED">Team need</option><option value="DISTANCE">Distance</option><option value="FIT">Program fit</option></select>
+        <button id="autoBoardBtn" class="btn neutral">Auto-fill Board</button>
+      </div>
+
+      <div id="recruitPager" class="pager"></div><div id="recruitCardList" class="mobile-card-list"></div><div class="table-wrap desktop-data-table">
+        <table>
+          <thead><tr><th>#</th><th>Prospect</th><th>Pos</th><th>Stars</th><th>Location</th><th>Stage</th><th>OVR</th><th>UPSIDE</th><th>Scout</th><th>Need</th><th>Dealbreaker</th><th>Recruiting Race</th><th>Weekly Plan</th><th>Actions</th></tr></thead>
+          <tbody id="recruitTable"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="highSchoolCommitSection" class="surface">
+      <div class="section-head"><div><span class="eyebrow">SIGNING CLASS</span><h2>Current Commits</h2></div></div>
+      <div id="classCards" class="metric-grid"></div><div id="classBalancePanel" class="class-balance-panel"></div>
+      <div id="commitList" class="commit-grid"></div>
+    </section>
+    <section id="portalRecruitingSection" class="surface hidden">
+      <div class="section-head"><div><span class="eyebrow">TRANSFER PORTAL</span><h2>Player Movement</h2></div><button id="portalAdvanceWeekBtn" class="btn primary">Advance Portal Week</button></div>
+      <div id="portalOverviewV11" class="metric-grid"></div>
+      <div id="portalDirectionV11" class="portal-direction"></div>
+      <div class="section-head subhead"><div><span class="eyebrow">YOUR ROSTER</span><h3>Outgoing Transfers</h3></div></div>
+      <div id="portalDepartureListV11" class="portal-grid"></div>
+      <div class="section-head subhead"><div><span class="eyebrow">AVAILABLE PLAYERS</span><h3>Portal Prospects</h3></div></div>
+      <div id="portalListV11" class="portal-grid"></div>
+    </section>
+  </section>
+
+  <section id="rosterTab" class="tab-page hidden">
+    <section class="surface">
+      <div class="section-head">
+        <div><span class="eyebrow">DEPTH CHART</span><h2>Starters & Rotation</h2></div>
+        <div class="actions"><button id="autoDepthBtn" class="btn neutral">Auto-set Depth</button><button id="autoRedshirtBtn" class="btn neutral">Auto-redshirt</button></div>
+      </div>
+      <div class="section-head subhead"><div><span class="eyebrow">ROTATIONS</span><h2>Depth Chart & Snap Shares</h2></div></div>
+    <div id="depthChartManager" class="depth-manager"></div>
+    <div id="depthChart" class="depth-grid"></div>
+    </section>
+
+    <section id="injuryReportSection" class="surface">
+      <div class="section-head">
+        <div><span class="eyebrow">PLAYER AVAILABILITY</span><h2>Injury Report</h2><p class="muted">Injuries persist across games, change the active depth chart, and recover one week at a time.</p></div>
+        <button id="autoAdjustInjuriesBtn" class="btn neutral">Auto-adjust Depth Chart</button>
+      </div>
+      <div id="injurySummary" class="metric-grid"></div>
+      <div id="injuryReportList" class="injury-report-list"></div>
+      <details class="injury-history-panel">
+        <summary>Recent injury history</summary>
+        <div id="injuryHistoryList"></div>
+      </details>
+    </section>
+
+    <section class="surface">
+      <div class="section-head"><div><span class="eyebrow">PERSONNEL</span><h2>Full Roster</h2></div></div>
+      <div id="rosterSummary" class="metric-grid"></div><div class="toolbar"><input id="rosterSearch" type="search" placeholder="Search player, position, hometown"></div><div id="rosterCardList" class="mobile-card-list"></div>
+      <div class="table-wrap desktop-data-table">
+        <table>
+          <thead><tr><th>Player</th><th>Pos</th><th>Archetype</th><th>Hometown</th><th>Class</th><th>OVR</th><th>POT</th><th>DEV</th><th>Morale</th><th>Status</th><th>Portal Risk</th></tr></thead>
+          <tbody id="rosterTable"></tbody>
+        </table>
+      </div>
+    </section>
+  </section>
+
+  <section id="gameplanTab" class="tab-page hidden">
+  <section class="surface">
+    <div class="section-head"><div><span class="eyebrow">WEEKLY PREPARATION</span><h2>Opponent Scouting</h2></div></div>
+    <div id="opponentScoutPanel"></div>
+  </section>
+  <section class="surface">
+    <div class="section-head"><div><span class="eyebrow">PRACTICE PLAN</span><h2>Weekly Focus</h2></div></div>
+    <div id="practiceFocusGrid" class="choice-grid"></div>
+  </section>
+  <section class="surface">
+    <div class="section-head"><div><span class="eyebrow">GAME PLAN</span><h2>Tendencies & Matchups</h2></div></div>
+    <div id="gamePlanControls" class="gameplan-grid"></div><div id="gamePlanImpact" class="gameplan-impact"></div>
+  </section>
+</section>
+
+<section id="gamedayTab" class="tab-page hidden">
+  <section class="surface game-day-hero">
+    <div class="section-head">
+      <div><span class="eyebrow">LIVE SATURDAY</span><h2>Game Center</h2><p class="muted">Every scheduled game opens here before the dynasty week advances. Watch live or use Sim to Final inside Game Center.</p></div>
+      <div class="game-day-actions">
+        <button id="watchLiveGameBtn" class="btn success">Watch Live</button>
+        <button id="quickSimGameBtn" class="btn success">Open This Week’s Game</button>
+      </div>
+    </div>
+    <div id="gameDayMatchup"></div>
+  </section>
+  <section class="surface">
+    <div class="section-head"><div><span class="eyebrow">AVAILABILITY</span><h2>Game-Day Injury Watch</h2></div><button id="openFullInjuryReportBtn" class="btn neutral">Full Injury Report</button></div>
+    <div id="gameDayInjurySummary"></div>
+  </section>
+  <section class="surface">
+    <div class="section-head"><div><span class="eyebrow">HOW IT WORKS</span><h2>True Live Simulation</h2></div></div>
+    <div class="game-center-feature-grid">
+      <article><b>Live situation</b><span>Quarter, clock, possession, down, distance and field position update every play.</span></article>
+      <article><b>Real players</b><span>Depth-chart players receive carries, targets, tackles, sacks and injuries based on snap shares.</span></article>
+      <article><b>Persistent season impact</b><span>Stats, fatigue, visits, injuries, records and standings are written to the dynasty when the game ends.</span></article>
+    </div>
+  </section>
+</section>
+
+<section id="coachTab" class="tab-page hidden">
+  <section class="surface">
+    <div class="section-head coach-tree-title"><div><span class="eyebrow">HEAD COACH</span><h2>Coach Tree V2</h2><p class="muted">Build a coaching identity with perks that change actual dynasty systems.</p></div><div id="coachSkillSummary"></div></div>
+    <div id="coachSkillTree" class="skill-tree coach-skill-tree-v2"></div>
+  </section>
+  <section class="surface">
+    <div class="section-head">
+      <div><span class="eyebrow">COACHING STAFF</span><h2>Coordinators & Staff Management</h2><p class="muted">Manage your offensive and defensive coordinators here alongside the Head Coach tree. Coordinator Level and XP progression is shown on each staff profile.</p></div>
+    </div>
+    <div id="coachStaffManagement" class="coach-grid"></div>
+    <div class="section-head staff-coach-assignment-head"><div><span class="eyebrow">RECRUITING RESPONSIBILITIES</span><h3>Staff Recruiting Assignments</h3></div></div>
+    <div id="coachStaffAssignments" class="assignment-grid"></div>
+  </section>
+  <section class="surface">
+    <div class="section-head"><div><span class="eyebrow">TEAM MANAGEMENT</span><h2>Captains, Discipline & Academics</h2></div></div>
+    <div id="leadershipPanel"></div>
+  </section>
+</section>
+
+<section id="statsTab" class="tab-page hidden">
+  <section class="surface">
+    <div class="section-head">
+      <div><span class="eyebrow">TEAM PRODUCTION</span><h2>Season Statistics</h2></div>
+      <div class="toolbar compact">
+        <select id="statsCategory">
+          <option value="PASSING">Passing</option>
+          <option value="RUSHING">Rushing</option>
+          <option value="RECEIVING">Receiving</option>
+          <option value="DEFENSE">Defense</option>
+          <option value="KICKING">Kicking</option>
+          <option value="PUNTING">Punting</option>
+          <option value="ALL">All Players</option>
+        </select>
+      </div>
+    </div>
+    <div id="teamStatSummary" class="metric-grid"></div>
+    <div class="table-wrap player-stats-table-wrap"><table id="playerStatsTable"></table></div>
+  </section>
+  <section class="surface">
+    <div class="section-head"><div><span class="eyebrow">WEEKLY RESULTS</span><h2>Player Game Logs</h2></div></div>
+    <div id="gameLogGrid" class="game-log-grid"></div>
+  </section>
+  <section class="surface">
+    <div class="section-head"><div><span class="eyebrow">AWARDS WATCH</span><h2>National Awards Race</h2></div></div>
+    <div id="awardWatchGrid" class="award-watch-grid"></div>
+  </section>
+  <section class="surface">
+    <div class="section-head"><div><span class="eyebrow">PROGRAM ARCHIVE</span><h2>Season Stat Leaders</h2></div></div>
+    <div id="statArchiveGrid" class="stat-archive-grid"></div>
+  </section>
+  <section class="surface">
+    <div class="section-head"><div><span class="eyebrow">NATIONAL LEADERS</span><h2>Countrywide Statistics</h2></div></div>
+    <div id="nationalLeaderGrid" class="national-leader-grid"></div>
+  </section>
+  <section class="surface">
+    <div class="section-head"><div><span class="eyebrow">ALL-TIME RECORD BOOK</span><h2>National Records</h2><p class="muted">Game, season and career marks persist across the entire dynasty and can be broken by any player in the country.</p></div></div>
+    <div id="nationalRecordSummary" class="metric-grid"></div>
+    <div id="nationalRecordBookGrid"></div>
+    <div class="section-head record-history-head"><div><span class="eyebrow">RECORD BREAKERS</span><h3>Recent Record History</h3></div></div>
+    <div id="nationalRecordHistory" class="record-history-list"></div>
+  </section>
+  <section class="surface">
+    <div class="section-head"><div><span class="eyebrow">RECRUITING LANDSCAPE</span><h2>National Class Rankings</h2></div></div>
+    <div id="classRankingGrid" class="class-ranking-grid"></div>
+  </section>
+</section>
+
+<section id="teamTab" class="tab-page hidden">
+    <section class="surface">
+      <div class="section-head"><div><span class="eyebrow">TEAM IDENTITY</span><h2>Schemes & Philosophy</h2></div></div>
+      <div class="scheme-grid">
+        <div class="scheme-card">
+          <h3>Offense</h3>
+          <select id="offenseScheme">
+            <option>Pro Style</option><option>Spread</option><option>Air Raid</option><option>Power Run</option><option>Option</option><option>Tempo Spread</option><option>RPO Spread</option><option>Veer &amp; Shoot</option><option>West Coast</option><option>Pistol</option>
+          </select>
+          <div id="offenseSummary" class="scheme-summary"></div>
+        </div>
+        <div class="scheme-card">
+          <h3>Defense</h3>
+          <select id="defenseScheme">
+            <option>4-3</option><option>3-4</option><option>4-2-5</option><option>3-3-5</option><option>Multiple</option><option>Tite / Mint</option><option>2-4-5 Nickel</option><option>3-2-6 Dime</option><option>4-4</option><option>Bear / 46</option>
+          </select>
+          <div id="defenseSummary" class="scheme-summary"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="surface">
+      <div class="section-head"><div><span class="eyebrow">PERFORMANCE</span><h2>Team Ratings</h2></div></div>
+      <div id="teamRatings" class="metric-grid"></div>
+    </section>
+
+    <section class="surface">
+      <div class="section-head"><div><span class="eyebrow">STATISTICS</span><h2>Season Leaders</h2></div></div>
+      <div id="leaderGrid" class="leader-grid"></div>
+    </section>
+  </section>
+
+  <section id="seasonTab" class="tab-page hidden">
+    <section class="surface">
+      <div class="section-head"><div><span class="eyebrow">CONFERENCE RACE</span><h2 id="conferenceStandingsTitle">Standings</h2></div></div>
+      <div id="standings" class="standings-grid"></div>
+    </section>
+
+    <section class="surface">
+      <div class="section-head"><div><span class="eyebrow">SCHEDULE</span><h2>Season Results</h2></div><button id="simToEndBtn" class="btn primary">Open Next Game</button></div>
+      <div class="schedule-tools">
+      <button id="openSchedulingBtn" class="btn neutral">Edit Non-Conference Schedule</button>
+      <span class="muted">Schedule strength affects rankings, recruiting exposure, revenue, and job expectations.</span>
+    </div>
+    <div id="schedule"></div>
+      <div id="gameRecapPanel" class="game-recap hidden"></div>
+    </section>
+
+    <section id="signingDayPanel" class="surface hidden">
+      <div class="section-head">
+        <div><span class="eyebrow">NATIONAL SIGNING DAY</span><h2>Final Decisions</h2></div>
+        <button id="resolveSigningDayBtn" class="btn primary">Resolve Signing Day</button>
+      </div>
+      <div id="signingDayList" class="commit-grid"></div>
+    </section>
+
+    <section id="championshipPanel" class="surface hidden">
+      <div class="section-head"><div><span class="eyebrow">CHAMPIONSHIP WEEK</span><h2>Conference Championships</h2></div><button id="playChampionshipBtn" class="btn primary">Play Championship Week</button></div>
+      <div id="championshipGames" class="bracket-grid"></div>
+    </section>
+    <section id="bowlsPanel" class="surface hidden">
+      <div class="section-head"><div><span class="eyebrow">BOWL SEASON</span><h2>Bowls & College Football Playoff</h2></div><button id="playPostseasonBtn" class="btn primary">Open Bowl / Playoff Game</button></div>
+      <div id="bowlGames" class="bracket-grid"></div>
+      <div id="fullPlayoffBracket" class="playoff-tree"></div>
+    </section>
+    <section id="awardsWeekPanel" class="surface hidden">
+      <div class="section-head"><div><span class="eyebrow">AWARDS WEEK</span><h2>Season Honors</h2><p class="muted">Review every major team award and All-American selection before entering the offseason.</p></div><button id="continueAwardsBtn" class="btn primary">Enter Offseason</button></div>
+      <div id="awardsWeekSummary" class="metric-grid"></div>
+      <div id="awardsWeekGrid" class="award-week-grid"></div>
+    </section>
+    <section id="postseasonPanel" class="surface hidden">
+      <div class="section-head"><div><span class="eyebrow">SEASON COMPLETE</span><h2>Season Review</h2></div></div>
+      <div id="seasonReview"></div>
+      <button id="offseasonBtn" class="btn primary">Enter Offseason</button>
+    </section>
+
+    <section id="offseasonHub" class="surface hidden">
+      <div class="section-head"><div><span class="eyebrow">OFFSEASON HUB</span><h2>Build Next Year's Program</h2></div></div>
+      <div class="offseason-step-grid">
+        <button class="offseason-step" data-offseason-action="spring"><b>Spring Practice</b><span>Choose a team development focus.</span></button>
+        <button class="offseason-step" data-offseason-action="battles"><b>Position Battles</b><span>Select starters using ability, fit, and leadership.</span></button>
+        <button class="offseason-step" data-offseason-action="progression"><b>Player Development</b><span>Assign individual offseason focuses.</span></button>
+        <button class="offseason-step" data-offseason-action="staff"><b>Coaching Carousel</b><span>Handle departures, contracts, and job offers.</span></button>
+        <button class="offseason-step" data-offseason-action="draft"><b>Pro Draft</b><span>See where graduating players were selected.</span></button>
+      </div>
+      <div id="offseasonResults"></div>
+    </section>
+    <section id="portalPanel" class="surface hidden">
+      <div class="section-head"><div><span class="eyebrow">PLAYER MOVEMENT</span><h2>Transfer Portal</h2></div><button id="finishOffseasonBtn" class="btn primary">Finish Offseason</button></div>
+      <div id="portalList" class="commit-grid"></div>
+    </section>
+  </section>
+
+
+  <section id="postseasonTab" class="tab-page hidden">
+    <section class="surface postseason-hero">
+      <div class="section-head"><div><span class="eyebrow">CHAMPIONSHIP PATH</span><h2>Postseason Hub</h2></div></div>
+      <div id="postseasonStatusCards" class="metric-grid"></div>
+      <div id="postseasonGuide" class="postseason-guide"></div>
+      <div id="postseasonProjectionGrid" class="playoff-grid"></div>
+    </section>
+    <div id="postseasonStageHost"></div>
+  </section>
+
+  <section id="programTab" class="tab-page hidden">
+    <section class="surface">
+      <div class="section-head">
+        <div><span class="eyebrow">ATHLETIC DEPARTMENT</span><h2>Program Management</h2></div>
+      </div>
+      <div id="programManagementCards" class="metric-grid"></div><div id="tierExplanation" class="tier-explanation"></div>
+    <div id="traditionGrid" class="tradition-grid"></div>
+    <div id="stadiumPanel" class="stadium-panel"></div>
+    </section>
+
+    <section class="surface">
+      <div class="section-head">
+        <div><span class="eyebrow">FACILITIES</span><h2>Upgrade the Program</h2></div>
+      </div>
+      <div id="facilityGrid" class="facility-grid"></div>
+    </section>
+
+    <section class="surface">
+      <div class="section-head">
+        <div><span class="eyebrow">COACHING CAROUSEL</span><h2>Staff Management</h2></div>
+      </div>
+      <div id="staffManagement" class="coach-grid"></div>
+    </section>
+
+    <section class="surface">
+      <div class="section-head">
+        <div><span class="eyebrow">PROMISE TRACKER</span><h2>Player & Recruit Promises</h2></div>
+      </div>
+      <div id="promiseList"></div>
+    </section>
+  </section>
+
+  <section id="rankingsTab" class="tab-page hidden">
+    <div id="rankingsSectionNav" class="tab-section-nav national-section-nav">
+      <button class="tab-section-btn active" data-national-section="top25">Top 25</button>
+      <button class="tab-section-btn" data-national-section="playoff">Playoff</button>
+      <button class="tab-section-btn" data-national-section="conferences">Conferences</button>
+      <button class="tab-section-btn" data-national-section="rosters">Team Rosters</button>
+    </div>
+    <p class="tab-section-help">Choose a national section instead of scrolling through the entire page.</p>
+    <section id="rankingsTop25Section" class="surface national-section" data-national-panel="top25">
+      <div class="section-head"><div><span class="eyebrow">NATIONAL PICTURE</span><h2>Top 25 Rankings</h2></div></div>
+      <div id="rankingGrid" class="ranking-grid"></div>
+    </section>
+    <section id="rankingsPlayoffSection" class="surface national-section hidden" data-national-panel="playoff">
+      <div class="section-head"><div><span class="eyebrow">POSTSEASON</span><h2>Playoff Projection</h2></div></div>
+      <div id="playoffBracket" class="playoff-grid"></div>
+    </section>
+    <section id="conferenceDirectorySection" class="surface national-section hidden" data-national-panel="conferences">
+      <div class="section-head"><div><span class="eyebrow">NATIONAL STRUCTURE</span><h2>Conference Alignment</h2></div></div>
+      <div id="conferenceDirectory" class="conference-directory"></div>
+    </section>
+    <section id="nationalRosterSection" class="surface national-section hidden" data-national-panel="rosters">
+      <div class="section-head"><div><span class="eyebrow">ALL 128 PROGRAMS</span><h2>National Team & Roster Browser</h2><p class="muted">Inspect every program's roster, classes, ratings and depth. Computer rosters are generated consistently from program strength for the current dynasty year.</p></div></div>
+      <div class="toolbar wrap national-roster-toolbar">
+        <input id="nationalTeamSearch" type="search" placeholder="Search school, city or state">
+        <select id="nationalConferenceFilter"><option value="ALL">All conferences</option></select>
+        <select id="nationalRosterPosition"><option value="ALL">All positions</option></select>
+      </div>
+      <div id="nationalTeamPager" class="pager"></div>
+      <div id="nationalTeamGrid" class="national-team-grid"></div>
+      <div id="selectedNationalRoster" class="selected-national-roster">
+        <div id="nationalTeamSummary" class="metric-grid"></div>
+        <div id="nationalRosterCards" class="mobile-card-list"></div>
+        <div class="table-wrap desktop-data-table"><table><thead><tr><th>Player</th><th>Pos</th><th>Role</th><th>Class</th><th>OVR</th><th>POT</th><th>DEV</th><th>Hometown</th></tr></thead><tbody id="nationalRosterTable"></tbody></table></div>
+      </div>
+    </section>
+  </section>
+
+    <section id="dynastyTab" class="tab-page hidden">
+      <section class="surface">
+        <div class="section-head"><div><span class="eyebrow">DYNASTY GOALS</span><h2>Achievements</h2></div><div id="achievementSummary"></div></div>
+        <div class="toolbar wrap">
+          <select id="achievementFilter"><option value="ALL">All achievements</option><option value="UNLOCKED">Unlocked</option><option value="LOCKED">Locked</option></select>
+        </div>
+        <div id="achievementGrid" class="achievement-grid"></div>
+      </section>
+      <section class="surface">
+        <div class="section-head"><div><span class="eyebrow">CAREER</span><h2>Coach Profile & Contracts</h2></div></div>
+        <div id="coachCareerPanel"></div>
+    <div class="save-backup-panel">
+      <button id="exportSaveBtn" class="btn primary">Export Dynasty Save</button>
+      <label class="btn neutral file-label">Import Dynasty Save<input id="importSaveInput" type="file" accept=".json,application/json"></label>
+    </div>
+      </section>
+      <section id="sponsorCenter" class="surface sponsor-center">
+        <div class="section-head"><div><span class="eyebrow">OPTIONAL REWARDS</span><h2>Sponsor Center</h2><p class="muted">Watch an optional video to receive a small weekly dynasty bonus. Rewards are limited and never required to play.</p></div><span id="adEditionBadge" class="sponsor-badge">TEST ADS</span></div>
+        <div id="adStatusPanel" class="ad-status-panel" aria-live="polite"></div>
+        <div class="sponsor-reward-grid">
+          <article class="sponsor-reward-card"><span class="sponsor-icon">⏱</span><div><small>STAFF SPONSOR</small><h3>+25 Recruiting Hours</h3><p>Up to 3 optional rewards per dynasty week.</p></div><button id="rewardHoursAdBtn" class="btn primary">Watch Sponsor Video</button></article>
+          <article class="sponsor-reward-card"><span class="sponsor-icon">$</span><div><small>BOOSTER SPOTLIGHT</small><h3>+$10,000 Recruit NIL</h3><p>Up to 3 optional rewards per dynasty week.</p></div><button id="rewardNilAdBtn" class="btn primary">Watch Sponsor Video</button></article>
+        </div>
+        <div class="sponsor-policy-row"><span>One interstitial may appear after the completed season recap. No banners or ads during live games.</span><button id="adPrivacyOptionsBtn" class="btn neutral">Privacy Options</button></div>
+      </section>
+      <section class="surface">
+        <div class="section-head"><div><span class="eyebrow">RIVALRIES</span><h2>Rivalry History</h2></div></div>
+        <div id="rivalryHistory" class="rivalry-grid"></div>
+      </section>
+      <section class="surface">
+        <div class="section-head"><div><span class="eyebrow">PRO PIPELINE</span><h2>Draft History</h2></div></div>
+        <div id="draftHistory" class="draft-grid"></div>
+      </section>
+    </section>
+    <section id="historyTab" class="tab-page hidden">
+    <section class="surface"><div class="section-head"><div><span class="eyebrow">LEGACY</span><h2>Dynasty History</h2></div></div><div id="historyList"></div></section>
+    <section class="surface"><div class="section-head"><div><span class="eyebrow">TROPHY ROOM</span><h2>Awards & Championships</h2></div></div><div id="trophyGrid" class="trophy-grid"></div></section>
+    <section class="surface"><div class="section-head"><div><span class="eyebrow">RECORD BOOK</span><h2>Program Records</h2></div></div><div id="recordBook" class="record-grid"></div></section>
+  </section>
+</section>
+</main>
+<nav id="mobileBottomNav" class="mobile-bottom-nav hidden">
+  <button data-mobile-target="dashboard">⌂<span>Home</span></button>
+  <button data-mobile-target="recruiting">★<span>Recruit</span></button>
+  <button data-mobile-target="roster">☷<span>Roster</span></button>
+  <button data-mobile-target="gameday">◉<span>Game Day</span></button>
+  <button id="mobileMoreBtn">•••<span>More</span></button>
+</nav>
+<div id="mobileMoreMenu" class="mobile-more-menu hidden">
+  <button data-mobile-target="team">Team</button><button data-mobile-target="gameplan">Game Plan</button><button data-mobile-target="season">Season</button><button data-mobile-target="coach">Coach</button><button data-mobile-target="stats">Stats</button>
+  <button data-mobile-target="postseason">Postseason</button>
+  <button data-mobile-target="program">Program</button>
+  <button data-mobile-target="rankings">Rankings</button>
+  <button id="openSponsorMobileBtn">Sponsor Rewards</button><button id="openSettingsMobileBtn">⚙ Settings</button><button data-mobile-target="dynasty">Dynasty</button><button data-mobile-target="history">History</button>
+  <button id="mobileMoreClose">Close</button>
+</div>
+<div id="tutorialPanel" class="tutorial hidden">
+  <div class="tutorial-card">
+    <span class="eyebrow">FIRST-SEASON GUIDE</span>
+    <h2 id="tutorialTitle"></h2>
+    <p id="tutorialText"></p>
+    <div class="actions">
+      <button id="tutorialBack" class="btn neutral">Back</button>
+      <button id="tutorialNext" class="btn primary">Next</button>
+      <button id="tutorialSkip" class="btn danger">Skip Tutorial</button>
+    </div>
+  </div>
+</div>
+
+
+<div id="dynastyBuildModal" class="dynasty-build-modal hidden" role="dialog" aria-modal="true" aria-labelledby="dynastyBuildTitle">
+  <div class="dynasty-build-card">
+    <img id="dynastyBuildLogo" src="icon-192.png" alt="">
+    <span class="eyebrow">SATURDAY DYNASTY FOOTBALL</span>
+    <h2 id="dynastyBuildTitle">Building Your Dynasty</h2>
+    <p id="dynastyBuildMessage">Creating your roster, schedule and national recruiting class…</p>
+    <div class="dynasty-build-progress" aria-hidden="true"><span id="dynastyBuildProgressBar"></span></div>
+    <div class="dynasty-build-list">
+      <span>✓ 128-team national universe</span>
+      <span>✓ Complete team roster and depth chart</span>
+      <span>✓ 3,000-player fixed recruiting class</span>
+      <span>✓ AI recruiting boards and schedule</span>
+    </div>
+    <p id="dynastyBuildError" class="dynasty-build-error hidden"></p>
+    <button id="dynastyBuildClose" class="btn neutral hidden">Return to Team Selection</button>
+  </div>
+</div>
+<div id="toast" class="toast hidden" aria-live="polite"></div>
+<div id="appSettingsModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="appSettingsTitle">
+  <div class="modal-card app-settings-card">
+    <button id="closeAppSettings" class="modal-close" aria-label="Close settings">×</button>
+    <span class="eyebrow">APP SETTINGS</span>
+    <h2 id="appSettingsTitle">Settings</h2>
+    <p class="muted">Audio and display controls apply across your Saturday Dynasty Football saves.</p>
+    <div class="release-settings app-settings-panel">
+      <section class="settings-section">
+        <div class="settings-section-head"><div><small>AUDIO</small><h3>Music & Sound Effects</h3></div></div>
+        <div class="settings-grid audio-settings-grid">
+          <label class="toggle-row"><input id="musicSetting" type="checkbox" checked> Background Music</label>
+          <label class="music-volume-control">Music Volume <input id="musicVolumeSetting" type="range" min="0" max="30" step="1" value="14"><small id="musicVolumeValue">14%</small></label>
+          <label class="toggle-row"><input id="soundSetting" type="checkbox" checked> Game Sound Effects</label>
+        </div>
+      </section>
+      <section class="settings-section">
+        <div class="settings-section-head"><div><small>DISPLAY</small><h3>Interface</h3></div></div>
+        <div class="settings-grid">
+          <label>Text Size<select id="textSizeSetting"><option value="normal">Normal</option><option value="large">Large</option></select></label>
+          <label>Layout Density<select id="densitySetting"><option value="comfortable">Comfortable</option><option value="compact">Compact</option></select></label>
+          <label class="toggle-row"><input id="motionSetting" type="checkbox"> Reduce Motion</label>
+        </div>
+      </section>
+      <p class="muted settings-save-note">Settings save automatically. Dynasty autosave still runs after every week and important decision, plus when the app moves to the background.</p>
+    </div>
+  </div>
+</div>
+<div id="modal" class="modal hidden"><div class="modal-card"><button id="closeModal" class="modal-close">×</button><div id="modalBody"></div></div></div>
+<div id="gameSimModal" class="game-result-modal hidden" role="dialog" aria-modal="true" aria-labelledby="gameSimTitle">
+  <div class="game-result-card game-sim-card">
+    <button id="closeGameSim" class="modal-close" aria-label="Close game simulation">×</button>
+    <div id="gameSimBody"></div>
+  </div>
+</div>
+<div id="gameResultModal" class="game-result-modal hidden" role="dialog" aria-modal="true" aria-labelledby="gameResultTitle">
+  <div class="game-result-card">
+    <button id="closeGameResult" class="modal-close" aria-label="Close game result">×</button>
+    <div id="gameResultBody"></div>
+  </div>
+</div>
+<script src="ad-config.js?v=216"></script>
+<script src="app-bundle.js?v=235"></script>
+</body>
+</html>

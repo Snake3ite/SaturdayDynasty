@@ -1,0 +1,156 @@
+/* V27.4.23 Build 224 — roster command center and depth chart only. */
+.roster-command-v224 {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(250px, 1.25fr) minmax(330px, 1fr);
+  gap: 14px;
+  align-items: center;
+  margin: 10px 0 12px;
+  padding: 16px;
+  border: 1px solid color-mix(in srgb, var(--team-secondary, #22d3ee) 40%, #27485a);
+  border-radius: 16px;
+  background: linear-gradient(125deg, color-mix(in srgb, var(--team-primary, #1d4ed8) 34%, #061620), #06141f 58%, color-mix(in srgb, var(--team-secondary, #22d3ee) 12%, #06141f));
+  box-shadow: 0 16px 38px rgba(0, 0, 0, .25);
+}
+
+.roster-command-v224::after {
+  content: "☷";
+  position: absolute;
+  top: -48px;
+  right: -10px;
+  color: color-mix(in srgb, var(--team-secondary, #22d3ee) 8%, transparent);
+  font-size: 12rem;
+  line-height: 1;
+  transform: rotate(-8deg);
+  pointer-events: none;
+}
+
+.roster-command-brand-v224,
+.roster-command-ratings-v224,
+.roster-command-nav-v224 {
+  position: relative;
+  z-index: 1;
+}
+
+.roster-command-brand-v224 h2 { margin: 4px 0 3px; font-size: 1.35rem; }
+.roster-command-brand-v224 p { margin: 0; color: #9cb2c0; font-size: .72rem; line-height: 1.45; }
+.roster-command-ratings-v224 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
+.roster-command-ratings-v224 > div { padding: 9px 7px; border: 1px solid rgba(255, 255, 255, .09); border-radius: 10px; background: rgba(3, 15, 24, .68); text-align: center; }
+.roster-command-ratings-v224 small,
+.roster-command-ratings-v224 b,
+.roster-command-ratings-v224 em { display: block; }
+.roster-command-ratings-v224 small { color: #7897a9; font-size: .5rem; font-weight: 900; letter-spacing: .09em; }
+.roster-command-ratings-v224 b { margin-top: 2px; font-size: 1.12rem; }
+.roster-command-ratings-v224 em { color: #718b9a; font-size: .48rem; font-style: normal; }
+
+.roster-command-nav-v224 { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
+.roster-command-nav-v224 button,
+.depth-side-switcher-v224 button,
+.roster-quick-filters-v224 button {
+  min-height: 38px;
+  padding: 7px 10px;
+  border: 1px solid #29485b;
+  border-radius: 9px;
+  background: #091d2a;
+  color: #9ab2bf;
+  font-size: .62rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+.roster-command-nav-v224 button.active,
+.depth-side-switcher-v224 button.active,
+.roster-quick-filters-v224 button.active {
+  border-color: color-mix(in srgb, var(--team-secondary, #22d3ee) 58%, #29485b);
+  background: color-mix(in srgb, var(--team-primary, #1d4ed8) 48%, #081a27);
+  color: #fff;
+}
+
+.roster-tools-v224 { display: flex; align-items: end; justify-content: space-between; gap: 12px; margin: 2px 0 10px; }
+.roster-tools-v224 h3 { margin: 2px 0 0; }
+.roster-quick-filters-v224 { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+.roster-quick-filters-v224::-webkit-scrollbar { display: none; }
+.roster-quick-filters-v224 button { flex: 0 0 auto; min-height: 34px; border-radius: 999px; }
+
+.roster-player-card-v224 { position: relative; overflow: hidden; padding: 11px !important; border-color: #274657 !important; background: linear-gradient(150deg, #0a2030, #071722 72%) !important; }
+.roster-player-card-v224::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 3px; background: linear-gradient(var(--team-secondary, #22d3ee), var(--team-primary, #2563eb)); }
+.roster-player-head-v224 { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; gap: 9px; align-items: center; }
+.roster-player-head-v224 .ui-player-portrait,
+.roster-fallback-portrait-v224 { width: 46px; height: 52px; }
+.roster-fallback-portrait-v224 { display: grid; place-items: center; border: 1px solid #315269; border-radius: 10px; background: #0b2636; }
+.roster-fallback-portrait-v224 b,
+.roster-fallback-portrait-v224 small { display: block; }
+.roster-fallback-portrait-v224 small { color: #8ba7b7; font-size: .5rem; }
+.roster-position-v224 { color: var(--team-secondary, #8fd9ff); font-size: .52rem; font-weight: 900; letter-spacing: .08em; }
+.roster-player-head-v224 h3 { margin: 2px 0; font-size: .9rem; }
+.roster-player-head-v224 p { margin: 0; color: #7f99a8; font-size: .58rem; }
+.roster-ovr-v224 { display: grid; place-items: center; min-width: 47px; padding: 6px; border: 1px solid color-mix(in srgb, var(--team-secondary, #22d3ee) 42%, #315269); border-radius: 10px; background: #061722; }
+.roster-ovr-v224 b { font-size: 1.08rem; }
+.roster-ovr-v224 small { color: #7895a6; font-size: .46rem; font-weight: 900; }
+.roster-player-metrics-v224 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; margin: 9px 0 7px; }
+.roster-player-metrics-v224 > div { padding: 6px; border: 1px solid rgba(255, 255, 255, .055); border-radius: 7px; background: #061723; text-align: center; }
+.roster-player-metrics-v224 small,
+.roster-player-metrics-v224 b { display: block; }
+.roster-player-metrics-v224 small { color: #6f8b9b; font-size: .46rem; font-weight: 900; }
+.roster-player-metrics-v224 b { margin-top: 2px; font-size: .72rem; }
+.roster-player-flags-v224 { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
+.roster-player-flags-v224 span,
+.roster-risk-text-v224 { padding: 4px 6px; border-radius: 999px; background: #173044; color: #a8bfcb; font-size: .48rem; font-weight: 900; }
+.roster-player-flags-v224 .success,
+.roster-risk-text-v224.success { background: #134d3e; color: #84eac6; }
+.roster-player-flags-v224 .warning,
+.roster-risk-text-v224.warning { background: #5d4318; color: #ffd47c; }
+.roster-player-flags-v224 .danger,
+.roster-risk-text-v224.danger { background: #642d38; color: #ffabb7; }
+.roster-empty-v224 { grid-column: 1 / -1; display: grid; gap: 3px; padding: 22px; border: 1px dashed #315064; border-radius: 12px; color: #9bb2bf; text-align: center; }
+.roster-empty-v224 b { color: #edf8ff; }
+
+#rosterTab #depthChart { display: none !important; }
+.depth-side-switcher-v224 { display: flex; align-items: end; justify-content: space-between; gap: 12px; margin-bottom: 10px; padding: 10px; border: 1px solid #1f3e50; border-radius: 11px; background: #071925; }
+.depth-side-switcher-v224 h3 { margin: 2px 0 0; }
+.depth-side-switcher-v224 > div:last-child { display: grid; grid-template-columns: repeat(3, minmax(105px, 1fr)); gap: 6px; }
+.depth-side-switcher-v224 button { min-height: 36px; }
+.depth-side[hidden] { display: none !important; }
+.depth-side > .real-depth-grid { gap: 9px; }
+.depth-role-v224 { position: relative; overflow: hidden; border-color: #294a5d !important; background: linear-gradient(150deg, #0b2230, #071824) !important; }
+.depth-role-v224::before { content: ""; position: absolute; top: 0; right: 0; left: 0; height: 3px; background: linear-gradient(90deg, var(--team-secondary, #22d3ee) var(--room-rating, 60%), #182d3b var(--room-rating, 60%)); }
+.depth-role-v224 .depth-position-head { display: grid; grid-template-columns: minmax(90px, 1fr) auto; gap: 8px; align-items: center; }
+.depth-role-v224 .depth-position-head > h4 { margin: 0; }
+.depth-role-v224 .depth-position-head > b { color: #9db5c2; font-size: .58rem; }
+.depth-role-v224 [data-depth-profile-v224] { grid-column: 1 / -1; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 7px; align-items: center; width: 100%; padding: 7px; border: 1px solid #203f51; border-radius: 8px; background: #061923; color: #e9f6fd; text-align: left; }
+.depth-role-v224 [data-depth-profile-v224] > span { padding: 3px 5px; border-radius: 999px; background: #174d3e; color: #82e8c5; font-size: .45rem; font-weight: 900; }
+.depth-role-v224 [data-depth-profile-v224] > b { overflow: hidden; font-size: .64rem; text-overflow: ellipsis; white-space: nowrap; }
+.depth-role-v224 [data-depth-profile-v224] > small { color: #7895a5; font-size: .5rem; }
+.depth-role-v224 .role-slot { padding: 8px; border-color: #1e3949; }
+.depth-role-v224 .role-slot label { font-size: .52rem; }
+.depth-role-v224 .role-slot select,
+.depth-role-v224 .role-slot input { min-height: 36px; }
+.depth-role-v224 .snap-stepper .btn { min-height: 34px; }
+.depth-role-v224 .snap-total { margin-top: 7px; }
+.depth-role-v224 > .actions { gap: 5px; }
+.depth-role-v224 > .actions .btn { min-height: 34px; }
+.depth-unassigned-v224 { grid-column: 1 / -1; color: #d7a5ad; font-size: .56rem; }
+
+@media (max-width: 760px) {
+  .roster-command-v224 { grid-template-columns: 1fr; gap: 9px; margin: -2px -2px 9px; padding: 12px; border-radius: 13px; }
+  .roster-command-brand-v224 h2 { font-size: 1.08rem; }
+  .roster-command-brand-v224 p { font-size: .61rem; }
+  .roster-command-ratings-v224 { gap: 5px; }
+  .roster-command-ratings-v224 > div { padding: 7px 4px; }
+  .roster-command-ratings-v224 b { font-size: .92rem; }
+  .roster-command-nav-v224 { grid-column: auto; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .roster-command-nav-v224 button { min-height: 40px; }
+  .roster-tools-v224 { display: grid; align-items: stretch; }
+  .roster-quick-filters-v224 { margin-right: -8px; }
+  .roster-player-card-v224 .btn { min-height: 40px; }
+  .depth-side-switcher-v224 { display: grid; align-items: stretch; padding: 8px; }
+  .depth-side-switcher-v224 > div:last-child { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .depth-side-switcher-v224 button { padding: 6px 3px; font-size: .54rem; }
+  .depth-side > .real-depth-grid { grid-template-columns: 1fr; }
+  .depth-role-v224 .role-slot { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 420px) {
+  .roster-command-ratings-v224 small { font-size: .44rem; }
+  .roster-player-metrics-v224 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

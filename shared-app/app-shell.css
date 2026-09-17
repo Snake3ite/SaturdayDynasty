@@ -1,0 +1,50 @@
+/* The app's Home overview: one team identity, one matchup, direct actions. */
+#gameCommandCenterV219{gap:12px}
+#gameCommandCenterV219 .ui-program-hero{padding:16px;border-radius:14px;box-shadow:none;border-color:#31404f;background:linear-gradient(110deg,color-mix(in srgb,var(--ui-team-primary) 24%,#10202d),#101e2a)}
+#gameCommandCenterV219 .ui-program-hero:after{display:none}
+#gameCommandCenterV219 .ui-program-hero-team img{width:56px;height:56px;padding:3px;background:transparent;border:0;border-radius:0}
+#gameCommandCenterV219 .ui-program-hero-team h2{font-size:22px;line-height:1.15;letter-spacing:-.035em;margin:5px 0}
+#gameCommandCenterV219 .ui-program-hero-team .eyebrow{font-size:11px;letter-spacing:.075em;color:#afbfce}
+#gameCommandCenterV219 .ui-program-hero-team p{font-size:13px;color:#b6c7d4;line-height:1.5}
+#gameCommandCenterV219 .ui-next-game-stage{padding:16px;gap:16px 8px;grid-template-columns:minmax(0,1fr) 46px minmax(0,1fr);border:1px solid #2b3b49;background:#0e1c27;border-radius:14px}
+.ui-stage-heading{grid-column:1/-1;display:flex;justify-content:space-between;gap:8px;padding-bottom:12px;border-bottom:1px solid #2a3946;color:#b0c3d1;font-size:10px;font-weight:750;letter-spacing:.07em}
+#gameCommandCenterV219 .ui-stage-side,#gameCommandCenterV219 .ui-stage-side:last-child{display:flex;flex-direction:column;gap:6px;text-align:center;justify-content:center}
+#gameCommandCenterV219 .ui-stage-side img{width:48px;height:48px;object-fit:contain}
+#gameCommandCenterV219 .ui-stage-side b{font-size:13px;line-height:1.3;white-space:normal;overflow:visible;text-overflow:clip;color:#f0f5f8}
+#gameCommandCenterV219 .ui-stage-side span{font-size:11px;color:#a9bac8;line-height:1.4}
+#gameCommandCenterV219 .ui-stage-center strong{font-size:16px;font-weight:800;color:#6f879a}
+#gameCommandCenterV219 .ui-stage-center span{display:block;font-size:10px;color:#a9bac8}
+.ui-stage-actions{grid-column:1/-1;display:grid;grid-template-columns:1fr auto;gap:8px}
+.ui-stage-actions .btn{font-size:12px;min-height:44px;letter-spacing:0;text-transform:none;margin:0}
+#gameCommandCenterV219 .ui-command-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+#gameCommandCenterV219 .ui-command-tile{grid-template-columns:1fr;padding:13px;gap:9px;min-height:106px;border:1px solid #2b3d4d;border-radius:12px;background:#10212f;box-shadow:none;align-items:start}
+#gameCommandCenterV219 .ui-command-tile.attention{border-color:#4c667b;box-shadow:inset 0 2px 0 color-mix(in srgb,var(--team-secondary) 40%,#8caec7)}
+#gameCommandCenterV219 .ui-command-icon{width:26px;height:26px;font-size:18px;display:none}
+#gameCommandCenterV219 .ui-command-tile small{font-size:11px;letter-spacing:.065em;color:#b1c5d5;font-weight:800}
+#gameCommandCenterV219 .ui-command-tile b{font-size:16px;font-weight:750;line-height:1.3;margin:7px 0 5px;color:#f3f7fa}
+#gameCommandCenterV219 .ui-command-tile em{font-size:12px;line-height:1.45;color:#aabdc9}
+#gameCommandCenterV219 .ui-command-arrow{display:none}
+#gameCommandCenterV219 button:focus-visible{outline:2px solid #b9e5ff;outline-offset:3px}
+#gameCommandCenterV219 .ui-stage-complete{flex-wrap:wrap}
+#gameCommandCenterV219 .ui-stage-complete small{font-size:11px}
+#gameCommandCenterV219 .ui-stage-complete b{font-size:17px;margin:4px 0}
+#gameCommandCenterV219 .ui-stage-complete p{font-size:13px;line-height:1.5}
+@media(max-width:760px){
+ #gameCommandCenterV219 .ui-command-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #gameCommandCenterV219 .ui-program-hero{padding:13px}
+ #gameCommandCenterV219 .ui-program-hero-team{gap:10px}
+ #gameCommandCenterV219 .ui-program-hero-team h2{font-size:21px}
+ #gameCommandCenterV219 .ui-next-game-stage{padding:13px;gap:12px 6px}
+ #gameCommandCenterV219 .ui-command-tile{min-height:112px}
+ .topbar .brand h1{font-size:13px;letter-spacing:.035em;line-height:1.2}
+ .topbar #releaseLabel{font-size:9px;letter-spacing:0;line-height:1.4;text-transform:none}
+ .topbar .brand .logo-img{width:34px;height:34px}
+ .mobile-status{min-height:52px}
+ .mobile-status small{font-size:9px;letter-spacing:.04em}
+ .mobile-status b{font-size:14px}
+ .mobile-status .btn{min-height:40px;font-size:11px;letter-spacing:0;text-transform:none}
+ .mobile-bottom-nav button{font-size:18px;min-height:52px}
+ .mobile-bottom-nav button .mobile-nav-label,.mobile-bottom-nav button span{font-size:10px;letter-spacing:0}
+}
+@media(max-width:350px){#gameCommandCenterV219 .ui-command-tile{padding:11px}#gameCommandCenterV219 .ui-command-tile b{font-size:15px}#gameCommandCenterV219 .ui-program-hero-team h2{font-size:19px}.ui-stage-heading{font-size:9px}}
+@media(prefers-reduced-motion:reduce){#gameCommandCenterV219 button{transition:none;transform:none}}
