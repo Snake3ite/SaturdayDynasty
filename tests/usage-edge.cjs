@@ -10,3 +10,10 @@ test('Disallowed origin, malformed events and unauthenticated report cannot trig
 test('Email totals separate 24h/all-time, platforms, ad impressions and products',()=>{
  const h=setup(),now=new Date().toISOString();h.c.fixture={key:'test',test:true,from:now,to:now,started_at:now,devices:[],active:[],last24:[{platform:'android',event:'game_completed',total:3},{platform:'browser',event:'purchase_confirmed',product:'commissioner_mode',total:1}],alltime:[{platform:'android',event:'game_completed',total:70},{platform:'android',event:'reward_shown',total:2},{platform:'android',event:'interstitial_shown',total:5}]};const report=vm.runInNewContext('formatReport(fixture)',h.c);assert.match(report.text,/Games completed: 3 \| 70/);assert.match(report.text,/Ads shown: 0 \| 7/);assert.match(report.text,/commissioner_mode purchases: 1 \| 0/);assert.deepEqual(Array.from(report.to),['ctoolis@gmail.com']);assert.match(report.text,/not Google Play install totals/);
 });
+
+test('Basic events omit device identity while preserving deduplication IDs',async()=>{
+ const h=setup(),id=crypto.randomUUID();const r=await h.handler(new Request('https://test.invalid',{method:'POST',body:JSON.stringify({action:'events',platform:'browser',events:[{id,event:'reporting_started',at:new Date().toISOString()}]})}));assert.equal(r.status,200);const body=JSON.parse(h.calls[0].opts.body);assert.equal(body.p_device,null);assert.equal(body.p_events[0].id,id);
+});
+test('Malformed supplied device ID is rejected instead of treated as basic',async()=>{
+ const h=setup();for(const device of ['',123,'not-a-uuid']){const r=await h.handler(new Request('https://test.invalid',{method:'POST',body:JSON.stringify({action:'events',device,platform:'browser',events:[{id:crypto.randomUUID(),event:'session',at:new Date().toISOString()}]})}));assert.equal(r.status,400)}assert.equal(h.calls.length,0);
+});

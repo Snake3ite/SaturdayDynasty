@@ -10,8 +10,8 @@
     },
     {
       "path": "app-bundle.js",
-      "bytes": 1240764,
-      "sha256": "8ceaef5af22ce64f38b0d7220192408cd4d7e231de9b803a8a49fc6313da4a8e"
+      "bytes": 1242598,
+      "sha256": "d8788c88a8b0331c388b44f5c3da562ce547027f2bdac0482e5f6717707e7a28"
     },
     {
       "path": "app-shell.css",
@@ -720,8 +720,8 @@
     },
     {
       "path": "manifest.json",
-      "bytes": 724,
-      "sha256": "6e8befd83369c452a45a5f5e84983067af8a21931ad362560e7a1f50cb9bc0f8"
+      "bytes": 737,
+      "sha256": "2dab640c0f5e530e8b081132fa4942558a53c94ff6d34c6192e501082e180751"
     },
     {
       "path": "navigation.css",
@@ -740,8 +740,8 @@
     },
     {
       "path": "usage-privacy.html",
-      "bytes": 2662,
-      "sha256": "94277e07a47de74f82c4d9a477fff22ae942fa2d3c6627d96bd328af1d1a0c64"
+      "bytes": 3752,
+      "sha256": "53f7ac975bd761792ffe6342ec53a09d8b171880210ee192e5f46fd17854876a"
     },
     {
       "path": "v103.css",

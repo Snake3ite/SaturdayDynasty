@@ -8,7 +8,7 @@
   "orientation": "portrait-primary",
   "background_color": "#020811",
   "theme_color": "#07131f",
-  "description": "Saturday Dynasty Football Build 236: Coach Journey and optional usage reporting",
+  "description": "Saturday Dynasty Football Build 236: Coach Journey and basic totals and optional ID tracking",
   "icons": [
     {
       "src": "icon-192.png",
