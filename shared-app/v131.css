@@ -1,0 +1,16 @@
+
+/* V1.3.1 depth-chart and player-stat usability */
+.player-stats-cards{display:none;gap:10px}
+.player-stat-card{border:1px solid var(--line,#27384a);background:var(--panel,#102334);border-radius:14px;padding:12px}
+.player-stat-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px}
+.player-stat-card-head>div{display:grid;gap:2px}
+.player-stat-card-head span{font-size:.78rem;color:var(--muted,#91a4b8)}
+.player-stat-card-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.player-stat-card-grid>div{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.06);border-radius:9px;padding:7px;text-align:center}
+.player-stat-card-grid small{display:block;color:var(--muted,#91a4b8);font-size:.68rem;letter-spacing:.06em}
+.player-stat-card-grid strong{display:block;margin-top:2px;font-size:1rem}
+@media(max-width:760px){
+ .player-stats-table-wrap{display:none}
+ .player-stats-cards{display:grid}
+ .player-stat-card-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}

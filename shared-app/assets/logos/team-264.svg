@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Birmingham Ironworks original team mark">
+<defs><filter id="s" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="7" stdDeviation="7" flood-opacity=".28"/></filter></defs>
+<path d="M128 18a110 110 0 1 0 0 220 110 110 0 0 0 0-220z" fill="#2A4D3E" stroke="#E9C46A" stroke-width="10" filter="url(#s)"/>
+<path d="m128 45 20 42 46 6-34 32 9 46-41-22-41 22 8-46-33-32 46-6z" fill="#FB7185" opacity=".88"/>
+<circle cx="128" cy="132" r="56" fill="#2A4D3E" stroke="#E9C46A" stroke-width="5" opacity=".93"/>
+<text x="128" y="151" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="54" font-weight="900" fill="#E9C46A" stroke="#2A4D3E" stroke-width="2" paint-order="stroke">BI</text>
+</svg>

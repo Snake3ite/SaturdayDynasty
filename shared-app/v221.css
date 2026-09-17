@@ -1,0 +1,50 @@
+/* V27.4.20 Build 221 — Startup & Save Stability */
+body.ui221-startup-mode{background:#050d15}
+body.ui221-startup-mode .topbar,body.ui221-startup-mode #mobileStatus{display:none!important}
+body.ui221-startup-mode main{padding:8px 8px max(12px,env(safe-area-inset-bottom));max-width:980px}
+body.ui221-startup-mode #schoolScreen{margin:0 auto;padding:10px;min-height:0;background:linear-gradient(180deg,#07131f,#050d15);border-color:#1c3546;box-shadow:none}
+body.ui221-startup-mode #schoolScreen>.launch-brand{grid-template-columns:76px minmax(0,1fr);gap:12px;margin:0 0 10px;padding:11px 12px;background:linear-gradient(115deg,#071725,#0b2030);border-radius:12px}
+body.ui221-startup-mode #schoolScreen>.launch-brand img{width:72px;height:72px;border-radius:12px}
+body.ui221-startup-mode #schoolScreen>.launch-brand h2{font-size:1.35rem;line-height:1.05;margin:2px 0 4px}
+body.ui221-startup-mode #schoolScreen>.launch-brand p{font-size:.72rem;line-height:1.3;max-width:660px;margin:0;color:#8fa5b3}
+body.ui221-startup-mode #schoolScreen>.dynasty-start-panel{margin:0;padding:12px;border-radius:12px;background:#071725}
+body.ui221-startup-mode #schoolScreen>.dynasty-start-panel .section-head{margin-bottom:8px}
+body.ui221-startup-mode #schoolScreen>.dynasty-start-panel .section-head h2{font-size:1.1rem;margin:2px 0}
+body.ui221-startup-mode #schoolScreen>.dynasty-start-panel .section-head p{font-size:.68rem;line-height:1.3;margin:0}
+body.ui221-startup-mode .save-slot-cards{gap:7px;margin:7px 0}
+body.ui221-startup-mode .save-slot-card{min-height:76px;padding:9px 10px;text-align:left;border-radius:10px}
+body.ui221-startup-mode .save-slot-card .eyebrow{font-size:.52rem}
+body.ui221-startup-mode .save-slot-card h3{font-size:.88rem;margin:2px 0}
+body.ui221-startup-mode .save-slot-card b{font-size:.7rem}
+body.ui221-startup-mode .save-slot-card .sub{font-size:.59rem;line-height:1.2}
+body.ui221-startup-mode .save-slot-card .slot-logo{width:34px;height:34px}
+body.ui221-startup-mode .dynasty-start-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px}
+body.ui221-startup-mode .dynasty-start-actions .btn{min-height:42px;margin:0;padding:8px 10px;font-size:.68rem}
+body.ui221-startup-mode #loadSelectedSaveBtn{order:1;grid-column:1/-1}
+body.ui221-startup-mode #newDynastyBtn{order:2;grid-column:1/-1;background:linear-gradient(135deg,var(--team-primary,#5b21b6),#0d5a81);border-color:var(--team-secondary,#22d3ee);color:#fff}
+body.ui221-startup-mode #openSettingsStartupBtn{order:3}
+body.ui221-startup-mode #deleteSelectedSaveBtn{order:4;background:#101d27;color:#dc8e96;border-color:#4c2d34}
+body.ui221-startup-mode .save-slot-message{font-size:.58rem;margin:6px 2px 0}
+body.ui221-startup-mode #schoolScreen:not(.ui221-team-picker-open)>.hero-copy,body.ui221-startup-mode #schoolScreen:not(.ui221-team-picker-open)>.team-count-banner,body.ui221-startup-mode #schoolScreen:not(.ui221-team-picker-open)>.team-filters,body.ui221-startup-mode #schoolScreen:not(.ui221-team-picker-open)>#schoolGrid{display:none!important}
+body.ui221-startup-mode #schoolScreen:not(.ui221-team-picker-open)>.ui221-team-picker{display:none!important}
+body.ui221-startup-mode #schoolScreen.ui221-team-picker-open>.dynasty-start-panel{display:none!important}
+body.ui221-startup-mode #schoolScreen.ui221-team-picker-open>.launch-brand{display:none!important}
+.ui221-team-picker{display:block;margin:0}
+.ui221-team-picker-head{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:12px;margin:0 0 9px;padding:10px 11px;border:1px solid #29475b;border-radius:12px;background:linear-gradient(110deg,#071725,#0a2032)}
+.ui221-team-picker-head .btn{margin:0;min-height:40px}.ui221-team-picker-head h2{font-size:1.15rem;margin:1px 0}.ui221-team-picker-head p{font-size:.65rem;color:#8fa5b3;margin:0}.ui221-team-picker .ui221-legacy-team-copy{display:none!important}
+.ui221-team-picker .team-count-banner{margin:0 0 7px;padding:7px 10px}.ui221-team-picker .team-count-banner strong{font-size:1rem}
+.ui221-team-picker .team-filters{top:0;margin:0 0 8px;padding:7px;gap:6px}
+.ui221-team-picker .team-filters input,.ui221-team-picker .team-filters select{min-height:40px;font-size:.72rem}
+.ui221-team-picker .school-grid{gap:8px}.ui221-team-picker .school-card{padding:11px}
+/* Build 221 makes late UI polish coalesced rather than synchronous during the loading overlay. */
+body.app-building .ui-section-nav-v219,body.app-building #gameCommandCenterV219{pointer-events:none}
+@media(max-width:760px){
+ body.ui221-startup-mode #schoolScreen{padding:7px}
+ body.ui221-startup-mode #schoolScreen>.launch-brand{grid-template-columns:58px minmax(0,1fr);padding:9px;gap:9px}
+ body.ui221-startup-mode #schoolScreen>.launch-brand img{width:56px;height:56px}
+ body.ui221-startup-mode #schoolScreen>.launch-brand h2{font-size:1.05rem}
+ body.ui221-startup-mode #schoolScreen>.launch-brand p{display:none}
+ body.ui221-startup-mode .save-slot-cards{grid-template-columns:1fr}
+ body.ui221-startup-mode .save-slot-card{min-height:64px;padding:8px 9px}
+ .ui221-team-picker-head{grid-template-columns:1fr;gap:7px}.ui221-team-picker-head .btn{justify-self:start;min-height:36px;padding:6px 9px}.ui221-team-picker-head h2{font-size:1.05rem}
+}

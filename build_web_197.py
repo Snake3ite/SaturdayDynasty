@@ -36,7 +36,7 @@ def apply_line_patch(path: Path, prefix: str, patch_dir: Path) -> None:
     lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
     for i1, i2, replacement in reversed(inflate(prefix, patch_dir)):
         lines[i1:i2] = [replacement] if replacement else []
-    path.write_text("".join(lines), encoding="utf-8")
+    path.write_text("".join(lines), encoding="utf-8", newline="")
 
 
 app_path = OUTPUT / "app-bundle.js"
@@ -57,12 +57,12 @@ html = html.replace(
 )
 html = html.replace("?v=195", "?v=197")
 html = html.replace("Build 195", "Build 197")
-index_path.write_text(html, encoding="utf-8")
+index_path.write_text(html, encoding="utf-8", newline="")
 
 if web_shell.exists():
     shell = web_shell.read_text(encoding="utf-8")
     shell = re.sub(r"app_version:'web-v[^']+'", "app_version:'web-v27.4.6-build-197'", shell)
-    web_shell.write_text(shell, encoding="utf-8")
+    web_shell.write_text(shell, encoding="utf-8", newline="")
 
 (OUTPUT / "sw.js").write_text(
     """const CACHE='sdf-web-v27-4-6-build-197';
@@ -71,7 +71,7 @@ self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(c
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',event=>{if(event.request.method!=='GET')return;event.respondWith(fetch(event.request).then(response=>{const copy=response.clone();caches.open(CACHE).then(cache=>cache.put(event.request,copy));return response}).catch(()=>caches.match(event.request).then(hit=>hit||caches.match('./index.html'))));});
 """,
-    encoding="utf-8",
+    encoding="utf-8", newline="",
 )
 
 app_hash = hashlib.sha256(app_path.read_bytes()).hexdigest()

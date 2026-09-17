@@ -1,0 +1,20 @@
+/* Android V1.6.3 closed-test repairs */
+.setup-strip input{min-width:180px;padding:.72rem .8rem;border:1px solid var(--border);border-radius:.7rem;background:var(--surface);color:var(--text)}
+.modal-card{padding-bottom:calc(110px + env(safe-area-inset-bottom))!important;max-height:calc(100dvh - 24px);overflow-y:auto}
+#recruitingTab,#rosterTab,#historyTab,#dynastyTab{padding-bottom:calc(96px + env(safe-area-inset-bottom))}
+.snap-stepper{display:grid;grid-template-columns:auto minmax(64px,1fr) auto;gap:.35rem;align-items:center}.snap-stepper input{width:100%;text-align:center}
+.snap-total{display:flex;justify-content:space-between;gap:.75rem;align-items:center;margin-top:.65rem;padding:.65rem .75rem;border-radius:.65rem;border:1px solid var(--border)}
+.snap-total.valid{border-color:#16a34a}.snap-total.invalid{border-color:#dc2626}.snap-total span{font-size:.82rem;color:var(--muted)}
+.development-player-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.6rem;align-items:center}.development-player-card select{grid-column:1/-1;width:100%}
+#programTrendGrid table{width:100%;border-collapse:collapse}#programTrendGrid th,#programTrendGrid td{padding:.65rem;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap}
+.viz-callout{margin-top:1rem;padding:1rem;border:1px solid var(--team-primary);border-radius:.85rem;background:color-mix(in srgb,var(--team-primary) 10%,transparent);display:grid;gap:.65rem}
+@media(max-width:760px){.setup-strip{align-items:stretch}.setup-strip label{width:100%}.setup-strip input,.setup-strip select{width:100%}.development-player-card{grid-template-columns:1fr}.development-player-card .btn{width:100%}.snap-total{align-items:flex-start;flex-direction:column}}
+.development-preview-columns,.two-col{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.8rem;align-items:start}
+@media(max-width:620px){.development-preview-columns,.two-col{grid-template-columns:1fr}}
+
+/* V1.6.6 all-position recruiting forecast */
+.forecast-grid-all{grid-template-columns:repeat(auto-fit,minmax(138px,1fr));gap:8px}
+.forecast-grid-all .forecast-card{padding:10px;min-height:88px}
+.forecast-card.moderate{border-left:4px solid var(--blue,#3b82f6)}
+.forecast-count{font-size:.78rem;color:var(--muted);white-space:nowrap}
+@media(max-width:760px){.forecast-grid-all{grid-template-columns:repeat(2,minmax(0,1fr))}.forecast-grid-all .forecast-card{padding:9px}.forecast-grid-all .forecast-card b{font-size:.92rem}.forecast-grid-all .forecast-card .sub{font-size:.72rem}}

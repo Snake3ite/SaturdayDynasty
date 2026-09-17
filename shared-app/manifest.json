@@ -1,0 +1,27 @@
+{
+  "name": "Saturday Dynasty Football",
+  "short_name": "Saturday Dynasty",
+  "id": "com.coreytoolis.saturdaydynastyfootball",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#020811",
+  "theme_color": "#07131f",
+  "description": "Saturday Dynasty Football \u2014 Build 235 refactors every screen into one consistent, phone-first interface while preserving the full dynasty workflow.",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "version": "27.4.34"
+}

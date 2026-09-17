@@ -1,0 +1,21 @@
+
+.recruiting-resource-guide{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:12px 0}
+.recruiting-resource-guide article{display:flex;gap:10px;align-items:flex-start;background:#102536;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px}
+.recruiting-resource-guide article>span{font-size:1.35rem}
+.recruiting-resource-guide b,.recruiting-resource-guide strong,.recruiting-resource-guide small{display:block}
+.recruiting-resource-guide strong{font-size:1.08rem;color:var(--cyan);margin:2px 0}
+.recruiting-resource-guide small{color:var(--muted);line-height:1.35}
+.recruit-status-message.warning{background:#3a3012;border-color:rgba(250,204,21,.35)}
+.recruit-status-message.warning b,.recruit-status-message.warning span{color:#fde68a}
+.player-management-card{display:flex;justify-content:space-between;align-items:center;gap:14px;background:#102536;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;margin:14px 0}
+.player-management-card h3{margin:3px 0}.player-management-card p{margin:0;color:var(--muted);line-height:1.4}
+.progression-list{display:grid;gap:7px}.progression-row{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#0d1b29;border-radius:10px;padding:9px}
+.progression-row span{color:var(--muted)}.progression-row em{font-style:normal;margin-left:5px}.progression-row em.gain,.progress-badge{color:#86efac}
+.progress-badge{background:#153625;border-radius:999px;padding:2px 5px}
+@media(max-width:760px){
+ .recruiting-resource-guide{grid-template-columns:1fr}
+ .player-management-card{align-items:stretch;flex-direction:column}
+ .player-management-card .btn{width:100%}
+}
+
+.walkon-control{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#122334;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px;margin:10px 0 14px}.walkon-control span{display:block;margin-top:3px}@media(max-width:760px){.walkon-control{align-items:stretch;flex-direction:column}.walkon-control .btn{width:100%}}

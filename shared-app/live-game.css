@@ -1,0 +1,145 @@
+/* Game Center has one presentation owner. The gc namespace intentionally
+   avoids the historical live-field and live-scoreboard override layers. */
+html:has(#gameSimModal:not(.hidden)),body:has(#gameSimModal:not(.hidden)){overflow:hidden!important}
+#gameSimModal .game-sim-card{width:min(1120px,96vw)!important;max-width:1120px;max-height:94dvh!important;padding:0!important;border:1px solid #33424b!important;border-radius:20px!important;background:#0c151c!important;overflow:auto!important;overscroll-behavior:contain;scrollbar-color:#41515b #101b23}
+#gameSimBody .gc-center,#gameSimBody .gc-final{--gc-bg:#0c151c;--gc-surface:#14222c;--gc-line:#2d3d47;--gc-muted:#a6b5bd;--gc-text:#f5f7f8;--gc-accent:#c4e885;background:var(--gc-bg);color:var(--gc-text);font-size:14px;line-height:1.5;min-height:0;padding:24px 28px 28px;isolation:isolate}
+#gameSimBody .gc-center *,#gameSimBody .gc-final *{box-sizing:border-box;min-width:0}
+#gameSimBody .gc-center button,#gameSimBody .gc-final button{font:inherit;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+#gameSimBody .gc-center :focus-visible,#gameSimBody .gc-final :focus-visible{outline:3px solid #c4e885;outline-offset:3px}
+#gameSimBody .gc-center button:disabled{opacity:.5;cursor:wait}
+.gc-sr-only{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;margin:-1px!important;padding:0!important;border:0!important}
+.gc-header{display:flex;justify-content:space-between;align-items:center;gap:16px}
+.gc-eyebrow{font-size:10px;letter-spacing:.17em;font-weight:800;color:var(--gc-accent)}
+#gameSimBody .gc-header h2{margin:2px 0 0;padding:0;font-size:27px;line-height:1.2;letter-spacing:-.045em;font-weight:800;text-align:left}
+.gc-header-actions{display:flex;gap:8px;align-items:center}
+#gameSimBody .gc-button{display:inline-flex;align-items:center;justify-content:center;gap:10px;border:1px solid #42515a;border-radius:10px;background:#1b2b35;color:#edf3f5;padding:10px 15px;min-height:44px;white-space:nowrap;font-weight:700;font-size:13px;box-shadow:none}
+#gameSimBody .gc-button:hover{background:#263b47;border-color:#75878f}
+#gameSimBody .gc-button-primary{background:var(--gc-accent);color:#1b2b18;border-color:var(--gc-accent);min-width:108px}
+#gameSimBody .gc-button-primary:hover{background:#d3f59a;border-color:#d3f59a}
+#gameSimBody .gc-help{padding:8px;width:44px;border-color:transparent;background:transparent;font-size:18px}
+.gc-match-meta{display:flex;justify-content:space-between;gap:12px;margin:18px 0 0;padding-bottom:12px;color:var(--gc-muted);font-size:12px;border-bottom:1px solid var(--gc-line)}
+.gc-scoreboard{display:grid;grid-template-columns:minmax(0,1fr) 110px minmax(0,1fr);align-items:center;gap:16px;padding:25px 4px 22px}
+.gc-team{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:12px;align-items:center}
+.gc-team-identity{display:flex;align-items:center;gap:12px}
+.gc-team-identity img{flex:none;width:66px;height:66px;object-fit:contain;filter:drop-shadow(0 3px 7px #0006)}
+.gc-team-meta{display:block;color:var(--gc-muted);font-size:11px;margin-bottom:3px}
+.gc-team-name{display:block;font-size:18px;line-height:1.25;letter-spacing:-.025em;overflow-wrap:break-word}
+.gc-score{font-size:64px;line-height:1;font-weight:850;letter-spacing:-.07em;font-variant-numeric:tabular-nums}
+.gc-team-them{direction:rtl}.gc-team-them>*{direction:ltr}.gc-team-them .gc-team-identity{flex-direction:row-reverse;text-align:right}
+.gc-possession{grid-column:1/-1;display:flex;align-items:center;gap:5px;margin-top:7px;color:var(--gc-accent);font-size:10px;font-weight:700;line-height:1.2;min-height:12px}
+.gc-team-them .gc-possession{justify-content:flex-end}
+.gc-possession i{width:7px;height:7px;display:inline-block;transform:rotate(-30deg);border-radius:70% 30%;background:var(--gc-accent)}
+.gc-clock{text-align:center;border-left:1px solid var(--gc-line);border-right:1px solid var(--gc-line);padding:7px 8px}
+.gc-clock>span{display:block;color:var(--gc-accent);font-weight:800;font-size:12px;letter-spacing:.12em}
+.gc-clock strong{font-size:29px;font-weight:750;line-height:1.4;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.gc-clock small{display:block;font-size:10px;color:var(--gc-muted)}
+.gc-presentation{display:grid;grid-template-columns:minmax(0,1.75fr) minmax(220px,1fr);gap:14px;align-items:stretch}
+.gc-field-card{border:1px solid var(--gc-line);border-radius:13px;overflow:hidden;background:#14222c}
+.gc-situation{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:10px;padding:12px 16px}
+.gc-situation>div+div{border-left:1px solid #34444e;padding-left:12px}
+.gc-situation small{display:block;font-size:9px;font-weight:700;letter-spacing:.08em;color:var(--gc-muted);white-space:nowrap}
+.gc-situation b{display:block;font-size:17px;letter-spacing:-.025em;line-height:1.4}
+.gc-drive-direction b span{color:var(--gc-accent);margin-left:3px}
+.gc-field{height:184px;position:relative;overflow:hidden;background:#255b42;border-block:2px solid #b2cabc}
+.gc-playing-area{position:absolute;inset:0 8%;border-inline:2px solid #cfdfd5;background:repeating-linear-gradient(90deg,#255b42 0%,#255b42 10%,#205139 10%,#205139 20%)}
+.gc-playing-area:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0%,transparent calc(10% - 1px),#d9e9df8c calc(10% - 1px),#d9e9df8c 10%);pointer-events:none}
+.gc-endzone{position:absolute;top:0;bottom:0;width:8%;display:flex;align-items:center;justify-content:center;writing-mode:vertical-rl;background:#183a32;color:#dce8df;font-size:12px;font-weight:900;letter-spacing:.12em}
+.gc-endzone-us{left:0;transform:rotate(180deg)}.gc-endzone-them{right:0;background:#1d3537}
+.gc-yard-numbers{position:absolute;left:0;right:0;top:13%;height:18px;color:#e3ede3cc;font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:12px;line-height:1}
+.gc-yard-numbers span{position:absolute;transform:translateX(-50%);white-space:nowrap;font-variant-numeric:tabular-nums}
+.gc-yard-bottom{top:auto;bottom:12%;transform:rotate(180deg)}
+.gc-hash{position:absolute;left:0;right:0;height:5px;background:repeating-linear-gradient(90deg,transparent 0%,transparent calc(1% - 1px),#d3e7dcb3 calc(1% - 1px),#d3e7dcb3 1%)}
+.gc-hash-top{top:36%}.gc-hash-bottom{bottom:36%}
+.gc-midfield-logo{position:absolute;width:54px;height:54px;object-fit:contain;left:50%;top:50%;transform:translate(-50%,-50%);opacity:.25;filter:grayscale(1) brightness(2)}
+.gc-first-down,.gc-scrimmage{position:absolute;top:0;bottom:0;width:3px;transform:translateX(-50%);z-index:2;box-shadow:0 0 3px #001a0e80}
+.gc-first-down{background:#f7cc5c}.gc-scrimmage{background:#67cef2}
+.gc-football{position:absolute;z-index:3;top:50%;transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 2px 3px #000b);width:29px;height:29px;border:1px solid #eef4ee;border-radius:50%;background:#10271fdc}
+.gc-football i{display:block;width:15px;height:9px;background:#a66a3d;border:1px solid #edd4b3;border-radius:70% 30%;transform:rotate(-30deg);position:relative}
+.gc-football i:after{content:"";position:absolute;left:3px;right:3px;top:3px;border-top:1px dashed #fff}
+.gc-football span{position:absolute;left:34px;top:1px;font-size:20px;line-height:24px;font-weight:900;color:#fff}.gc-football.drives-left span{left:auto;right:34px}
+.gc-field-key{display:flex;justify-content:center;gap:18px;color:#c1d0d5;padding:7px 10px;font-size:10px}
+.gc-field-key span{display:flex;align-items:center;gap:6px}.gc-field-key i{width:13px;height:2px;display:block;background:#67cef2}.gc-field-key .gc-key-first{background:#f7cc5c}
+.gc-latest{display:flex;flex-direction:column;align-items:flex-start;padding:21px 20px;border:1px solid var(--gc-line);border-radius:13px;background:linear-gradient(145deg,#1c2e36,#14222c)}
+.gc-latest-kicker{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:10px;font-weight:800;color:var(--gc-accent);letter-spacing:.08em}
+.gc-latest-kicker>span:last-child{color:var(--gc-muted);font-size:10px;text-transform:none;font-weight:500;letter-spacing:0;margin-left:8px}
+.gc-status-dot{display:block;width:6px;height:6px;border-radius:50%;background:#c4e885;box-shadow:0 0 0 3px #c4e88516}
+.gc-status-dot.is-paused{background:#bcc8ce;box-shadow:none}
+.gc-latest p{font-size:21px;line-height:1.45;font-weight:650;letter-spacing:-.025em;margin:14px 0 16px;overflow-wrap:break-word}
+.gc-latest>small{color:var(--gc-muted);margin-top:auto;font-size:11px}
+.gc-latest.gc-event-score{background:linear-gradient(145deg,#233629,#14251f);border-color:#4d6950}
+.gc-latest.gc-event-turnover,.gc-latest.gc-event-penalty{border-color:#7c6944}
+.gc-latest.gc-event-injury{border-color:#8c525a}
+.gc-control-dock{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:14px 0 19px;background:var(--gc-bg)}
+.gc-playback{display:flex;align-items:center;gap:12px}
+.gc-speeds{display:flex;align-items:center;gap:2px;border:1px solid #35454f;padding:0;border-radius:10px;background:#101d25;overflow:hidden}
+#gameSimBody .gc-speed{min-width:44px;min-height:44px;padding:6px 10px;border:0;border-radius:7px;background:transparent;color:#b7c4cb;font-size:13px;font-weight:650}
+#gameSimBody .gc-speed[aria-pressed="true"]{background:#354751;color:#fff}
+#gameSimBody .gc-speed:hover{background:#293d48;color:#fff}
+#gameSimBody .gc-finish{background:transparent;color:#d5dee2;border-color:#42515a}
+.gc-details{border:1px solid var(--gc-line);border-radius:13px;overflow:hidden;background:#111e27}
+.gc-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-bottom:1px solid var(--gc-line);background:#14222c}
+#gameSimBody .gc-tabs button{min-height:51px;padding:13px 10px;border:0;border-bottom:3px solid transparent;border-radius:0;background:transparent;color:#a6b5bd;font-size:13px;font-weight:700}
+#gameSimBody .gc-tabs button[aria-selected="true"]{border-bottom-color:var(--gc-accent);color:#f2f7ee;background:#c4e88506}
+#gameSimBody .gc-tabs button:hover{background:#20313b;color:#fff}
+.gc-details [hidden],#gameSimBody .gc-panel-heading [hidden]{display:none!important}
+.gc-panel-heading{display:flex;align-items:center;gap:12px;min-height:44px;padding:10px 17px;border-bottom:1px solid #2b3b454d;color:var(--gc-muted);font-size:11px}
+.gc-panel-heading>small{margin-left:auto;font-size:10px}
+#gameSimBody .gc-latest-button{border:0;background:transparent;color:var(--gc-accent);padding:4px 7px;font-size:11px;min-height:44px}
+.gc-feed{position:relative;max-height:370px;overflow:auto;overscroll-behavior:contain;scrollbar-color:#41515b #101b23;scrollbar-width:thin}
+.gc-feed-row{display:grid;grid-template-columns:48px minmax(0,1fr) 43px;gap:15px;align-items:start;padding:15px 18px;border-bottom:1px solid #2b3b4573}
+.gc-feed-row:last-child{border-bottom:0}
+.gc-feed-time{display:grid;gap:1px;font-size:11px;color:var(--gc-muted);font-variant-numeric:tabular-nums}.gc-feed-time b{font-weight:750;color:#dce4e7}
+.gc-feed-row p{margin:0;font-size:13px;line-height:1.55;color:#e1e8ec;overflow-wrap:break-word}
+.gc-feed-row small{display:block;color:var(--gc-accent);font-size:9px;letter-spacing:.06em;font-weight:800;text-transform:uppercase;margin-bottom:4px}
+.gc-feed-score{text-align:right;white-space:nowrap;color:#a6b5bd;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums}
+.gc-feed-row.gc-event-score{background:#c4e88508;border-left:3px solid #b5d879;padding-left:15px}.gc-feed-row.gc-event-score .gc-feed-score{color:#c4e885}
+.gc-feed-row.gc-event-turnover small,.gc-feed-row.gc-event-penalty small{color:#f2cc82}.gc-feed-row.gc-event-injury small{color:#ffb1b8}.gc-feed-row.gc-event-quarter{background:#2b455133}
+.gc-empty{display:grid;gap:5px;padding:28px 20px;text-align:center;color:var(--gc-muted);font-size:13px}.gc-empty b{color:#e1e9ed;font-weight:650}.gc-empty span{font-size:12px}
+#gameSimBody .gc-stats-table{width:100%;border-collapse:collapse;table-layout:fixed;margin:0;background:transparent;font-size:13px}
+#gameSimBody .gc-stats-table th{position:static}
+#gameSimBody .gc-stats-table thead th{padding:16px 12px 12px;text-align:center;background:transparent;border:0;white-space:normal;width:32%;color:#e1e9ed;text-transform:none;letter-spacing:0;font-size:11px}
+#gameSimBody .gc-stats-table thead th:nth-child(2){width:36%}
+.gc-stats-table thead img{display:block;margin:0 auto 5px;width:32px;height:32px;object-fit:contain}
+#gameSimBody .gc-stats-table tbody th,#gameSimBody .gc-stats-table tbody td{padding:11px 12px;border:0;border-top:1px solid #2b3b4573;background:transparent;text-align:center;white-space:normal;font-variant-numeric:tabular-nums}
+#gameSimBody .gc-stats-table tbody th{font-size:11px;font-weight:500;color:var(--gc-muted)}
+#gameSimBody .gc-stats-table td{font-size:14px;font-weight:700;color:#e4ecef}
+#gameSimBody .gc-stats-table tr.gc-stat-total{background:#c4e88508}
+#gameSimBody .gc-stats-table tr.gc-stat-total td{color:#d2eea9;font-size:20px}
+.gc-players{padding:4px 18px 12px}.gc-players article{display:grid;grid-template-columns:39px minmax(0,1fr) auto;align-items:center;gap:12px;padding:17px 0;border-bottom:1px solid #2b3b4573}
+.gc-player-position{display:grid;place-items:center;width:36px;height:36px;border:1px solid #41515a;border-radius:9px;color:var(--gc-accent);font-size:10px;font-weight:800;background:#1b2c35}
+.gc-players article b{display:block;font-size:14px;line-height:1.3}.gc-players article div>span{display:block;color:var(--gc-muted);font-size:11px;margin-top:4px;line-height:1.6}.gc-players article>small{color:var(--gc-accent);font-size:9px;letter-spacing:.05em}
+.gc-injuries{margin:10px 18px 18px;border:1px solid #79505a;background:#40273155;border-radius:10px;padding:14px}
+.gc-injuries h3{font-size:12px;margin:0 0 8px;color:#ffc0c5}.gc-injuries>div{display:flex;justify-content:space-between;gap:12px;font-size:12px;margin-top:7px}.gc-injuries span{color:#e2afb7}
+.gc-final .gc-scoreboard{margin:20px 0;border-block:1px solid var(--gc-line)}
+.gc-final-heading{text-align:center;padding-top:14px}.gc-final-heading .gc-eyebrow{color:#c4e885}
+#gameSimBody .gc-final-heading h2{font-size:32px;line-height:1.2;letter-spacing:-.04em;margin:8px 0 10px}
+.gc-final-heading p{color:var(--gc-muted);font-size:13px;max-width:570px;margin:0 auto}
+.gc-final-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.gc-final-grid>section{background:#111e27;border:1px solid var(--gc-line);border-radius:13px;overflow:hidden}.gc-final-grid h3{font-size:13px;padding:15px 18px;margin:0;border-bottom:1px solid var(--gc-line)}
+.gc-final-actions{display:flex;justify-content:center;gap:12px;margin-top:24px}
+@media(min-width:1000px){.gc-details{max-width:100%}.gc-feed-row{grid-template-columns:60px minmax(0,1fr) 70px}.gc-feed-row p{font-size:14px}}
+@media(max-width:800px){
+ #gameSimModal{padding:0!important;align-items:stretch!important}
+ #gameSimModal .game-sim-card{width:100%!important;max-width:none;max-height:100dvh!important;height:100dvh;border:0!important;border-radius:0!important;padding:0!important}
+ #gameSimBody .gc-center,#gameSimBody .gc-final{padding:calc(15px + env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) calc(24px + env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left));min-height:100dvh;font-size:13px}
+ #gameSimBody .gc-center{padding-bottom:calc(92px + env(safe-area-inset-bottom))}
+ #gameSimBody .gc-header h2{font-size:23px}.gc-eyebrow{font-size:9px}.gc-header{gap:10px}.gc-header-actions{gap:3px}
+ #gameSimBody .gc-exit{font-size:11px;padding:9px 11px}.gc-match-meta{margin-top:14px;padding-bottom:10px;font-size:10px;gap:8px}
+ .gc-scoreboard{grid-template-columns:minmax(0,1fr) 72px minmax(0,1fr);gap:8px;padding:20px 0 17px}
+ .gc-team{grid-template-columns:minmax(0,1fr);text-align:center;gap:0;direction:ltr}
+ .gc-team-identity,.gc-team-them .gc-team-identity{flex-direction:column;gap:5px;text-align:center}
+ .gc-team-identity img{width:45px;height:45px}.gc-team-name{font-size:13px;line-height:1.25;min-height:33px;display:flex;align-items:center;justify-content:center;max-width:100%;overflow-wrap:break-word}.gc-team-meta{font-size:9px;margin-bottom:4px}
+ .gc-score{font-size:49px;margin-top:8px;letter-spacing:-.07em}.gc-possession,.gc-team-them .gc-possession{justify-content:center;margin-top:7px;font-size:9px}
+ .gc-clock{padding:6px 4px;margin-top:22px}.gc-clock strong{font-size:23px}.gc-clock>span{font-size:11px}.gc-clock small{font-size:9px}
+ .gc-presentation{display:flex;flex-direction:column;gap:10px}.gc-situation{padding:11px 12px;gap:7px}.gc-situation small{font-size:8px;letter-spacing:.06em}.gc-situation b{font-size:16px}.gc-situation>div+div{padding-left:9px}
+ .gc-field{height:154px}.gc-endzone{font-size:11px}.gc-yard-numbers{font-size:10px}.gc-midfield-logo{width:46px;height:46px}.gc-field-key{font-size:9px;padding:6px 10px}
+ .gc-latest{padding:14px 15px;min-height:125px}.gc-latest-kicker{font-size:9px}.gc-latest-kicker>span:last-child{font-size:10px}.gc-latest p{font-size:16px;line-height:1.5;margin:9px 0 10px;font-weight:600}.gc-latest>small{font-size:10px}
+ .gc-control-dock{gap:9px;padding:12px 0 16px;flex-wrap:wrap;justify-content:flex-end}.gc-playback{position:fixed;bottom:0;left:0;right:0;z-index:40;gap:8px;padding:11px max(14px,env(safe-area-inset-right)) calc(11px + env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left));background:#111e27;border-top:1px solid #41515a;box-shadow:0 -8px 20px #0003}.gc-speeds{flex:1;justify-content:space-between;gap:0;padding:0}
+ #gameSimBody .gc-button-primary{min-width:97px;font-size:12px;padding:10px 12px}.gc-control-dock>.gc-finish{font-size:12px;min-height:44px;padding:9px 13px}
+ #gameSimBody .gc-speed{min-width:44px;min-height:44px;padding:6px;font-size:12px}
+ .gc-tabs button{font-size:12px!important;min-height:49px!important}.gc-panel-heading{padding:10px 12px;font-size:10px;gap:5px}.gc-panel-heading>small{font-size:9px}.gc-feed{max-height:410px}.gc-feed-row{grid-template-columns:35px minmax(0,1fr) 35px;gap:10px;padding:13px 12px}.gc-feed-row.gc-event-score{padding-left:9px}.gc-feed-time,.gc-feed-score{font-size:10px}.gc-feed-row p{font-size:12px;line-height:1.6}.gc-feed-row small{font-size:8px}
+ .gc-players{padding:2px 13px 10px}.gc-players article{gap:9px}.gc-players article b{font-size:13px}.gc-players article div>span{font-size:10px}.gc-players article>small{font-size:8px}
+ .gc-injuries>div{flex-direction:column;gap:2px}.gc-final-grid{grid-template-columns:1fr}.gc-final-actions{flex-direction:column;margin-top:17px;gap:9px}#gameSimBody .gc-final-heading h2{font-size:27px}
+}
+@media(max-width:430px){.gc-control-dock>.gc-finish{width:100%;min-height:44px!important}.gc-playback{flex-basis:100%}.gc-scoreboard{padding-top:17px}.gc-score{font-size:46px}.gc-team-name{font-size:12px}.gc-team-identity img{width:42px;height:42px}}
+@media(max-width:350px){#gameSimBody .gc-center,#gameSimBody .gc-final{padding-left:10px;padding-right:10px}.gc-match-meta{font-size:9px}.gc-situation b{font-size:14px}.gc-situation small{font-size:7px}.gc-header h2{font-size:21px!important}.gc-scoreboard{grid-template-columns:minmax(0,1fr) 67px minmax(0,1fr);gap:6px}.gc-team-name{font-size:11px}.gc-field{height:143px}.gc-latest p{font-size:15px}}
+@media(prefers-reduced-motion:reduce){#gameSimBody .gc-center *,#gameSimBody .gc-final *{animation:none!important;transition:none!important;scroll-behavior:auto!important}}

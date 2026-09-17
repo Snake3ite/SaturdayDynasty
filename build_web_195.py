@@ -76,7 +76,7 @@ def apply_line_patch(path: Path, prefix: str, patch_dir: Path) -> None:
     ops = json.loads(inflate(prefix, patch_dir))
     for i1, i2, replacement in reversed(ops):
         lines[i1:i2] = [replacement] if replacement else []
-    path.write_text("".join(lines), encoding="utf-8")
+    path.write_text("".join(lines), encoding="utf-8", newline="")
 
 
 def append_css_once(styles_path: Path, patch_dir: Path, marker: str | None) -> None:
@@ -85,7 +85,7 @@ def append_css_once(styles_path: Path, patch_dir: Path, marker: str | None) -> N
     addition = (patch_dir / "styles-additions.css").read_text(encoding="utf-8")
     styles = styles_path.read_text(encoding="utf-8")
     if marker not in styles:
-        styles_path.write_text(styles.rstrip() + "\n\n" + addition.rstrip() + "\n", encoding="utf-8")
+        styles_path.write_text(styles.rstrip() + "\n\n" + addition.rstrip() + "\n", encoding="utf-8", newline="")
 
 
 zip_path = Path(ZIP_NAME)
@@ -134,14 +134,14 @@ for build, patch_dir, css_marker, android_old, android_new, web_old, web_new in 
     html = html.replace(web_old, web_new)
     html = html.replace(f"?v={previous_build}", f"?v={build}")
     html = html.replace(f"Build {previous_build}", f"Build {build}")
-    index_path.write_text(html, encoding="utf-8")
+    index_path.write_text(html, encoding="utf-8", newline="")
     previous_build = build
 
 # Normalize the recovered Build 194 stylesheet cache key to the Build 195 release.
 html = index_path.read_text(encoding="utf-8")
 html = html.replace('styles.css?v=195-cssfix', 'styles.css?v=195')
 html = html.replace('styles.css?v=194-cssfix', 'styles.css?v=195')
-index_path.write_text(html, encoding="utf-8")
+index_path.write_text(html, encoding="utf-8", newline="")
 
 # Restore exact canonical team logos. Custom commissioner logos live in the save
 # and override these assets at runtime.
@@ -155,7 +155,7 @@ logo_dir.mkdir(parents=True, exist_ok=True)
 for filename, svg in logo_payload.items():
     if not re.fullmatch(r"team-\d+\.svg", filename) or not isinstance(svg, str) or "<svg" not in svg:
         raise SystemExit(f"Build 195 team-logo bundle contains an invalid entry: {filename}")
-    (logo_dir / filename).write_text(svg, encoding="utf-8")
+    (logo_dir / filename).write_text(svg, encoding="utf-8", newline="")
 
 repo_cloud_config = Path("cloud-config.js")
 if not repo_cloud_config.exists():
@@ -180,13 +180,13 @@ if "browser-save-bridge.js?v=195" not in html:
     if anchor not in html:
         raise SystemExit("Could not locate Build 195 web-shell script anchor.")
     html = html.replace(anchor, anchor + "\n" + browser_scripts)
-index_path.write_text(html, encoding="utf-8")
+index_path.write_text(html, encoding="utf-8", newline="")
 
 web_shell = OUTPUT / "web-shell.js"
 if web_shell.exists():
     shell = web_shell.read_text(encoding="utf-8")
     shell = re.sub(r"app_version:'web-v[^']+'", "app_version:'web-v27.4.4-build-195'", shell)
-    web_shell.write_text(shell, encoding="utf-8")
+    web_shell.write_text(shell, encoding="utf-8", newline="")
 
 (OUTPUT / "sw.js").write_text(
     """const CACHE='sdf-web-v27-4-4-build-195';
@@ -195,7 +195,7 @@ self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(c
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',event=>{if(event.request.method!=='GET')return;event.respondWith(fetch(event.request).then(response=>{const copy=response.clone();caches.open(CACHE).then(cache=>cache.put(event.request,copy));return response}).catch(()=>caches.match(event.request).then(hit=>hit||caches.match('./index.html'))));});
 """,
-    encoding="utf-8",
+    encoding="utf-8", newline="",
 )
 
 for name in ("_redirects", "supabase.sql"):

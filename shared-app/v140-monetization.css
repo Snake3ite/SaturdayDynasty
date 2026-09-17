@@ -1,0 +1,77 @@
+
+.sponsor-center{position:relative;overflow:hidden}
+.sponsor-center::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:linear-gradient(90deg,var(--cyan),transparent)}
+.sponsor-badge{border:1px solid rgba(34,211,238,.38);background:rgba(34,211,238,.1);color:var(--cyan);border-radius:999px;padding:7px 10px;font-size:.72rem;font-weight:900;letter-spacing:.08em}
+.ad-status-panel{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:12px 0}
+.ad-status-panel>div{background:rgba(3,13,22,.56);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:11px;display:flex;flex-direction:column;gap:4px}
+.ad-status-panel small,.sponsor-reward-card small{color:var(--cyan);font-weight:800;letter-spacing:.08em}
+.sponsor-reward-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.sponsor-reward-card{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start;background:linear-gradient(145deg,rgba(17,43,61,.95),rgba(7,20,31,.98));border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:14px}
+.sponsor-reward-card .btn{grid-column:1/-1;width:100%}
+.sponsor-reward-card h3{margin:2px 0 4px}.sponsor-reward-card p{margin:0;color:var(--muted)}
+.sponsor-icon{display:grid;place-items:center;width:42px;height:42px;border-radius:11px;background:rgba(34,211,238,.12);border:1px solid rgba(34,211,238,.28);font-weight:900;color:var(--cyan);font-size:1.2rem}
+.sponsor-policy-row{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:12px;color:var(--muted);font-size:.88rem}
+@media(max-width:700px){.ad-status-panel,.sponsor-reward-grid{grid-template-columns:1fr}.sponsor-policy-row{align-items:stretch;flex-direction:column}.sponsor-policy-row .btn{width:100%}}
+
+/* V1.4.2 Sponsor Center discoverability */
+#openSponsorDashboardBtn,#openSponsorRecruitingBtn{white-space:nowrap}
+#openSponsorMobileBtn{color:var(--cyan);font-weight:800;border-color:rgba(34,211,238,.25)}
+@media(max-width:700px){
+ .dashboard-game-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%}
+ .dashboard-game-actions #openSponsorDashboardBtn{grid-column:1/-1}
+ .recruit-controls #openSponsorRecruitingBtn{width:100%}
+}
+
+
+/* V1.4.3 direct rewarded-ad buttons on Recruiting */
+.recruit-inline-ad-buttons{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin:0 0 12px;
+}
+.recruit-inline-ad-btn{
+  appearance:none;
+  border:1px solid rgba(74,222,128,.65);
+  background:linear-gradient(180deg,#22c55e,#15803d);
+  color:#fff;
+  border-radius:9px;
+  min-height:38px;
+  padding:8px 12px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  font:inherit;
+  font-size:.82rem;
+  font-weight:900;
+  line-height:1.1;
+  cursor:pointer;
+  box-shadow:0 5px 12px rgba(21,128,61,.2);
+}
+.recruit-inline-ad-btn:active:not(:disabled){
+  transform:translateY(1px);
+}
+.recruit-inline-ad-btn:disabled{
+  cursor:not-allowed;
+  opacity:.55;
+  filter:saturate(.55);
+  box-shadow:none;
+}
+@media(max-width:700px){
+  .recruit-inline-ad-buttons{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+  }
+  .recruit-inline-ad-btn{
+    width:100%;
+    min-width:0;
+    padding:9px 7px;
+    font-size:.75rem;
+  }
+}
+@media(max-width:390px){
+  .recruit-inline-ad-buttons{
+    grid-template-columns:1fr;
+  }
+}
