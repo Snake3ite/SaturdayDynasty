@@ -1,7 +1,7 @@
 {
-  "version": "27.4.37",
-  "release": "Android V27.4.37 · Build 238 · Challenge Careers",
-  "versionCode": 238,
+  "version": "27.4.38",
+  "release": "Android V27.4.38 · Build 239 · Season Stories",
+  "versionCode": 239,
   "fileCount": 172,
   "files": [
     {
@@ -11,8 +11,8 @@
     },
     {
       "path": "app-bundle.js",
-      "sha256": "ac0e91b01f1967c99e1cf3ce2a4cfbc401ed1ab8ee5f41eeb16a2dd226d0dded",
-      "bytes": 1275937
+      "sha256": "aa2ca5e10f9353a06b4e1dcae73a0abf015fc89a1aaaf981ee2748e5c5ac8a0b",
+      "bytes": 1283410
     },
     {
       "path": "app-shell.css",
@@ -691,8 +691,8 @@
     },
     {
       "path": "coach-journey.css",
-      "sha256": "b4a8621f0ab1ebc86896d640261ef121f4512a9c8a850d4ae545579e68f23fd2",
-      "bytes": 5314
+      "sha256": "76a4cf9b490657f6ab73811ad1042aff6346c1dd2dd6e344452efeedb4a7d2d4",
+      "bytes": 6323
     },
     {
       "path": "dynasty-story.css",
@@ -716,8 +716,8 @@
     },
     {
       "path": "index.html",
-      "sha256": "d78fb8596c90537668168177c24d171e0e4d17113386e20d3a2b54eb5955ad5f",
-      "bytes": 43492
+      "sha256": "a376d7c7a7d14ff1982f7da88c0c3d15443f33e4d281025805641dc84d8bcb86",
+      "bytes": 43489
     },
     {
       "path": "live-game.css",
@@ -726,7 +726,7 @@
     },
     {
       "path": "manifest.json",
-      "sha256": "0505d650b14d239e9895165ffce23c54308c091873b198a8057813f4c9ceaf9c",
+      "sha256": "07ffbdf398d01f2d27eb4d52d46cc211081a53cd7c73ce95956712b732c52df8",
       "bytes": 728
     },
     {
