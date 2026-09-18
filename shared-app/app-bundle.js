@@ -1290,7 +1290,7 @@ if(location.protocol==="http:"||location.protocol==="https:"){
 
 (()=>{
 'use strict';
-const RELEASE='Android V27.4.37 · Build 238 · Challenge Careers';
+const RELEASE='Android V27.4.38 · Build 239 · Season Stories';
 const SAVE_PREFIX='SaturdayDynastyFootballAndroidV1';
 const LEGACY_PREFIXES=['SaturdayArchitectAndroidV1','SaturdayArchitectCompleteV9','SaturdayArchitectStatsV82','SaturdayArchitectDynastyV81','SaturdayArchitectRealignmentV74','SaturdayArchitectRecruitingV73','SaturdayArchitect128V72','SaturdayArchitectMobileV71'];
 const ui={activeTab:'dashboard',recruitPage:1,recruitPageSize:window.innerWidth<=760?30:75,rosterQuery:'',recruitQuery:''};
@@ -5098,7 +5098,7 @@ function injectButtons(){
 }
 function updateButtons(){const defs=[['#sdfAndroidPlayerEditorBtn','player_editor','PLAYER EDITOR'],['#sdfAndroidTeamEditorBtn','team_editor','TEAM EDITOR'],['#sdfProfilePlayerEditorBtn','player_editor','EDIT PLAYER']];for(const [sel,k,label] of defs){const b=$p(sel);if(!b)continue;const ok=owns(k);b.classList.toggle('locked',!ok);b.textContent=ok?`✦ ${label}`:`🔒 ${label}`}}
 
-window.SDF_ANDROID_COMMERCE={openShop,closeShop,refresh:refreshBilling,owns,purchase};
+window.SDF_ANDROID_COMMERCE={openShop,closeShop,refresh:refreshBilling,owns,purchase,getState:()=>({ready:billing.ready,owned:[...billing.owned]})};
 window.SDF_COMMISSIONER={openPlayerEditor,openTeamEditor,hasPlayerEditor:()=>owns('player_editor'),hasTeamEditor:()=>owns('team_editor'),removeAds:()=>owns('remove_ads')};
 const init=()=>{ensureShop();ensureEditor();injectButtons();refreshBilling();setInterval(refreshBilling,15000)};
 document.readyState==='loading'?document.addEventListener('DOMContentLoaded',init):init();
@@ -7781,7 +7781,7 @@ async function flush(){
  for(const item of data.queue){if(batch.length===40||item.trackingId!==trackingId)break;batch.push(item)}
  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),10000);activeRequest=controller;
  try{
-  const payload={action:'events',platform:native()?'android':'browser',build:238,qa:!native()&&location.hostname!=='saturdaydynasty.ctoolis.workers.dev',events:batch.map(({trackingId,...e})=>e)};
+  const payload={action:'events',platform:native()?'android':'browser',build:239,qa:!native()&&location.hostname!=='saturdaydynasty.ctoolis.workers.dev',events:batch.map(({trackingId,...e})=>e)};
   if(trackingId)payload.device=trackingId;
   const response=await fetch(URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),signal:controller.signal,credentials:'omit',referrerPolicy:'no-referrer'});
   if(!response.ok)throw new Error('Usage delivery unavailable');
@@ -7852,7 +7852,7 @@ function record(event,product){
 }
 let lastSession=0;
 function session(){const now=Date.now();if(now-lastSession>=1800000){record('session');lastSession=now}}
-function diagnosticReport(){return{build:238,scope:'This device only; no online reporting',enabled:diagnostics.enabled,counts:diagnostics.events.reduce((a,e)=>(a[e.event]=(a[e.event]||0)+1,a),{}),events:diagnostics.events.map(e=>({...e}))}}
+function diagnosticReport(){return{build:239,scope:'This device only; no online reporting',enabled:diagnostics.enabled,counts:diagnostics.events.reduce((a,e)=>(a[e.event]=(a[e.event]||0)+1,a),{}),events:diagnostics.events.map(e=>({...e}))}}
 function downloadReport(){const url=URL.createObjectURL(new Blob([JSON.stringify(diagnosticReport(),null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='Saturday-Dynasty-Device-Diagnostics.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
 function ensureJourney(s){
  if(!s.coachJourneyV236)s.coachJourneyV236={eligible:Number(s.year)===1&&Number(s.week)===1&&!(s.schedule||[]).some(g=>g.result),active:false,dismissed:false,done:{},observed:{}};
@@ -7884,8 +7884,64 @@ function briefing(s){
  else cards.push({label:'Preparation',title:s.weeklyPractice||'Balanced',text:'Your current practice focus. Review the opponent and choose the preparation that fits this matchup.',tab:'gameplan'});
  const next=(s.schedule||[]).find(g=>!g.result&&Number(g.week)>=Number(s.week));
  cards.push(next?{label:`Next up · Week ${next.week}`,title:next.opponent||'Next matchup',text:`${next.home?'Home':'Away'}${next.conference?' · Conference game':''}. ${next.weather||'Check the matchup'} · Your next chance to move the season forward.`,tab:'gameday'}:{label:'Keep building',title:'Your next chapter',text:'Review your season, development and the next offseason decision in the Season Hub.',tab:'postseason'});
+ const moments=weeklyMoments(s);
+ if(moments.rivalry)cards[2]=moments.rivalry;
+ if(moments.development&&!hurt.length&&!unhappy)cards[1]=moments.development;
+ if(moments.record)cards.push(moments.record);
  return cards;
 }
+
+function weeklyMoments(s){
+ const out={},next=(s.schedule||[]).find(g=>!g.result&&Number(g.week)>=Number(s.week));
+ if(next?.rivalry){
+  const id=next.oppId??next.opponentId??s.rivalId,r=s.rivalryWorldV191?.rivalries?.[id]||s.rivalryHistory?.[id]||{},streak=Number(r.streak)||0;
+  out.rivalry={label:`Rivalry week · Week ${next.week}`,title:next.opponent||'Your rival',text:`${r.trophy||'Bragging rights on the line'}. Series ${Number(r.wins)||0}–${Number(r.losses)||0}${streak?` · ${Math.abs(streak)} straight ${streak>0?'wins':'losses'}`:''}. ${next.home?'Defend home field.':'Take it on the road.'}`,tab:'gameday'};
+ }
+ const growth=(s.roster||[]).flatMap(p=>(p.progressionHistory||[]).filter(h=>Number(h.dynastyYear)===Number(s.year)-(s.phase==='REGULAR'?1:0)&&Number(h.to)>Number(h.from)).map(h=>({p,h,gain:Number(h.to)-Number(h.from)}))).sort((a,b)=>b.gain-a.gain)[0];
+ if(growth)out.development={label:s.phase==='REGULAR'?'Last offseason’s breakthrough':'Recorded development',title:growth.p.name,text:`${growth.p.pos||'Player'} · ${growth.h.from} → ${growth.h.to} OVR (+${growth.gain}). Review their player journey and role in your team.`,tab:'roster'};
+ const record=(s.nationalRecordHistory||[]).filter(x=>String(x.teamId)===String(s.school.id)&&Number(x.year)===Number(s.year)&&Number(x.week)<=Number(s.week)&&Number(x.week)>=Number(s.week)-1).sort((a,b)=>Number(b.week)-Number(a.week)).at(0);
+ if(record)out.record={label:`Record book · Week ${record.week}`,title:record.player||s.school.name,text:`${record.label}: ${record.value}${record.level?` · ${record.level}`:''}. A new entry in your program’s story.`,tab:'postseason'};
+ return out;
+}
+function seasonWrap(s){
+ if(!['AWARDS','PORTAL'].includes(s.phase))return null;
+ const archived=(s.careerRecapsV237||[]).find(r=>r.key===`${s.school.id}:${s.year}`&&r.complete);
+ const recap=archived||(s.phase==='AWARDS'?window.SDF_DYNASTY_STORY?.makeRecap(s):null);
+ if(!recap?.games)return null;
+ const prep=window.SDF_V217_OFFSEASON?.PREP||[];
+ const step=s.phase==='PORTAL'?prep.find(x=>!s.offseasonTasks?.[x.key]):null;
+ const next=s.phase==='AWARDS'?'Review awards, then begin your offseason.':step?`${step.label} is next. Make your choices or let your staff handle it.`:s.offseasonFlow217?.stage==='PORTAL'?`Transfer Portal · Week ${Number(s.portalWeek)||1} of 4.`:'Your offseason review is complete. Open the transfer portal when ready.';
+ return{recap,next};
+}
+const reminderMemory=new Map();let activeReminder='';
+const reminderKey=()=>`SDF_COMMISSIONER_REMINDER_V239:${window.SDF_ACCOUNT_SCOPE?.databaseName?.()||'local'}`;
+function reminderPrefs(){const key=reminderKey();if(reminderMemory.has(key))return reminderMemory.get(key);try{const p=JSON.parse(localStorage.getItem(key)||'{}');return p&&typeof p==='object'?p:{}}catch{return{}}}
+function saveReminder(p){reminderMemory.set(reminderKey(),p);try{localStorage.setItem(reminderKey(),JSON.stringify(p))}catch{}}
+function reminderAllowed(p,season,ownership,now=Date.now()){
+ return ownership===false&&!p.never&&p.season!==season&&(!p.lastShown||now-Number(p.lastShown)>=30*86400000);
+}
+function commissionerOwnership(){
+ if(window.SDF_COMMERCE){const e=window.SDF_COMMERCE.getEntitlements?.();return e?!!e.commissioner_mode:null}
+ const b=window.SDF_ANDROID_COMMERCE?.getState?.();return b?.ready?b.owned.includes('commissioner_mode'):null;
+}
+function renderSeason(s,host){
+ const model=seasonWrap(s);let panel=$('seasonWrap239');
+ if(!model){panel?.remove();return}
+ const postseason=$('postseasonTab');const target=postseason?.getClientRects().length?postseason:host;
+ if(!panel){panel=document.createElement('section');panel.id='seasonWrap239';panel.className='journey-card season-wrap239'}
+ if(panel.parentElement!==target)target.prepend(panel)
+ const r=model.recap,star=r.leaders?.[0],growth=r.developed?.[0];
+ const html=`<div class="journey-heading"><div><small>SEASON COMPLETE · YEAR ${r.year}</small><h3>${esc(r.school)}</h3></div><strong class="season-record239">${r.wins}–${r.losses}</strong></div><div class="season-highlights239"><div><small>SEASON SPOTLIGHT</small><b>${esc(star?.name||'Your team’s story')}</b><span>${star?`${esc(star.label)} · ${star.value}`:'Revisit your results, rivalries and recruiting class.'}</span></div><div><small>GROWTH SINCE ARRIVAL</small><b>${esc(growth?.name||'Keep developing')}</b><span>${growth?`+${growth.gain} OVR · ${growth.baseline} → ${growth.now}`:'Player journeys preserve each recorded step.'}</span></div></div><p class="season-next239"><b>Next:</b> ${esc(model.next)}</p><div class="journey-actions"><button type="button" class="btn primary" data-season-recap>View season recap</button><button type="button" class="btn neutral" data-season-next>Open Season Hub</button></div>`;
+ if(panel.dataset.content!==html){panel.innerHTML=html;panel.dataset.content=html;panel.querySelector('[data-season-recap]').onclick=()=>window.SDF_DYNASTY_STORY?.open('season',r.key);panel.querySelector('[data-season-next]').onclick=()=>navigate('postseason')}
+ let offer=panel.querySelector('.season-offer239');const ownership=commissionerOwnership(),season=r.key,token=reminderKey()+':'+season,prefs=reminderPrefs();
+ const allowed=ownership===false&&!prefs.never&&(activeReminder===token||reminderAllowed(prefs,season,ownership));
+ if(!allowed){offer?.remove();return}
+ // A hidden Home screen must not consume the once-per-season invitation.
+ if(!panel.getClientRects().length)return;
+ if(activeReminder!==token){activeReminder=token;saveReminder({...prefs,lastShown:Date.now(),season})}
+ if(!offer){offer=document.createElement('aside');offer.className='season-offer239';offer.innerHTML='<div><small>OPTIONAL · COMMISSIONER MODE</small><b>Make next season your own.</b><p>Try team colors and player edits in a free sample. Your dynasty stays untouched.</p></div><div class="journey-actions"><button type="button" class="btn neutral" data-preview>Try free preview</button><button type="button" class="journey-text" data-later>Not now</button><button type="button" class="journey-text" data-never>Don’t show again</button></div>';panel.append(offer);offer.querySelector('[data-preview]').onclick=openPreview;const dismiss=never=>{saveReminder({...reminderPrefs(),never});activeReminder='';offer.remove()};offer.querySelector('[data-later]').onclick=()=>dismiss(false);offer.querySelector('[data-never]').onclick=()=>dismiss(true)}
+}
+
 function saveJourney(reason){window.SDF_RELEASE_TEST?.scheduleSave?.(reason,100,false)}
 function setGuide(active){const s=current();if(!s)return;const j=ensureJourney(s);j.active=active;j.dismissed=!active;if(active){j.eligible=true;record('guide_started')}else record('guide_dismissed');saveJourney('First-week guide');render()}
 function renderGuide(s,host){
@@ -7901,11 +7957,13 @@ function renderGuide(s,host){
 function navigate(tab){window.SDF_HELP?.close?.();window.showTab?.(tab);if(tab==='gameplan')setTimeout(()=>{const button=[...document.querySelectorAll('#gameplanTab .ui-section-chip')].find(b=>b.textContent.trim()==='Practice');button?.click()},50)}
 function render(){
  const s=current();if(!s)return;observe(s);window.SDF_USAGE?.observe(s);
- const host=$('gameCommandCenterV219');if(!host)return;
+ const host=$('gameCommandCenterV219');if(!host){const postseason=$('postseasonTab');if(postseason)renderSeason(s,postseason);return;}
  renderGuide(s,host);
  let panel=$('coachBriefV236');if(!panel){panel=document.createElement('section');panel.id='coachBriefV236';panel.className='journey-card journey-brief';host.append(panel)}
  const html=`<div class="journey-heading"><div><small>YOUR WEEK AT A GLANCE</small><h3>Coach’s briefing</h3></div><span class="journey-week">Year ${Number(s.year)||1} · Week ${Number(s.week)||1}</span></div><div class="journey-brief-grid">${briefing(s).map(c=>`<button type="button" class="journey-brief-item" data-brief-tab="${c.tab}"><small>${esc(c.label)}</small><b>${esc(c.title)}</b><span>${esc(c.text)}</span><em>Review →</em></button>`).join('')}</div>`;
- if(panel.innerHTML!==html){panel.innerHTML=html;panel.querySelectorAll('[data-brief-tab]').forEach(b=>b.onclick=()=>navigate(b.dataset.briefTab))}
+ if(panel.dataset.content!==html){panel.innerHTML=html;panel.dataset.content=html;panel.querySelectorAll('[data-brief-tab]').forEach(b=>b.onclick=()=>navigate(b.dataset.briefTab))}
+ renderSeason(s,host);
+ setTimeout(()=>{if(current()===s&&host.isConnected)renderSeason(s,host)},0);
  renderGuideHint(s);
  window.SDF_USAGE?.render();
  window.SDF_DYNASTY_STORY?.render?.();
@@ -7938,8 +7996,8 @@ const originalPractice=window.choosePracticeFocus;if(typeof originalPractice==='
 const originalShow=window.showTab;if(typeof originalShow==='function')window.showTab=function(...args){const result=originalShow.apply(this,args);refreshAfterAction();return result};
 // Automatic startup offers an action-based guide; the full reference tour remains in Help.
 window.startTutorial=()=>{const s=current();if(s){ensureJourney(s);render()}return false};
-window.SDF_JOURNEY={render,newDynasty,isGuided:()=>!!current()?.coachJourneyV236?.active,record,diagnosticReport,openPreview,previewModel,briefing,progress};
-function init(){session();installSettings();render();document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')session()})}
+window.SDF_JOURNEY={render,newDynasty,isGuided:()=>!!current()?.coachJourneyV236?.active,record,diagnosticReport,openPreview,previewModel,briefing,progress,weeklyMoments,seasonWrap,reminderAllowed,reminderPrefs,saveReminder,commissionerOwnership};
+function init(){const seasonHost=$('postseasonTab');if(seasonHost&&typeof MutationObserver!=='undefined')new MutationObserver(()=>{const s=current(),host=$('gameCommandCenterV219')||seasonHost;if(s&&host)renderSeason(s,host)}).observe(seasonHost,{childList:true});window.addEventListener('sdf:play-entitlements',refreshAfterAction);window.addEventListener('sdf:entitlements',refreshAfterAction);session();installSettings();render();document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')session()})}
 document.readyState==='loading'?document.addEventListener('DOMContentLoaded',init,{once:true}):init();
 })();
 
@@ -7981,7 +8039,7 @@ function makeRecap(s){
  const leaders=categories.map(([label,key])=>{const p=roster.filter(p=>num(p.seasonStats?.[key])>0).sort((a,b)=>num(b.seasonStats[key])-num(a.seasonStats[key]))[0];return p?{label,name:p.name,pos:p.pos,value:num(p.seasonStats[key])}:null}).filter(Boolean);
  const records=(s.nationalRecordHistory||[]).filter(r=>String(r.teamId)===String(s.school.id)&&num(r.year)===num(s.year)).slice(-4).map(r=>({player:r.player,label:r.label,level:r.level,value:r.value}));
  const rivalry=games.filter(g=>g.rivalry).map(g=>({opponent:g.opponent,result:g.result,score:g.score}));
- return{key:`${s.school.id}:${s.year}`,schoolId:s.school.id,school:s.school.name,year:num(s.year),wins:num(s.record?.w),losses:num(s.record?.l),games:games.length,commits:(s.commits||[]).length,developed,leaders,records,rivalry,trophies:(s.trophies||[]).filter(t=>num(t.year)===num(s.year)).map(t=>t.type),latest:latest?{opponent:latest.opponent,result:latest.result,score:latest.score}:null};
+ return{complete:s.phase==='AWARDS',key:`${s.school.id}:${s.year}`,schoolId:s.school.id,school:s.school.name,year:num(s.year),wins:num(s.record?.w),losses:num(s.record?.l),games:games.length,commits:(s.commits||[]).length,developed,leaders,records,rivalry,trophies:(s.trophies||[]).filter(t=>num(t.year)===num(s.year)).map(t=>t.type),latest:latest?{opponent:latest.opponent,result:latest.result,score:latest.score}:null};
 }
 function captureSeason(s=current()){
  if(!s?.school||!(s.schedule||[]).some(g=>g.result))return;
@@ -8105,8 +8163,8 @@ function drawDialog(){
  }
  const list=recaps(s),recap=selectedRecap(s);panel.innerHTML=`<label class="story237-picker">Choose a season <select data-story-season>${list.slice().reverse().map(r=>`<option value="${esc(r.key)}" ${r.key===recap.key?'selected':''}>Year ${r.year} · ${esc(r.school)}${r.complete?'':' · Current'}</option>`).join('')}</select></label>${recapHtml(recap)}`;
 }
-function open(tab='season'){
- observe();selected=tab;selectedKey='';opener=document.activeElement;let dialog=$('dynastyStory237');
+function open(tab='season',recapKey=''){
+ observe();selected=tab;selectedKey=recapKey;opener=document.activeElement;let dialog=$('dynastyStory237');
  if(!dialog){dialog=document.createElement('dialog');dialog.id='dynastyStory237';dialog.setAttribute('aria-labelledby','storyTitle237');dialog.innerHTML='<header><div><small>YOUR PROGRAM. YOUR STORY.</small><h2 id="storyTitle237">Dynasty story</h2></div><button class="btn neutral" type="button" data-story-close aria-label="Close dynasty story">Close</button></header><nav role="tablist" aria-label="Dynasty story sections"><button type="button" role="tab" data-story-tab="season">Season recap</button><button type="button" role="tab" data-story-tab="players">Player journeys</button><button type="button" role="tab" data-story-tab="challenge">Challenges</button></nav><div data-story-content role="tabpanel"></div><p role="status" data-story-status></p>';document.body.append(dialog);dialog.addEventListener('close',()=>{opener?.focus?.()});dialog.addEventListener('click',event=>{
   const b=event.target.closest('button');if(!b)return;
   if(b.hasAttribute('data-story-close'))dialog.close();
