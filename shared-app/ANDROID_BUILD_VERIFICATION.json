@@ -1,7 +1,7 @@
 {
-  "version": "27.4.38",
-  "release": "Android V27.4.38 · Build 239 · Season Stories",
-  "versionCode": 239,
+  "version": "27.4.39",
+  "release": "Android V27.4.39 · Build 240 · Dynasty Scenarios",
+  "versionCode": 240,
   "fileCount": 172,
   "files": [
     {
@@ -11,8 +11,8 @@
     },
     {
       "path": "app-bundle.js",
-      "sha256": "aa2ca5e10f9353a06b4e1dcae73a0abf015fc89a1aaaf981ee2748e5c5ac8a0b",
-      "bytes": 1283410
+      "sha256": "16a041161bc816ed133bd728b0fba4ff7f015c6b961ef44320cecbb6d4d4ae55",
+      "bytes": 1301509
     },
     {
       "path": "app-shell.css",
@@ -696,8 +696,8 @@
     },
     {
       "path": "dynasty-story.css",
-      "sha256": "f78484c054192d2c2acd94cff6644c6bc51b612b57697f4533b3626d5432f67c",
-      "bytes": 4854
+      "sha256": "5d6d5a2c2ea9b3a6ca779461365b6adfa32f9d1c0dc7c906a8df51c75e90c4cc",
+      "bytes": 5320
     },
     {
       "path": "icon-1024.png",
@@ -716,8 +716,8 @@
     },
     {
       "path": "index.html",
-      "sha256": "a376d7c7a7d14ff1982f7da88c0c3d15443f33e4d281025805641dc84d8bcb86",
-      "bytes": 43489
+      "sha256": "a85731ea6c12da5e2a905b5ed5d1c36f2de184734bca541b7a053661e63ea333",
+      "bytes": 43551
     },
     {
       "path": "live-game.css",
@@ -726,7 +726,7 @@
     },
     {
       "path": "manifest.json",
-      "sha256": "07ffbdf398d01f2d27eb4d52d46cc211081a53cd7c73ce95956712b732c52df8",
+      "sha256": "0a31603bbe0171f62213e5fdff8f1fa1eadfbb0e344987d17aeac41498ed8fbd",
       "bytes": 728
     },
     {
