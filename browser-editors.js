@@ -16,7 +16,7 @@
   function begin(){work=snapshot();return work}
   function current(){return work}
   async function ensureOwned(k){if(owns(k))return true;await window.SDF_COMMERCE?.refreshEntitlements?.(true);if(owns(k))return true;window.SDF_COMMERCE?.openShop?.();return false}
-  function commit(reason){if(!work)return false;const r=rel();if(!r?.hydrateState||!r?.saveNow)return false;r.hydrateState(work);work=null;window.renderAll?.();r.saveNow(reason,true,true);window.dispatchEvent(new CustomEvent('sdf:editor-saved',{detail:{reason}}));return true}
+  function commit(reason){if(!work)return false;const r=rel();if(!r?.hydrateState||!r?.saveNow)return false;window.SDF_SCENARIOS?.invalidate(work);r.hydrateState(work);work=null;window.renderAll?.();r.saveNow(reason,true,true);window.dispatchEvent(new CustomEvent('sdf:editor-saved',{detail:{reason}}));return true}
 
   const st=document.createElement('style');st.id='sdf-paid-editors-style';st.textContent=`
   .sdf-paid-tool{display:inline-flex;align-items:center;gap:7px;border:1px solid #b4943f;border-radius:7px;background:#171e25;color:#f7d873;padding:9px 12px;font-size:.68rem;font-weight:900;letter-spacing:.04em;cursor:pointer}.sdf-paid-tool.locked{border-color:#314656;color:#8ba0ad;background:#0b1922}.sdf-profile-editor-wrap{display:flex;justify-content:flex-end;margin:10px 0 14px}
