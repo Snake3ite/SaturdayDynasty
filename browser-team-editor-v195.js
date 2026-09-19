@@ -24,7 +24,7 @@
   function current(){return work}
   function commit(reason){
     if(!work||!rel()?.hydrateState||!rel()?.saveNow)return false;
-    window.SDF_SCENARIOS?.invalidate(work);rel().hydrateState(work);
+    if(window.SDF_SCENARIOS?.confirmEdit(work)===false)return false;window.SDF_SCENARIOS?.invalidate(work);rel().hydrateState(work);
     work=null;
     window.renderAll?.();
     rel().saveNow(reason,true,true);
