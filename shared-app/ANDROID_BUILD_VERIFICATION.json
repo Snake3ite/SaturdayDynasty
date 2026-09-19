@@ -1,7 +1,7 @@
 {
-  "version": "27.4.39",
-  "release": "Android V27.4.39 · Build 240 · Dynasty Scenarios",
-  "versionCode": 240,
+  "version": "27.4.40",
+  "release": "Android V27.4.40 · Build 241 · Scenario Careers & Creators",
+  "versionCode": 241,
   "fileCount": 172,
   "files": [
     {
@@ -11,8 +11,8 @@
     },
     {
       "path": "app-bundle.js",
-      "sha256": "16a041161bc816ed133bd728b0fba4ff7f015c6b961ef44320cecbb6d4d4ae55",
-      "bytes": 1301509
+      "sha256": "7254aa57fd6a3b500c478978cf5fc4254246a38de4f5ce8c18e1327b838e79ce",
+      "bytes": 1331501
     },
     {
       "path": "app-shell.css",
@@ -696,8 +696,8 @@
     },
     {
       "path": "dynasty-story.css",
-      "sha256": "5d6d5a2c2ea9b3a6ca779461365b6adfa32f9d1c0dc7c906a8df51c75e90c4cc",
-      "bytes": 5320
+      "sha256": "f144b1e1f68f604e1cee12da31540646f4edc29d3f505305be1b05c8e6f2fbf3",
+      "bytes": 6359
     },
     {
       "path": "icon-1024.png",
@@ -716,8 +716,8 @@
     },
     {
       "path": "index.html",
-      "sha256": "a85731ea6c12da5e2a905b5ed5d1c36f2de184734bca541b7a053661e63ea333",
-      "bytes": 43551
+      "sha256": "6f6083813599a122176381ed8434b96e9bc64d2ee7682fa5f17fdd600743a1bb",
+      "bytes": 43561
     },
     {
       "path": "live-game.css",
@@ -726,7 +726,7 @@
     },
     {
       "path": "manifest.json",
-      "sha256": "0a31603bbe0171f62213e5fdff8f1fa1eadfbb0e344987d17aeac41498ed8fbd",
+      "sha256": "ab76af87da182c299578a305d2e0d3b0d26cc8bcfcf87c9eda6b53636dd954d2",
       "bytes": 728
     },
     {
