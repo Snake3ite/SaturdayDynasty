@@ -1,7 +1,7 @@
 {
-  "version": "27.4.40",
-  "release": "Android V27.4.40 · Build 241 · Scenario Careers & Creators",
-  "versionCode": 241,
+  "version": "27.4.42",
+  "release": "Android V27.4.42 · Build 243 · Bye Weeks & Developer Messages",
+  "versionCode": 243,
   "fileCount": 172,
   "files": [
     {
@@ -11,8 +11,8 @@
     },
     {
       "path": "app-bundle.js",
-      "sha256": "7254aa57fd6a3b500c478978cf5fc4254246a38de4f5ce8c18e1327b838e79ce",
-      "bytes": 1331501
+      "sha256": "2be8d4be92ca576ab3a237dbb97cadcd5196000e9341b2482643edfd558a8a0f",
+      "bytes": 1352255
     },
     {
       "path": "app-shell.css",
@@ -716,8 +716,8 @@
     },
     {
       "path": "index.html",
-      "sha256": "6f6083813599a122176381ed8434b96e9bc64d2ee7682fa5f17fdd600743a1bb",
-      "bytes": 43561
+      "sha256": "f6c3a40fb0af28875e3041371b2bde2324ee20d6dd2cbf6c61aaad4a1e7581a9",
+      "bytes": 43564
     },
     {
       "path": "live-game.css",
@@ -726,7 +726,7 @@
     },
     {
       "path": "manifest.json",
-      "sha256": "ab76af87da182c299578a305d2e0d3b0d26cc8bcfcf87c9eda6b53636dd954d2",
+      "sha256": "b94bddc50b6c040bc044d8bd139e1f44853a123a962b4ca99869c72990f29bfa",
       "bytes": 728
     },
     {
