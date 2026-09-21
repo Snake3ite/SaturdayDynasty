@@ -14,3 +14,6 @@
 - Messages wait for other popups to close and do not require advertising/analytics ID tracking.
 
 Your exact launch message is already stored in the database and bundled in Build 243.
+
+## Facebook and other links
+Use `[Follow us on Facebook](https://www.facebook.com/profile.php?id=61593100940559)` in the body. Build 244 and newer render HTTPS links as clickable text, opening separately from the game. Earlier builds display the text but do not render the link. Existing dismissals remain acknowledged.

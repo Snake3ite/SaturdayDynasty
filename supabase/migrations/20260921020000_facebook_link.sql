@@ -1,0 +1,2 @@
+update public.system_messages set body=body || chr(10) || chr(10) || $fb$[Follow us on Facebook](https://www.facebook.com/profile.php?id=61593100940559)$fb$ where id='3f81a6ab-7d6a-4e57-95ca-e82264000243' and body not like '%61593100940559%';
+select title, right(body,100) as facebook_link from public.system_messages where id='3f81a6ab-7d6a-4e57-95ca-e82264000243';
