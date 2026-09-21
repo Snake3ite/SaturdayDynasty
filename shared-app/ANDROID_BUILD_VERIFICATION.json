@@ -1,7 +1,7 @@
 {
-  "version": "27.4.42",
-  "release": "Android V27.4.42 · Build 243 · Bye Weeks & Developer Messages",
-  "versionCode": 243,
+  "version": "27.4.43",
+  "release": "Android V27.4.43 · Build 244 · Position Battles & Starter Persistence",
+  "versionCode": 244,
   "fileCount": 172,
   "files": [
     {
@@ -11,8 +11,8 @@
     },
     {
       "path": "app-bundle.js",
-      "sha256": "2be8d4be92ca576ab3a237dbb97cadcd5196000e9341b2482643edfd558a8a0f",
-      "bytes": 1352255
+      "sha256": "399485f5fdc3cdcdc4238ece99a37b2834496b4d22b0686619d9ec27714b4a83",
+      "bytes": 1354555
     },
     {
       "path": "app-shell.css",
@@ -716,8 +716,8 @@
     },
     {
       "path": "index.html",
-      "sha256": "f6c3a40fb0af28875e3041371b2bde2324ee20d6dd2cbf6c61aaad4a1e7581a9",
-      "bytes": 43564
+      "sha256": "d02394e001463c2cd3a176616eb402cdfd7fdfbcac89b2e8730dc75a28c0e6e4",
+      "bytes": 43572
     },
     {
       "path": "live-game.css",
@@ -726,7 +726,7 @@
     },
     {
       "path": "manifest.json",
-      "sha256": "b94bddc50b6c040bc044d8bd139e1f44853a123a962b4ca99869c72990f29bfa",
+      "sha256": "bf3badb5782ef615b298028d8c7df29db47942165b1ac5ed72698eb4d9e94791",
       "bytes": 728
     },
     {
