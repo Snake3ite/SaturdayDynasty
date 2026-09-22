@@ -1311,7 +1311,7 @@ if(location.protocol==="http:"||location.protocol==="https:"){
 
 (()=>{
 'use strict';
-const RELEASE='Android V27.4.43 · Build 244 · Position Battles & Starter Persistence';
+const RELEASE='Android V27.4.44 · Build 245 · Live Resume & Recruiting Board Repairs';
 const SAVE_PREFIX='SaturdayDynastyFootballAndroidV1';
 const LEGACY_PREFIXES=['SaturdayArchitectAndroidV1','SaturdayArchitectCompleteV9','SaturdayArchitectStatsV82','SaturdayArchitectDynastyV81','SaturdayArchitectRealignmentV74','SaturdayArchitectRecruitingV73','SaturdayArchitect128V72','SaturdayArchitectMobileV71'];
 const ui={activeTab:'dashboard',recruitPage:1,recruitPageSize:window.innerWidth<=760?30:75,rosterQuery:'',recruitQuery:''};
@@ -3368,12 +3368,16 @@ function unlockGameAudio(){try{const ctx=soundContext();if(!ctx)return;const wak
 document.addEventListener('pointerdown',unlockGameAudio,{once:true,capture:true});document.addEventListener('keydown',unlockGameAudio,{once:true,capture:true});
 function crowdCheer(side,game){if(state?.soundEnabled===false)return;window.SDF_MUSIC?.duck?.(1600);try{const ctx=soundContext();if(!ctx)return;const play=()=>{const ours=side==='us',loud=ours?(game?.home?.25:game?.neutral?.21:.18):(game?.home?.10:.14),duration=ours?1.65:1.05,now=ctx.currentTime,buffer=ctx.createBuffer(1,Math.max(1,Math.floor(ctx.sampleRate*duration)),ctx.sampleRate),data=buffer.getChannelData(0);for(let i=0;i<data.length;i++){const x=i/data.length,attack=Math.min(1,x/.08),fade=Math.max(.16,1-x*.72),pulse=.72+.28*Math.sin(i/145);data[i]=((window.SDF_SEEDS?.random()??Math.random())*2-1)*attack*fade*pulse}const src=ctx.createBufferSource(),band=ctx.createBiquadFilter(),gain=ctx.createGain();band.type='bandpass';band.frequency.value=760;band.Q.value=.42;gain.gain.setValueAtTime(.0001,now);gain.gain.exponentialRampToValueAtTime(loud,now+.055);gain.gain.exponentialRampToValueAtTime(.0001,now+duration);src.buffer=buffer;src.connect(band);band.connect(gain);gain.connect(ctx.destination);src.start(now);if(ours){for(let i=0;i<4;i++){const o=ctx.createOscillator(),g=ctx.createGain(),t=now+.08+i*.09;o.type='triangle';o.frequency.setValueAtTime(330+i*55,t);o.frequency.exponentialRampToValueAtTime(500+i*70,t+.24);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.035,t+.035);g.gain.exponentialRampToValueAtTime(.0001,t+.30);o.connect(g);g.connect(ctx.destination);o.start(t);o.stop(t+.32)}tone('touchdown')}};if(ctx.state==='suspended')ctx.resume?.().then(play).catch(()=>{});else play()}catch{}}
 function tone(type){if(state?.soundEnabled===false)return;try{const ctx=soundContext();if(!ctx)return;const play=()=>{const seq=type==='injury'?[[190,.16],[135,.28]]:type==='win'?[[523,.08],[659,.08],[784,.18]]:type==='loss'?[[260,.14],[196,.24]]:type==='kickoff'?[[440,.05],[660,.09]]:type==='touchdown'?[[392,.05],[523,.06],[659,.08],[784,.14]]:[[420,.07]];let t=ctx.currentTime;seq.forEach(([f,d])=>{const o=ctx.createOscillator(),g=ctx.createGain();o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.07,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(ctx.destination);o.start(t);o.stop(t+d+.03);t+=d})};if(ctx.state==='suspended')ctx.resume?.().then(play).catch(()=>{});else play()}catch{}}
+function resumableLiveGame(){
+ const game=state.liveGame;if(!game||game.finalized||Number(game.year)!==Number(state.year))return false;
+ return !!state.liveGameContext||Number(game.week)===Number(state.week)
+}
 function renderGameDay(){
- const host=$12('gameDayMatchup');if(!host||!state.school)return;const g=currentGame(),opp=g?teamById(g.oppId):null,resume=state.liveGame&&!state.liveGame.finalized&&state.liveGame.year===state.year&&state.liveGame.week===state.week;
+ const host=$12('gameDayMatchup');if(!host||!state.school)return;const g=currentGame(),opp=g?teamById(g.oppId):null,resume=resumableLiveGame();
  if(g?.bye){host.innerHTML=window.SDF_CALENDAR243.byeHtml();return}
  if(!g){host.innerHTML='<div class="postseason-empty">No regular-season matchup is currently scheduled.</div>';return}
  host.innerHTML=`<div class="game-day-matchup"><div><img src="${logo(state.school.id)}"><b>${safe(state.school.name)}</b><span>${state.record.w}-${state.record.l} · ${teamRatings().overall} OVR</span></div><div class="game-day-middle"><span>WEEK ${state.week}</span><b>${g.home?'VS':'AT'}</b><small>${safe(g.weather||'Clear')} · ${g.conference?'Conference game':'Non-conference'}${g.rivalry?' · Rivalry':''}</small></div><div><img src="${logo(opp?.id)}"><b>${safe(g.opponent)}</b><span>${g.oppPower} projected power</span></div></div>${resume?`<div class="resume-live-banner resume-live-status-v229"><b>Live game in progress</b><span>${quarterText(state.liveGame.quarter)} · ${clockText(state.liveGame.clock)} · ${state.liveGame.score.us}-${state.liveGame.score.them}</span></div>`:''}`;
- ['watchLiveGameBtn','watchLiveDashboardBtn'].forEach(id=>{const b=$12(id);if(b){b.disabled=!!g.result||state.phase!=='REGULAR';b.textContent=resume?'Resume Live Game':'Watch Game Live'}});
+ ['watchLiveGameBtn','watchLiveDashboardBtn'].forEach(id=>{const b=$12(id);if(b){b.disabled=!resume&&(!!g.result||state.phase!=='REGULAR');b.textContent=resume?'Resume Live Game':'Watch Game Live'}});
  const q=$12('quickSimGameBtn');if(q){q.hidden=!!resume;q.disabled=!!resume||!!g.result||state.phase!=='REGULAR';q.textContent='Open This Week’s Game'}
 }
 function repairQuickSimInjuries(){
@@ -3411,7 +3415,7 @@ function enforceGameCenterLabels(){
 const renderBeforeRequired=window.renderAll;
 window.renderAll=function(...args){const out=renderBeforeRequired?.apply(this,args);enforceGameCenterLabels();return out};
 
-repairQuickSimInjuries();ensure12();wire12();if(state.school)window.renderAll();window.SDF_V12_TEST={newLiveGame,simulatePlay,renderInjuries,recoveryTick,recordInjury,finalizeLiveGame,gameConfig,emptyTeamStats,topPlayers,playerLine,skill12,unlockAudio:unlockGameAudio,audioContext:soundContext,requiredGameCenter:true};
+repairQuickSimInjuries();ensure12();wire12();if(state.school)window.renderAll();window.SDF_V12_TEST={newLiveGame,simulatePlay,renderInjuries,recoveryTick,recordInjury,finalizeLiveGame,gameConfig,emptyTeamStats,topPlayers,playerLine,skill12,resumableLiveGame,unlockAudio:unlockGameAudio,audioContext:soundContext,requiredGameCenter:true};
 })();
 
 (()=>{
@@ -5151,8 +5155,10 @@ const SUPABASE_URL='https://fwnvwkffxazwsmaiqayj.supabase.co';
 const PUBLISHABLE_KEY='sb_publishable_MeNnZ-PoF0cKlhfcvcL6Rg_xIJajlhW';
 const ENDPOINT=`${SUPABASE_URL}/functions/v1/send-feedback`;
 const MAX_FILE_BYTES=4*1024*1024;
-const APP_VERSION='V27.4.35';
-const BUILD_CODE=236;
+// Release verification checks these diagnostic values against the installed
+// Android package so feedback can no longer report an old build number.
+const APP_VERSION='V27.4.44';
+const BUILD_CODE=245;
 const $f=(s,r=document)=>r.querySelector(s);
 
 const style=document.createElement('style');
@@ -7097,10 +7103,14 @@ function updateCommand(){
 
 function setStatus(status){
  const select=$('statusFilter');if(!select)return;
+ // Shortcut buttons are destinations. Clear stale filters so My Board cannot
+ // appear empty just because an old position, star, region or search remains.
+ for(const id of ['positionFilter','starFilter','recruitRegionFilter'])if($(id))$(id).value='ALL';
+ if($('recruitSearch'))$('recruitSearch').value='';
  select.value=status;
  window.SDF_RECRUIT_UI??={page:1};window.SDF_RECRUIT_UI.page=1;
  select.dispatchEvent(new Event('change',{bubbles:true}));
- setTimeout(()=>{updateCommand();decorateCards()},0);
+ setTimeout(()=>{updateCommand();decorateCards();$('recruitBoardToolsV223')?.scrollIntoView?.({block:'start'})},0);
 }
 
 function decorateCards(){
