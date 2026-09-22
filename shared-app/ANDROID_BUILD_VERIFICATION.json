@@ -1,7 +1,7 @@
 {
-  "version": "27.4.43",
-  "release": "Android V27.4.43 · Build 244 · Position Battles & Starter Persistence",
-  "versionCode": 244,
+  "version": "27.4.44",
+  "release": "Android V27.4.44 · Build 245 · Live Resume &amp; Recruiting Board Repairs",
+  "versionCode": 245,
   "fileCount": 172,
   "files": [
     {
@@ -11,8 +11,8 @@
     },
     {
       "path": "app-bundle.js",
-      "sha256": "399485f5fdc3cdcdc4238ece99a37b2834496b4d22b0686619d9ec27714b4a83",
-      "bytes": 1354555
+      "sha256": "314ad94feb88e410c2c85767fb925162ebf6a3c75a5f4779e08d8abc28fe4ebf",
+      "bytes": 1355210
     },
     {
       "path": "app-shell.css",
@@ -716,8 +716,8 @@
     },
     {
       "path": "index.html",
-      "sha256": "d02394e001463c2cd3a176616eb402cdfd7fdfbcac89b2e8730dc75a28c0e6e4",
-      "bytes": 43572
+      "sha256": "ad030b0937dc186b6363f6f7629b7fc493d8fdf001679a58884d7815e1880ec0",
+      "bytes": 43567
     },
     {
       "path": "live-game.css",
@@ -726,8 +726,8 @@
     },
     {
       "path": "manifest.json",
-      "sha256": "bf3badb5782ef615b298028d8c7df29db47942165b1ac5ed72698eb4d9e94791",
-      "bytes": 728
+      "sha256": "85b9a7d17fc44b09970ec973baf853ac072d2d0bb0a4a8ffab7a393388e4f8ed",
+      "bytes": 726
     },
     {
       "path": "navigation.css",
