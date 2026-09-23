@@ -1311,7 +1311,7 @@ if(location.protocol==="http:"||location.protocol==="https:"){
 
 (()=>{
 'use strict';
-const RELEASE='Android V27.4.44 · Build 245 · Live Resume & Recruiting Board Repairs';
+const RELEASE='Android V27.4.45 · Build 246 · Unlimited Sponsor Rewards';
 const SAVE_PREFIX='SaturdayDynastyFootballAndroidV1';
 const LEGACY_PREFIXES=['SaturdayArchitectAndroidV1','SaturdayArchitectCompleteV9','SaturdayArchitectStatsV82','SaturdayArchitectDynastyV81','SaturdayArchitectRealignmentV74','SaturdayArchitectRecruitingV73','SaturdayArchitect128V72','SaturdayArchitectMobileV71'];
 const ui={activeTab:'dashboard',recruitPage:1,recruitPageSize:window.innerWidth<=760?30:75,rosterQuery:'',recruitQuery:''};
@@ -3645,17 +3645,15 @@ function ensureState(){
  state.monetization.edition='ADS_READY';
 }
 function weekKey(kind){return `${state?.year||0}-${state?.week||0}-${kind}`}
-const WEEKLY_REWARD_LIMIT=3;
 function claimCount(kind){
  ensureState();
  const raw=state?.monetization?.weeklyClaims?.[weekKey(kind)];
  // Older saves stored a timestamp when a reward was claimed. Treat that as one
  // historical use instead of accidentally interpreting the timestamp as a count.
  if(Number(raw)>1000000)return 1;
- return Math.max(0,Math.min(WEEKLY_REWARD_LIMIT,Number(raw)||0));
+ return Math.max(0,Number(raw)||0);
 }
-function claimed(kind){return claimCount(kind)>=WEEKLY_REWARD_LIMIT}
-function markClaimed(kind){ensureState();state.monetization.weeklyClaims[weekKey(kind)]=Math.min(WEEKLY_REWARD_LIMIT,claimCount(kind)+1)}
+function markClaimed(kind){ensureState();state.monetization.weeklyClaims[weekKey(kind)]=claimCount(kind)+1}
 function summarizeReward(reward){
  if(!reward)return '';
  const type=String(reward.type||'reward');
@@ -3684,10 +3682,9 @@ function persistReward(reason){
 }
 function grantReward(kind,rewardMeta,attempt=activeRewardAttempt){
  if(!kind||typeof state==='undefined'||!state?.school)return false;
- if(claimed(kind)){
-  if(attempt)attempt.granted=true;
-  return false;
- }
+ // AdMob can both fire the reward event and resolve showRewardVideoAd(). Each
+ // completed video pays once, but there is no weekly limit on new videos.
+ if(attempt?.granted)return false;
  const beforeHours=Number(state.weeklyHours||0),beforeNil=Number(state.nilBudget||0);
  if(kind==='HOURS'){
   const bonus=Number(cfg().rewardRecruitingHours||25);
@@ -3778,31 +3775,26 @@ function statusText(){
 }
 function render(){
  const panel=$m('adStatusPanel');if(!panel)return;ensureState();
- const c=cfg(),hoursUses=claimCount('HOURS'),nilUses=claimCount('NIL'),hoursClaimed=hoursUses>=WEEKLY_REWARD_LIMIT,nilClaimed=nilUses>=WEEKLY_REWARD_LIMIT;
- const hoursRemaining=WEEKLY_REWARD_LIMIT-hoursUses,nilRemaining=WEEKLY_REWARD_LIMIT-nilUses;
+ const c=cfg(),hoursUses=claimCount('HOURS'),nilUses=claimCount('NIL');
  const persisted=state?.monetization?.lastRewardStatus;
  const shownStatus=lastRewardStatus!=='Idle'?lastRewardStatus:(persisted?.stage?(persisted.detail?`${persisted.stage}: ${persisted.detail}`:persisted.stage):'No sponsor video completed yet');
- panel.innerHTML=`<div><small>EDITION</small><b>${c.useTestAds?'Safe test mode':'Production ads'}</b></div><div><small>AD STATUS</small><b>${statusText()}</b></div><div><small>THIS WEEK</small><b>Hours ${hoursUses}/${WEEKLY_REWARD_LIMIT} · NIL ${nilUses}/${WEEKLY_REWARD_LIMIT}</b></div><div><small>LAST VIDEO</small><b>${shownStatus}</b></div>`;
+ panel.innerHTML=`<div><small>EDITION</small><b>${c.useTestAds?'Safe test mode':'Production ads'}</b></div><div><small>AD STATUS</small><b>${statusText()}</b></div><div><small>VIDEOS THIS WEEK</small><b>Hours ${hoursUses} · NIL ${nilUses} · Unlimited</b></div><div><small>LAST VIDEO</small><b>${shownStatus}</b></div>`;
  const badge=$m('adEditionBadge');if(badge)badge.textContent=c.useTestAds?'TEST ADS':'ADS ACTIVE';
  const h=$m('rewardHoursAdBtn'),n=$m('rewardNilAdBtn');
- if(h){h.disabled=busy||hoursClaimed||!native()||!plugin();h.textContent=hoursClaimed?'3/3 Claimed This Week':busy?'Ad In Progress…':`Watch Sponsor Video (${hoursRemaining} left)`}
- if(n){n.disabled=busy||nilClaimed||!native()||!plugin();n.textContent=nilClaimed?'3/3 Claimed This Week':busy?'Ad In Progress…':`Watch Sponsor Video (${nilRemaining} left)`}
+ if(h){h.disabled=busy||!native()||!plugin();h.textContent=busy?'Ad In Progress…':'Watch Sponsor Video'}
+ if(n){n.disabled=busy||!native()||!plugin();n.textContent=busy?'Ad In Progress…':'Watch Sponsor Video'}
  const inlineHours=$m('recruitRewardHoursAdBtn'),inlineNil=$m('recruitRewardNilAdBtn');
  if(inlineHours){
-  inlineHours.disabled=busy||hoursClaimed||!native()||!plugin();
-  inlineHours.innerHTML=hoursClaimed
-   ?'<span aria-hidden="true">✓</span><span>Hours 3/3 This Week</span>'
-   :busy
+  inlineHours.disabled=busy||!native()||!plugin();
+  inlineHours.innerHTML=busy
     ?'<span aria-hidden="true">…</span><span>Ad In Progress…</span>'
-    :`<span aria-hidden="true">▶</span><span>Watch for +${Number(c.rewardRecruitingHours||25)} Recruiting Hrs (${hoursRemaining} left)</span>`;
+    :`<span aria-hidden="true">▶</span><span>Watch for +${Number(c.rewardRecruitingHours||25)} Recruiting Hrs</span>`;
  }
  if(inlineNil){
-  inlineNil.disabled=busy||nilClaimed||!native()||!plugin();
-  inlineNil.innerHTML=nilClaimed
-   ?'<span aria-hidden="true">✓</span><span>NIL 3/3 This Week</span>'
-   :busy
+  inlineNil.disabled=busy||!native()||!plugin();
+  inlineNil.innerHTML=busy
     ?'<span aria-hidden="true">…</span><span>Ad In Progress…</span>'
-    :`<span aria-hidden="true">▶</span><span>Watch for +$${Math.round(Number(c.rewardNilAmount||10000)/1000)}K NIL (${nilRemaining} left)</span>`;
+    :`<span aria-hidden="true">▶</span><span>Watch for +$${Math.round(Number(c.rewardNilAmount||10000)/1000)}K NIL</span>`;
  }
  const privacy=$m('adPrivacyOptionsBtn');if(privacy)privacy.disabled=!plugin();
 }
@@ -3840,7 +3832,7 @@ async function initializeAds(force=false){
  try{return await initializingPromise}finally{initializingPromise=null}
 }
 async function showReward(kind){
- if(busy||claimed(kind))return;
+ if(busy)return;
  const AdMob=plugin();if(!AdMob)return;
  if(!canRequestAds){setRewardStatus('CHECKING','Refreshing Google ad readiness…');await initializeAds(true);}
  // Do not permanently dead-end the button on a stale consent/init flag. The
@@ -5157,8 +5149,8 @@ const ENDPOINT=`${SUPABASE_URL}/functions/v1/send-feedback`;
 const MAX_FILE_BYTES=4*1024*1024;
 // Release verification checks these diagnostic values against the installed
 // Android package so feedback can no longer report an old build number.
-const APP_VERSION='V27.4.44';
-const BUILD_CODE=245;
+const APP_VERSION='V27.4.45';
+const BUILD_CODE=246;
 const $f=(s,r=document)=>r.querySelector(s);
 
 const style=document.createElement('style');
