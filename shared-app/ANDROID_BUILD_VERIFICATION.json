@@ -1,7 +1,7 @@
 {
-  "version": "27.4.44",
-  "release": "Android V27.4.44 · Build 245 · Live Resume &amp; Recruiting Board Repairs",
-  "versionCode": 245,
+  "version": "27.4.45",
+  "release": "Android V27.4.45 · Build 246 · Unlimited Sponsor Rewards",
+  "versionCode": 246,
   "fileCount": 172,
   "files": [
     {
@@ -11,8 +11,8 @@
     },
     {
       "path": "app-bundle.js",
-      "sha256": "314ad94feb88e410c2c85767fb925162ebf6a3c75a5f4779e08d8abc28fe4ebf",
-      "bytes": 1355210
+      "sha256": "d9985820fae682003bb8e54ee4cc01b98aa7bb6b5c67db3002b67b7dd4a3d8d1",
+      "bytes": 1354503
     },
     {
       "path": "app-shell.css",
@@ -716,8 +716,8 @@
     },
     {
       "path": "index.html",
-      "sha256": "ad030b0937dc186b6363f6f7629b7fc493d8fdf001679a58884d7815e1880ec0",
-      "bytes": 43567
+      "sha256": "66f076ef32116ecbb1617052ffaf7b9c4e14c45fa786ec899c76434570666a6f",
+      "bytes": 43518
     },
     {
       "path": "live-game.css",
@@ -726,8 +726,8 @@
     },
     {
       "path": "manifest.json",
-      "sha256": "85b9a7d17fc44b09970ec973baf853ac072d2d0bb0a4a8ffab7a393388e4f8ed",
-      "bytes": 726
+      "sha256": "902507ab3c79c1f6f78b2787f323180fe318d44478fdc0a99b48d8a8921174af",
+      "bytes": 715
     },
     {
       "path": "navigation.css",
