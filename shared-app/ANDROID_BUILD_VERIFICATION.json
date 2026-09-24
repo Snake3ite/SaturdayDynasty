@@ -1,7 +1,7 @@
 {
-  "version": "27.4.45",
-  "release": "Android V27.4.45 · Build 246 · Unlimited Sponsor Rewards",
-  "versionCode": 246,
+  "version": "27.4.46",
+  "release": "Android V27.4.46 · Build 247 · Commissioner Mode &amp; Editor Upgrade",
+  "versionCode": 247,
   "fileCount": 172,
   "files": [
     {
@@ -11,8 +11,8 @@
     },
     {
       "path": "app-bundle.js",
-      "sha256": "d9985820fae682003bb8e54ee4cc01b98aa7bb6b5c67db3002b67b7dd4a3d8d1",
-      "bytes": 1354503
+      "sha256": "477c33d0c64c1bfe2f33883f8985ef925bee97757e0a0aa9940e95db3faa04f7",
+      "bytes": 1357686
     },
     {
       "path": "app-shell.css",
@@ -716,8 +716,8 @@
     },
     {
       "path": "index.html",
-      "sha256": "66f076ef32116ecbb1617052ffaf7b9c4e14c45fa786ec899c76434570666a6f",
-      "bytes": 43518
+      "sha256": "74981a040eafa2eb25bc4fac09e3e9f0f41f9741ee927bb2554c057744a93687",
+      "bytes": 43531
     },
     {
       "path": "live-game.css",
@@ -726,8 +726,8 @@
     },
     {
       "path": "manifest.json",
-      "sha256": "902507ab3c79c1f6f78b2787f323180fe318d44478fdc0a99b48d8a8921174af",
-      "bytes": 715
+      "sha256": "868a380a92dfaf9fe10311ad6e1b564f381977dce55f42b5f5fe9b0335f63b79",
+      "bytes": 728
     },
     {
       "path": "navigation.css",
