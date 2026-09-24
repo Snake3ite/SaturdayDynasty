@@ -1,7 +1,7 @@
 {
-  "version": "27.4.47",
-  "release": "Android V27.4.47 · Build 248 · Conference Manager &amp; Exact Previews",
-  "versionCode": 248,
+  "version": "27.4.48",
+  "release": "Android V27.4.48 · Build 249 · Conference Manager &amp; Exact Previews",
+  "versionCode": 249,
   "fileCount": 172,
   "files": [
     {
@@ -11,8 +11,8 @@
     },
     {
       "path": "app-bundle.js",
-      "sha256": "851cbc54cf67159a34c5b537d8abb27773fab87674cb3b075f77575a9e76b004",
-      "bytes": 1366160
+      "sha256": "32f6c6774db2785c06428e087387cd1456f41cc012a8c861ba3daf70222280e6",
+      "bytes": 1366236
     },
     {
       "path": "app-shell.css",
@@ -716,7 +716,7 @@
     },
     {
       "path": "index.html",
-      "sha256": "a575baa0b9f80e76e3b3fe4a7aa8f4b68caa44bcffe778fe460a7be360fd16d1",
+      "sha256": "428d25feae247efabe3ac5c6d25ed8aeb31616576c708e6226591b4b106b3af4",
       "bytes": 43532
     },
     {
@@ -726,7 +726,7 @@
     },
     {
       "path": "manifest.json",
-      "sha256": "2ccb9120f7fa9c07d6f281b4cbd009d6b86b6b5bc12be7dd8d96ebe5e47f2ea2",
+      "sha256": "e97101df1cb654715b5a69aa8bcc44d1a94cc7bda7a53b619cce94d409744879",
       "bytes": 725
     },
     {
