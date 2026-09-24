@@ -8,7 +8,7 @@
   "orientation": "portrait-primary",
   "background_color": "#020811",
   "theme_color": "#07131f",
-  "description": "Saturday Dynasty Football Build 248: exact editor previews and Conference Manager.",
+  "description": "Saturday Dynasty Football Build 249: exact editor previews and Conference Manager.",
   "icons": [
     {
       "src": "icon-192.png",
@@ -23,5 +23,5 @@
       "purpose": "any maskable"
     }
   ],
-  "version": "27.4.47"
+  "version": "27.4.48"
 }

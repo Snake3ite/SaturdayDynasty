@@ -1311,7 +1311,7 @@ if(location.protocol==="http:"||location.protocol==="https:"){
 
 (()=>{
 'use strict';
-const RELEASE='Android V27.4.47 · Build 248 · Conference Manager &amp; Exact Previews';
+const RELEASE='Android V27.4.48 · Build 249 · Conference Manager &amp; Exact Previews';
 const SAVE_PREFIX='SaturdayDynastyFootballAndroidV1';
 const LEGACY_PREFIXES=['SaturdayArchitectAndroidV1','SaturdayArchitectCompleteV9','SaturdayArchitectStatsV82','SaturdayArchitectDynastyV81','SaturdayArchitectRealignmentV74','SaturdayArchitectRecruitingV73','SaturdayArchitect128V72','SaturdayArchitectMobileV71'];
 const ui={activeTab:'dashboard',recruitPage:1,recruitPageSize:window.innerWidth<=760?30:75,rosterQuery:'',recruitQuery:''};
@@ -5107,7 +5107,7 @@ function closeShop(){$p('#sdfPlayShop')?.classList.remove('open')}
 function purchase(k){if(owns(k))return;const n=native();if(!n)return setShopStatus('Google Play Billing is unavailable in this build.',true);pendingProduct=k;lastOutcome=null;savePendingCheckout();window.SDF_JOURNEY?.record('checkout_started',k);setShopStatus('Opening Google Play checkout…');try{n.purchase(k)}catch{pendingProduct=null;savePendingCheckout();window.SDF_JOURNEY?.record('checkout_failed',k);setShopStatus('Could not open Google Play checkout. Please try again.',true)}}
 
 function ensureEditor(){if($p('#sdfAndroidEditor'))return;const o=document.createElement('div');o.id='sdfAndroidEditor';o.innerHTML=`<section class="sdf-premium-box"><header class="sdf-premium-head"><div><div class="sdf-premium-ey">COMMISSIONER TOOLS</div><h2 id="sdfEditorTitle"></h2><p id="sdfEditorSubtitle"></p></div><button class="sdf-premium-close" aria-label="Close">×</button></header><div class="sdf-premium-body"><div id="sdfEditorToast" class="sdf-editor-toast"></div><div id="sdfEditorContent"></div></div></section>`;document.body.append(o);$p('.sdf-premium-close',o).onclick=closeEditor;o.onclick=e=>{if(e.target===o)closeEditor()}}
-function showEditor(title,sub,html){ensureEditor();editorDirty=false;$p('#sdfEditorTitle').textContent=title;$p('#sdfEditorSubtitle').textContent=sub;$p('#sdfEditorContent').innerHTML=html;$p('#sdfEditorToast').textContent='';$p('#sdfAndroidEditor').classList.add('open');$p('#sdfEditorContent').addEventListener('input',()=>editorDirty=true);$p('#sdfEditorContent').addEventListener('change',()=>editorDirty=true)}
+function showEditor(title,sub,html){ensureEditor();editorDirty=false;$p('#sdfEditorTitle').textContent=title;$p('#sdfEditorSubtitle').textContent=sub;$p('#sdfEditorContent').innerHTML=html;$p('#sdfEditorToast').textContent='';$p('#sdfAndroidEditor').classList.add('open');const mark=e=>{if(!editorPreview&&e.target.closest?.('.sdf-form,.sdf-conference-manager'))editorDirty=true};$p('#sdfEditorContent').addEventListener('input',mark);$p('#sdfEditorContent').addEventListener('change',mark)}
 function discardAllowed(){return !editorDirty||window.confirm('Discard your unsaved editor changes?')}
 function closeEditor(){if(!discardAllowed())return;editorDirty=false;editorPreview=false;work=null;$p('#sdfAndroidEditor')?.classList.remove('open')}
 function editorToast(t,bad=false){const x=$p('#sdfEditorToast');if(!x)return;x.textContent=t;x.className='sdf-editor-toast '+(bad?'bad':'good')}
@@ -5161,8 +5161,8 @@ const ENDPOINT=`${SUPABASE_URL}/functions/v1/send-feedback`;
 const MAX_FILE_BYTES=4*1024*1024;
 // Release verification checks these diagnostic values against the installed
 // Android package so feedback can no longer report an old build number.
-const APP_VERSION='V27.4.47';
-const BUILD_CODE=248;
+const APP_VERSION='V27.4.48';
+const BUILD_CODE=249;
 const $f=(s,r=document)=>r.querySelector(s);
 
 const style=document.createElement('style');
