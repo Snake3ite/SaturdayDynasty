@@ -1,7 +1,7 @@
 {
-  "version": "27.4.46",
-  "release": "Android V27.4.46 · Build 247 · Commissioner Mode &amp; Editor Upgrade",
-  "versionCode": 247,
+  "version": "27.4.47",
+  "release": "Android V27.4.47 · Build 248 · Conference Manager &amp; Exact Previews",
+  "versionCode": 248,
   "fileCount": 172,
   "files": [
     {
@@ -11,8 +11,8 @@
     },
     {
       "path": "app-bundle.js",
-      "sha256": "477c33d0c64c1bfe2f33883f8985ef925bee97757e0a0aa9940e95db3faa04f7",
-      "bytes": 1357686
+      "sha256": "851cbc54cf67159a34c5b537d8abb27773fab87674cb3b075f77575a9e76b004",
+      "bytes": 1366160
     },
     {
       "path": "app-shell.css",
@@ -716,8 +716,8 @@
     },
     {
       "path": "index.html",
-      "sha256": "74981a040eafa2eb25bc4fac09e3e9f0f41f9741ee927bb2554c057744a93687",
-      "bytes": 43531
+      "sha256": "a575baa0b9f80e76e3b3fe4a7aa8f4b68caa44bcffe778fe460a7be360fd16d1",
+      "bytes": 43532
     },
     {
       "path": "live-game.css",
@@ -726,8 +726,8 @@
     },
     {
       "path": "manifest.json",
-      "sha256": "868a380a92dfaf9fe10311ad6e1b564f381977dce55f42b5f5fe9b0335f63b79",
-      "bytes": 728
+      "sha256": "2ccb9120f7fa9c07d6f281b4cbd009d6b86b6b5bc12be7dd8d96ebe5e47f2ea2",
+      "bytes": 725
     },
     {
       "path": "navigation.css",
