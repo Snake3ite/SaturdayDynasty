@@ -1,7 +1,7 @@
 {
-  "version": "27.4.48",
-  "release": "Android V27.4.48 · Build 249 · Conference Manager &amp; Exact Previews",
-  "versionCode": 249,
+  "version": "27.4.49",
+  "release": "Android V27.4.49 · Build 250 · Custom Conferences &amp; Schedules",
+  "versionCode": 250,
   "fileCount": 172,
   "files": [
     {
@@ -11,8 +11,8 @@
     },
     {
       "path": "app-bundle.js",
-      "sha256": "32f6c6774db2785c06428e087387cd1456f41cc012a8c861ba3daf70222280e6",
-      "bytes": 1366236
+      "sha256": "edc1b41ecf5bc14cd104842008bc0a2b07c34cb99139e44efe7c757a70101c9b",
+      "bytes": 1380404
     },
     {
       "path": "app-shell.css",
@@ -716,8 +716,8 @@
     },
     {
       "path": "index.html",
-      "sha256": "428d25feae247efabe3ac5c6d25ed8aeb31616576c708e6226591b4b106b3af4",
-      "bytes": 43532
+      "sha256": "1f458e68ecf2bee51c77870dac2d83ace190faaf0e4e22b8b838efbfeb6e24d2",
+      "bytes": 43527
     },
     {
       "path": "live-game.css",
@@ -726,7 +726,7 @@
     },
     {
       "path": "manifest.json",
-      "sha256": "e97101df1cb654715b5a69aa8bcc44d1a94cc7bda7a53b619cce94d409744879",
+      "sha256": "4a64f1aa779fd281954aa21c53329778b68f98f8519a7d313b0aa1aa3d70df0e",
       "bytes": 725
     },
     {
