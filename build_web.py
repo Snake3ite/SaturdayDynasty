@@ -54,7 +54,7 @@ self.addEventListener('fetch',event=>{
 checks=[]
 for p in sorted(OUT.rglob('*')):
  if p.is_file():checks.append({'path':p.relative_to(OUT).as_posix(),'bytes':p.stat().st_size,'sha256':hashlib.sha256(p.read_bytes()).hexdigest()})
-assert (OUT/'app-bundle.js').read_text(encoding='utf-8')==web_bundle
+assert (OUT/'app-bundle.js').read_bytes()==web_bundle.encode('utf-8')
 for f in re.findall(r'(?:src|href)="([^"?#]+)',html):
  if '://' not in f and not f.startswith('#'):assert (OUT/f).exists(),f
 (OUT/'WEB_BUILD_VERIFICATION.json').write_text(json.dumps({'versionCode':268,'version':'27.4.67','files':checks},indent=2),encoding='utf-8',newline='')
