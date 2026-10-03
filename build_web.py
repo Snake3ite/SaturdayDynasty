@@ -1,5 +1,5 @@
 from pathlib import Path
-import shutil,json,re,hashlib
+import shutil,json,re,hashlib,gzip
 ROOT=Path(__file__).resolve().parent
 SOURCE=ROOT/'shared-app';OUT=ROOT/'dist'
 # Rebuild only the generated output directory inside this repository.
@@ -10,7 +10,8 @@ shutil.copytree(SOURCE,OUT)
 BROWSER=['cloud-config.js','web-shell.js','browser-save-bridge.js','browser-editors.js','browser-commerce-bridge.js','browser-team-editor-v195.js','browser-feedback.js','browser-shell.css','browser-bootstrap.js','ad-config.js','_headers','icon.svg','manifest.webmanifest']
 for f in BROWSER:shutil.copy2(ROOT/f,OUT/f)
 # A hydrated browser launch can occur after DOMContentLoaded; honor older shared hooks.
-shared=(SOURCE/'app-bundle.js').read_text(encoding='utf-8')
+bundle_archive=ROOT/'.web268-runtime'/'app-bundle.js.gz'
+shared=gzip.decompress(bundle_archive.read_bytes()).decode('utf-8') if bundle_archive.exists() else (SOURCE/'app-bundle.js').read_text(encoding='utf-8')
 web_bundle="function sdfWebOnReady(target,listener,options){if(document.readyState==='loading')target.addEventListener('DOMContentLoaded',listener,options);else queueMicrotask(()=>listener.call(target,new Event('DOMContentLoaded')))}\n"+shared
 for target in ['window','document']:
  web_bundle=web_bundle.replace(target+".addEventListener('DOMContentLoaded',",'sdfWebOnReady('+target+',')
