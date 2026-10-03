@@ -8,9 +8,9 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png" sizes="192x192">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="styles.css?v=250">
+<link rel="stylesheet" href="styles.css?v=268">
 <link rel="stylesheet" href="release.css?v=216">
-<link rel="stylesheet" href="v103.css?v=215">
+<link rel="stylesheet" href="v103.css?v=266">
 <link rel="stylesheet" href="v105.css?v=215">
 <link rel="stylesheet" href="v11.css?v=215"><link rel="stylesheet" href="v111.css?v=215"><link rel="stylesheet" href="v113.css?v=215">
 <link rel="stylesheet" href="v114.css?v=215">
@@ -30,16 +30,16 @@
 <link rel="stylesheet" href="v225.css?v=225">
 <link rel="stylesheet" href="v226.css?v=226">
 <link rel="stylesheet" href="v227.css?v=227">
-<link rel="stylesheet" href="v232.css?v=250">
-<link rel="stylesheet" href="app-shell.css?v=250">
-<link rel="stylesheet" href="live-game.css?v=250">
-<link rel="stylesheet" href="navigation.css?v=250">
-<link rel="stylesheet" href="coach-journey.css?v=250">
-<link rel="stylesheet" href="dynasty-story.css?v=250">
+<link rel="stylesheet" href="v232.css?v=268">
+<link rel="stylesheet" href="app-shell.css?v=266">
+<link rel="stylesheet" href="live-game.css?v=266">
+<link rel="stylesheet" href="navigation.css?v=266">
+<link rel="stylesheet" href="coach-journey.css?v=266">
+<link rel="stylesheet" href="dynasty-story.css?v=258">
 </head>
 <body class="ui221-startup-mode">
 <header class="topbar">
-  <div class="brand"><img id="appTeamLogo" class="logo-img" src="icon-192.png" alt="Saturday Dynasty Football"><div><h1>Saturday Dynasty Football</h1><p id="releaseLabel">Android V27.4.49 · Build 250 · Custom Conferences &amp; Schedules</p></div></div>
+  <div class="brand"><img id="appTeamLogo" class="logo-img" src="icon-192.png" alt="Saturday Dynasty Football"><div><h1>Saturday Dynasty Football</h1><p id="releaseLabel">Android V27.4.67 · Build 268 · Ad Impression Reporting</p></div></div>
   <div class="broadcast-context"><small id="activeSectionKicker">DYNASTY FOOTBALL</small><strong id="activeSectionTitle">Select a Program</strong></div>
   <div class="top-status">
     <span>YEAR <b id="yearLabel">1</b></span>
@@ -76,7 +76,7 @@
       <button id="loadSelectedSaveBtn" class="btn primary">Load Selected Save</button>
       <button id="deleteSelectedSaveBtn" class="btn danger">Delete Selected Save</button>
       <button id="newDynastyBtn" class="btn neutral">Choose a Team for New Dynasty</button>
-      <button id="scenarioMenu240" class="btn primary" type="button" onclick="window.SDF_DYNASTY_STORY.open('challenge')">Scenarios · 14 ways to play</button>
+      <button id="scenarioMenu240" class="btn primary" type="button" onclick="window.SDF_DYNASTY_STORY.open('challenge')">Scenarios · 32 ways to play</button>
       <button id="openSettingsStartupBtn" class="btn neutral">⚙ Settings</button>
     </div>
     <p id="saveSlotMessage" class="muted save-slot-message" aria-live="polite"></p>
@@ -506,7 +506,7 @@
 
     <section class="surface">
       <div class="section-head">
-        <div><span class="eyebrow">FACILITIES</span><h2>Upgrade the Program</h2></div>
+        <div><span class="eyebrow">FACILITIES · ATHLETICS BUDGET</span><h2>Upgrade the Program</h2><p class="muted">Construction uses Athletics Budget. Recruit NIL is a separate player-offer pool.</p></div>
       </div>
       <div id="facilityGrid" class="facility-grid"></div>
     </section>
@@ -515,6 +515,7 @@
       <div class="section-head">
         <div><span class="eyebrow">COACHING CAROUSEL</span><h2>Staff Management</h2></div>
       </div>
+      <div class="facility-budget-guide staff-budget-guide"><div class="facility-budget-icon" aria-hidden="true">🤝</div><div><span class="eyebrow">DEPARTMENT SPONSOR</span><h3>Need more Athletics Budget?</h3><p>Watch an optional video for <b>$50,000 Athletics Budget</b> toward staff and program costs. This does not add Recruit NIL.</p></div><button class="btn primary" type="button" data-budget-reward>Watch for +$50K Athletics Budget</button></div>
       <div id="staffManagement" class="coach-grid"></div>
     </section>
 
@@ -585,6 +586,7 @@
         <div class="sponsor-reward-grid">
           <article class="sponsor-reward-card"><span class="sponsor-icon">⏱</span><div><small>STAFF SPONSOR</small><h3>+25 Recruiting Hours</h3><p>Unlimited optional rewards.</p></div><button id="rewardHoursAdBtn" class="btn primary">Watch Sponsor Video</button></article>
           <article class="sponsor-reward-card"><span class="sponsor-icon">$</span><div><small>BOOSTER SPOTLIGHT</small><h3>+$10,000 Recruit NIL</h3><p>Unlimited optional rewards.</p></div><button id="rewardNilAdBtn" class="btn primary">Watch Sponsor Video</button></article>
+          <article class="sponsor-reward-card"><span class="sponsor-icon">🏫</span><div><small>DEPARTMENT SPONSOR</small><h3>+$50,000 Athletics Budget</h3><p>For facilities, staff and program costs. Does not add Recruit NIL.</p></div><button class="btn primary" data-budget-reward>Watch Sponsor Video</button></article>
         </div>
         <div class="sponsor-policy-row"><span>One interstitial may appear after the completed season recap. No banners or ads during live games.</span><button id="adPrivacyOptionsBtn" class="btn neutral">Privacy Options</button></div>
       </section>
@@ -692,6 +694,6 @@
   </div>
 </div>
 <script src="ad-config.js?v=216"></script>
-<script src="app-bundle.js?v=250"></script>
+<script src="app-bundle.js?v=268"></script>
 </body>
 </html>
