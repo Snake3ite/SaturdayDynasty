@@ -1,18 +1,18 @@
 {
-  "version": "27.4.49",
-  "release": "Android V27.4.49 · Build 250 · Custom Conferences &amp; Schedules",
-  "versionCode": 250,
-  "fileCount": 172,
+  "version": "27.4.69",
+  "release": "Android V27.4.69 · Build 270 · Recruiting Filters",
+  "versionCode": 270,
+  "fileCount": 173,
   "files": [
     {
       "path": "ad-config.js",
-      "sha256": "1fe45f8bca0660b7402e809fec00c3c6cbb00f4ff07a60882718bf5134711d90",
-      "bytes": 641
+      "sha256": "55372b2cc91b1290abab9cca7ce0793ce5aedeb7c69ec3c96ca7cc98691b2535",
+      "bytes": 732
     },
     {
       "path": "app-bundle.js",
-      "sha256": "edc1b41ecf5bc14cd104842008bc0a2b07c34cb99139e44efe7c757a70101c9b",
-      "bytes": 1380404
+      "sha256": "96c106ff3f0f271d61a665984fc2d910ebb46b779737cc8eb33c73360334e9bf",
+      "bytes": 1458785
     },
     {
       "path": "app-shell.css",
@@ -716,8 +716,8 @@
     },
     {
       "path": "index.html",
-      "sha256": "1f458e68ecf2bee51c77870dac2d83ace190faaf0e4e22b8b838efbfeb6e24d2",
-      "bytes": 43527
+      "sha256": "4bb9031d7df9e2ab9fe99f85ece5fb77abc72559ac5f5c158a6a706615c1cf9c",
+      "bytes": 46595
     },
     {
       "path": "live-game.css",
@@ -726,8 +726,8 @@
     },
     {
       "path": "manifest.json",
-      "sha256": "4a64f1aa779fd281954aa21c53329778b68f98f8519a7d313b0aa1aa3d70df0e",
-      "bytes": 725
+      "sha256": "56449cf91f0f3bb8d32ae003b99f21214af5bbec68675ee59cf65d26e98b8cec",
+      "bytes": 720
     },
     {
       "path": "navigation.css",
@@ -746,13 +746,13 @@
     },
     {
       "path": "usage-privacy.html",
-      "sha256": "53f7ac975bd761792ffe6342ec53a09d8b171880210ee192e5f46fd17854876a",
-      "bytes": 3752
+      "sha256": "cdb66c9a226fe54d860733e0ee27dc463461d8fc48cd3bbc1ed8a3d13fb51d64",
+      "bytes": 3796
     },
     {
       "path": "v103.css",
-      "sha256": "d7c1f25f5e4a3c40c20a33908ceea0aee6e1520d7a53ae90d2ff600ca2220e48",
-      "bytes": 7363
+      "sha256": "f855a5cedd80540b609c815c1e66387e29b783c0312e3877c2a162b64ec1517e",
+      "bytes": 8715
     },
     {
       "path": "v105.css",
@@ -836,8 +836,8 @@
     },
     {
       "path": "v223.css",
-      "sha256": "7998339f2073df439d1708b3cc3cc98b835e95f9ebd5484b28d6ffc4e9bba24b",
-      "bytes": 9281
+      "sha256": "e71eeda52b6be99fcc8490b594fadea2db4b7ad284f84ec63ff10d9e9026a697",
+      "bytes": 10364
     },
     {
       "path": "v224.css",
@@ -863,6 +863,11 @@
       "path": "v232.css",
       "sha256": "14d1c25fe97a69b34cb497fb95821747a6029f1c29ba7f6492b58f36135f2473",
       "bytes": 41831
+    },
+    {
+      "path": "v269.css",
+      "sha256": "cf7b571aadb2ec7ea5d27f45f868e8119985eb00dfa1a2a2ce50ea12762170af",
+      "bytes": 961
     }
   ]
 }

@@ -1,0 +1,8 @@
+.portal-filter-toolbar{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:8px;margin:10px 0 14px;padding:10px;background:#091925;border:1px solid var(--border);border-radius:13px}
+.portal-filter-toolbar input,.portal-filter-toolbar select{min-width:0;width:100%;min-height:42px;padding:9px 11px;background:#122234;color:#fff;border:1px solid var(--border);border-radius:9px}
+.portal-filter-toolbar input{grid-column:span 2}
+.portal-filter-toolbar input::placeholder{color:#8da6b8}
+.portal-filter-toolbar select:focus,.portal-filter-toolbar input:focus{outline:2px solid var(--cyan);outline-offset:1px}
+.portal-filter-toolbar select option{background:#122234;color:#fff}
+.portal-card .portal-fit-row b{font-size:.9rem}
+@media(max-width:760px){.portal-filter-toolbar{grid-template-columns:1fr 1fr;gap:6px;padding:8px}.portal-filter-toolbar input{grid-column:1/-1}.portal-filter-toolbar select{font-size:.78rem;min-height:40px;padding:7px}}

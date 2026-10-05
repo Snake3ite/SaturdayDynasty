@@ -8,11 +8,11 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png" sizes="192x192">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="styles.css?v=250">
+<link rel="stylesheet" href="styles.css?v=270">
 <link rel="stylesheet" href="release.css?v=216">
-<link rel="stylesheet" href="v103.css?v=215">
+<link rel="stylesheet" href="v103.css?v=266">
 <link rel="stylesheet" href="v105.css?v=215">
-<link rel="stylesheet" href="v11.css?v=215"><link rel="stylesheet" href="v111.css?v=215"><link rel="stylesheet" href="v113.css?v=215">
+<link rel="stylesheet" href="v11.css?v=270"><link rel="stylesheet" href="v111.css?v=215"><link rel="stylesheet" href="v113.css?v=215">
 <link rel="stylesheet" href="v114.css?v=215">
 <link rel="stylesheet" href="v12.css?v=215">
 <link rel="stylesheet" href="v13.css?v=215">
@@ -25,21 +25,22 @@
 <link rel="stylesheet" href="v219.css?v=219">
 <link rel="stylesheet" href="v220.css?v=220">
 <link rel="stylesheet" href="v221.css?v=221">
-<link rel="stylesheet" href="v223.css?v=223">
+<link rel="stylesheet" href="v223.css?v=270">
 <link rel="stylesheet" href="v224.css?v=224">
 <link rel="stylesheet" href="v225.css?v=225">
 <link rel="stylesheet" href="v226.css?v=226">
 <link rel="stylesheet" href="v227.css?v=227">
-<link rel="stylesheet" href="v232.css?v=250">
-<link rel="stylesheet" href="app-shell.css?v=250">
-<link rel="stylesheet" href="live-game.css?v=250">
-<link rel="stylesheet" href="navigation.css?v=250">
-<link rel="stylesheet" href="coach-journey.css?v=250">
-<link rel="stylesheet" href="dynasty-story.css?v=250">
+<link rel="stylesheet" href="v269.css?v=269">
+<link rel="stylesheet" href="v232.css?v=270">
+<link rel="stylesheet" href="app-shell.css?v=266">
+<link rel="stylesheet" href="live-game.css?v=266">
+<link rel="stylesheet" href="navigation.css?v=266">
+<link rel="stylesheet" href="coach-journey.css?v=266">
+<link rel="stylesheet" href="dynasty-story.css?v=258">
 </head>
 <body class="ui221-startup-mode">
 <header class="topbar">
-  <div class="brand"><img id="appTeamLogo" class="logo-img" src="icon-192.png" alt="Saturday Dynasty Football"><div><h1>Saturday Dynasty Football</h1><p id="releaseLabel">Android V27.4.49 · Build 250 · Custom Conferences &amp; Schedules</p></div></div>
+  <div class="brand"><img id="appTeamLogo" class="logo-img" src="icon-192.png" alt="Saturday Dynasty Football"><div><h1>Saturday Dynasty Football</h1><p id="releaseLabel">Android V27.4.69 · Build 270 · Recruiting Filters</p></div></div>
   <div class="broadcast-context"><small id="activeSectionKicker">DYNASTY FOOTBALL</small><strong id="activeSectionTitle">Select a Program</strong></div>
   <div class="top-status">
     <span>YEAR <b id="yearLabel">1</b></span>
@@ -76,7 +77,7 @@
       <button id="loadSelectedSaveBtn" class="btn primary">Load Selected Save</button>
       <button id="deleteSelectedSaveBtn" class="btn danger">Delete Selected Save</button>
       <button id="newDynastyBtn" class="btn neutral">Choose a Team for New Dynasty</button>
-      <button id="scenarioMenu240" class="btn primary" type="button" onclick="window.SDF_DYNASTY_STORY.open('challenge')">Scenarios · 14 ways to play</button>
+      <button id="scenarioMenu240" class="btn primary" type="button" onclick="window.SDF_DYNASTY_STORY.open('challenge')">Scenarios · 32 ways to play</button>
       <button id="openSettingsStartupBtn" class="btn neutral">⚙ Settings</button>
     </div>
     <p id="saveSlotMessage" class="muted save-slot-message" aria-live="polite"></p>
@@ -218,8 +219,10 @@
         <select id="positionFilter"><option value="ALL">All positions</option></select>
         <select id="starFilter"><option value="ALL">All stars</option><option value="5">5-star</option><option value="4">4-star</option><option value="3">3-star</option><option value="2">2-star</option><option value="1">1-star</option></select>
         <select id="recruitRegionFilter"><option value="ALL">All regions</option></select>
+        <select id="interestFilter" aria-label="Minimum prospect interest"><option value="ALL">Any interest</option><option value="HIGH">High interest · 70+</option><option value="WARM">Warm interest · 45+</option><option value="LOW">Low interest · under 45</option></select>
+        <select id="scoutFilter" aria-label="Scouting status"><option value="ALL">Any scouting status</option><option value="SCOUTED">Scouted ratings</option><option value="UNSCOUTED">Needs scouting</option></select>
         <select id="statusFilter"><option value="AVAILABLE">All uncommitted</option><option value="RECRUITABLE">Recruitable now</option><option value="UNCONTACTED">Uncontacted prospects</option><option value="LATE">Late opportunities</option><option value="BOARD">My board</option><option value="OFFERED">Scholarship offered</option><option value="COMMITTED">Committed</option></select>
-        <select id="sortFilter"><option value="RANK">National rank</option><option value="INTEREST">My interest</option><option value="NEED">Team need</option><option value="DISTANCE">Distance</option><option value="FIT">Program fit</option></select>
+        <select id="sortFilter"><option value="RANK">National rank</option><option value="INTEREST">My interest</option><option value="NEED">Team need</option><option value="DISTANCE">Distance</option><option value="FIT">Program fit</option><option value="OVR">Scouted overall</option><option value="POTENTIAL">Scouted potential</option></select>
         <button id="autoBoardBtn" class="btn neutral">Auto-fill Board</button>
       </div>
 
@@ -243,6 +246,16 @@
       <div class="section-head subhead"><div><span class="eyebrow">YOUR ROSTER</span><h3>Outgoing Transfers</h3></div></div>
       <div id="portalDepartureListV11" class="portal-grid"></div>
       <div class="section-head subhead"><div><span class="eyebrow">AVAILABLE PLAYERS</span><h3>Portal Prospects</h3></div></div>
+      <div class="portal-filter-toolbar" role="group" aria-label="Filter transfer portal prospects">
+        <input id="portalSearch" type="search" placeholder="Search player, school or reason" aria-label="Search portal prospects">
+        <select id="portalPositionFilter" aria-label="Filter portal position"><option value="ALL">All positions</option><option>QB</option><option>RB</option><option>WR</option><option>TE</option><option>OT</option><option>IOL</option><option>EDGE</option><option>DL</option><option>LB</option><option>CB</option><option>S</option><option>K</option><option>P</option></select>
+        <select id="portalClassFilter" aria-label="Filter portal class"><option value="ALL">All classes</option><option value="1">Freshman</option><option value="2">Sophomore</option><option value="3">Junior</option><option value="4">Senior</option></select>
+        <select id="portalOverallFilter" aria-label="Minimum player overall"><option value="0">Any overall</option><option value="70">70+ OVR</option><option value="80">80+ OVR</option><option value="85">85+ OVR</option></select>
+        <select id="portalFitFilter" aria-label="Minimum program fit"><option value="ALL">Any program fit</option><option value="FIT70">Good fit · 70+</option><option value="FIT80">Strong fit · 80+</option><option value="PT80">Playing time · 80+</option></select>
+        <select id="portalInterestFilter" aria-label="Filter player interest"><option value="ALL">Any interest</option><option value="LEADING">We lead the race</option><option value="INTEREST50">50+ interest</option></select>
+        <select id="portalStatusFilter" aria-label="Filter transfer status"><option value="AVAILABLE">Available</option><option value="ALL">All players</option><option value="SIGNED">Signed to us</option><option value="LOST">Committed elsewhere</option></select>
+        <select id="portalSortFilter" aria-label="Sort portal prospects"><option value="OVR">Highest overall</option><option value="FIT">Best program fit</option><option value="PT">Best playing-time fit</option><option value="INTEREST">Our interest</option><option value="POTENTIAL">Highest potential</option><option value="CLASS">Class year</option></select>
+      </div>
       <div id="portalListV11" class="portal-grid"></div>
     </section>
   </section>
@@ -470,7 +483,7 @@
       <div class="section-head"><div><span class="eyebrow">OFFSEASON HUB</span><h2>Build Next Year's Program</h2></div></div>
       <div class="offseason-step-grid">
         <button class="offseason-step" data-offseason-action="spring"><b>Spring Practice</b><span>Choose a team development focus.</span></button>
-        <button class="offseason-step" data-offseason-action="battles"><b>Position Battles</b><span>Select starters using ability, fit, and leadership.</span></button>
+        <button class="offseason-step" data-offseason-action="battles"><b>Position Battles</b><span>After the portal closes, review starters and close calls.</span></button>
         <button class="offseason-step" data-offseason-action="progression"><b>Player Development</b><span>Assign individual offseason focuses.</span></button>
         <button class="offseason-step" data-offseason-action="staff"><b>Coaching Carousel</b><span>Handle departures, contracts, and job offers.</span></button>
         <button class="offseason-step" data-offseason-action="draft"><b>Pro Draft</b><span>See where graduating players were selected.</span></button>
@@ -506,7 +519,7 @@
 
     <section class="surface">
       <div class="section-head">
-        <div><span class="eyebrow">FACILITIES</span><h2>Upgrade the Program</h2></div>
+        <div><span class="eyebrow">FACILITIES · ATHLETICS BUDGET</span><h2>Upgrade the Program</h2><p class="muted">Construction uses Athletics Budget. Recruit NIL is a separate player-offer pool.</p></div>
       </div>
       <div id="facilityGrid" class="facility-grid"></div>
     </section>
@@ -515,6 +528,7 @@
       <div class="section-head">
         <div><span class="eyebrow">COACHING CAROUSEL</span><h2>Staff Management</h2></div>
       </div>
+      <div class="facility-budget-guide staff-budget-guide"><div class="facility-budget-icon" aria-hidden="true">🤝</div><div><span class="eyebrow">DEPARTMENT SPONSOR</span><h3>Need more Athletics Budget?</h3><p>Watch an optional video for <b>$50,000 Athletics Budget</b> toward staff and program costs. This does not add Recruit NIL.</p></div><button class="btn primary" type="button" data-budget-reward>Watch for +$50K Athletics Budget</button></div>
       <div id="staffManagement" class="coach-grid"></div>
     </section>
 
@@ -585,6 +599,7 @@
         <div class="sponsor-reward-grid">
           <article class="sponsor-reward-card"><span class="sponsor-icon">⏱</span><div><small>STAFF SPONSOR</small><h3>+25 Recruiting Hours</h3><p>Unlimited optional rewards.</p></div><button id="rewardHoursAdBtn" class="btn primary">Watch Sponsor Video</button></article>
           <article class="sponsor-reward-card"><span class="sponsor-icon">$</span><div><small>BOOSTER SPOTLIGHT</small><h3>+$10,000 Recruit NIL</h3><p>Unlimited optional rewards.</p></div><button id="rewardNilAdBtn" class="btn primary">Watch Sponsor Video</button></article>
+          <article class="sponsor-reward-card"><span class="sponsor-icon">🏫</span><div><small>DEPARTMENT SPONSOR</small><h3>+$50,000 Athletics Budget</h3><p>For facilities, staff and program costs. Does not add Recruit NIL.</p></div><button class="btn primary" data-budget-reward>Watch Sponsor Video</button></article>
         </div>
         <div class="sponsor-policy-row"><span>One interstitial may appear after the completed season recap. No banners or ads during live games.</span><button id="adPrivacyOptionsBtn" class="btn neutral">Privacy Options</button></div>
       </section>
@@ -692,6 +707,6 @@
   </div>
 </div>
 <script src="ad-config.js?v=216"></script>
-<script src="app-bundle.js?v=250"></script>
+<script src="app-bundle.js?v=270"></script>
 </body>
 </html>

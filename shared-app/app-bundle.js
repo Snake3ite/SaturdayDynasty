@@ -551,7 +551,7 @@ function renderV9(){
 
 function renderAll(){if(!state.school)return;migrateDynastyCore();$("yearLabel").textContent=state.year;$("weekLabel").textContent=state.phase==="REGULAR"?state.week:state.phase;$("recordLabel").textContent=`${state.record.w}-${state.record.l}`;if($("mobileYear"))$("mobileYear").textContent=state.year;if($("mobileWeek"))$("mobileWeek").textContent=state.phase==="REGULAR"?state.week:state.phase;if($("mobileRecord"))$("mobileRecord").textContent=`${state.record.w}-${state.record.l}`;$("hoursLabel").textContent=state.weeklyHours;$("scholarshipLabel").textContent=state.scholarships;$("schoolName").textContent=state.school.name;$("schoolMeta").textContent=`${state.school.city}, ${state.school.state} · ${state.school.conference}`;$("programMark").textContent=initials(state.school.name);$("offenseScheme").value=state.offense;$("defenseScheme").value=state.defense;ensureExpansionState();renderSidebar();renderDashboard();renderStaff();renderStaffAssignments();renderNeeds();renderRecruiting();renderRoster();renderTeam();renderSchedule();renderStandings();renderProgram();renderTraditionsAndStadium();renderStats();renderV9();renderRankings();renderConferenceDirectory();renderDynasty();renderOffseasonHub();renderHistory()}
 function renderSidebar(){$("schoolSummary").innerHTML=[["Prestige",state.school.prestige],["Recent success",state.school.recent],["Record",`${state.record.w}-${state.record.l}`],["Expectation",`${state.school.expectation} wins`],["Pipelines",state.school.pipelines.join(", ")]].map(x=>`<div class="stat-line"><span>${x[0]}</span><b>${x[1]}</b></div>`).join("")}
-function renderDashboard(){let ca=Math.round(avg(state.commits.map(r=>r.ovr))||0),t=teamRatings();$("programCards").innerHTML=metric("Team OVR",t.overall)+metric("Offense",t.offense)+metric("Defense",t.defense)+metric("Roster Size",state.roster.length)+metric("Commits",state.commits.length)+metric("Class Average",ca||"-")+metric("Budget","$"+Math.round(state.budget/1000)+"k")+metric("Job Security",state.jobSecurity+"%");$("newsFeed").innerHTML=state.news.slice(-10).reverse().map(n=>`<div class="news-item"><span class="news-dot"></span><div>${n}</div></div>`).join("");$("advanceWeekBtn").disabled=state.phase!=="REGULAR"||state.seasonDone;$("recruitAdvanceBtn").disabled=state.phase!=="REGULAR"||state.seasonDone}
+function renderDashboard(){let ca=Math.round(avg(state.commits.map(r=>r.ovr))||0),t=teamRatings();$("programCards").innerHTML=metric("Team OVR",t.overall)+metric("Offense",t.offense)+metric("Defense",t.defense)+metric("Roster Size",state.roster.length)+metric("Commits",state.commits.length)+metric("Class Average",ca||"-")+metric("Athletics Budget","$"+Math.round(state.budget/1000)+"k")+metric("Job Security",state.jobSecurity+"%");$("newsFeed").innerHTML=state.news.slice(-10).reverse().map(n=>`<div class="news-item"><span class="news-dot"></span><div>${n}</div></div>`).join("");$("advanceWeekBtn").disabled=state.phase!=="REGULAR"||state.seasonDone;$("recruitAdvanceBtn").disabled=state.phase!=="REGULAR"||state.seasonDone}
 function renderStaff(){$("staffGrid").innerHTML=Object.values(state.staff).map(c=>`<div class="coach-card"><h3>${c.name}</h3><div class="muted">${c.role}</div><div class="coach-ratings"><div><small>Recruit</small><b>${c.recruiting}</b></div><div><small>Develop</small><b>${c.development}</b></div><div><small>Game</small><b>${c.game}</b></div></div></div>`).join("")}
 function renderNeeds(){let n=needs();$("needsGrid").innerHTML=POSITIONS.map(p=>`<div class="need ${n[p].label.toLowerCase()}"><b>${p} · ${n[p].label}</b><small>${n[p].count} players · ${n[p].sen} seniors · starter ${n[p].q}</small></div>`).join("")}
 function recStage(r){let v=r.interest[state.school.id];if(r.committedTo)return"Committed";if(v>=88)return"Top 3";if(v>=78)return"Top 5";if(v>=66)return"Top 8";return"Open"}
@@ -858,7 +858,7 @@ window.replaceCoach=replaceCoach;
 function renderProgram(){
  if(!$("programManagementCards"))return;
  let status=state.jobSecurity>=75?"Secure":state.jobSecurity>=45?"Warm":"Hot Seat";
- $("programManagementCards").innerHTML=metric("Budget","$"+Math.round(state.budget/1000)+"k")+metric("Job Security",status)+metric("Fan Approval",state.fanApproval+"%")+metric("Booster Support",state.boosterSupport+"%")+metric("Prestige",state.school.prestige)+metric("Recent Success",state.school.recent)+metric("Program Tier",schoolTier(state.school).label);if($("tierExplanation"))$("tierExplanation").innerHTML=`Your program is currently <b>${schoolTier(state.school).label}</b>. Stronger prestige, recent success, facilities, pro development, and NIL support raise your tier and unlock higher-level recruits.`;
+ $("programManagementCards").innerHTML=metric("Athletics Budget","$"+Math.round(state.budget/1000)+"k")+metric("Job Security",status)+metric("Fan Approval",state.fanApproval+"%")+metric("Booster Support",state.boosterSupport+"%")+metric("Prestige",state.school.prestige)+metric("Recent Success",state.school.recent)+metric("Program Tier",schoolTier(state.school).label);if($("tierExplanation"))$("tierExplanation").innerHTML=`Your program is currently <b>${schoolTier(state.school).label}</b>. Stronger prestige, recent success, facilities, pro development, and NIL support raise your tier and unlock higher-level recruits.`;
  const names={training:"Training Center",recruiting:"Recruiting Department",medical:"Sports Medicine",stadium:"Stadium & Atmosphere",academics:"Academic Support"};
  $("facilityGrid").innerHTML=Object.entries(state.facilities).map(([k,v])=>`<div class="facility-card"><h3>${names[k]}</h3><div class="level">Level ${v}</div><div class="progress"><div style="width:${v*20}%"></div></div><span class="sub">${v>=5?"Maximum level":"Next upgrade: $"+Math.round(facilityCost(k)/1000)+"k"}</span><button class="btn small primary full" onclick="upgradeFacility('${k}')" ${v>=5||state.budget<facilityCost(k)?"disabled":""}>Upgrade</button></div>`).join("");
  $("staffManagement").innerHTML=Object.entries(state.staff).map(([k,c])=>`<div class="coach-card"><h3>${c.name}</h3><div class="muted">${c.role}</div><div class="coach-ratings"><div><small>Recruit</small><b>${c.recruiting}</b></div><div><small>Develop</small><b>${c.development}</b></div><div><small>Game</small><b>${c.game}</b></div></div><button class="btn small danger full" onclick="replaceCoach('${k}')" ${state.budget<(k==="head"?450000:220000)?"disabled":""}>Replace Coach</button></div>`).join("");
@@ -1113,7 +1113,7 @@ function runPositionBattles(){
  window.SDF_V11_TEST?.ensureRealDepth?.();
  const body=$("modalBody"),card=$("modal").querySelector('.modal-card'),scroll=card?.scrollTop||0;
  body.replaceChildren();const title=document.createElement('h2');title.textContent='Position Battles';body.append(title);
- const intro=document.createElement('p');intro.textContent='Choose the starter for each role. Selections update your real depth chart immediately and carry into next season while that player remains eligible. Use Depth Chart for rotation and snap shares.';body.append(intro);
+ const intro=document.createElement('p');intro.textContent='The transfer portal is closed and the depth chart now starts with the highest-rated eligible players. Review each battle and keep the best OVR choice or select another starter. Changes update your real depth chart and carry into next season.';body.append(intro);
  for(const role of window.SDF_V11_TEST?.ROLE_DEFS||[]){
   const players=state.roster.filter(p=>p.pos===role.pos&&!p.injury&&!p.redshirt).sort((a,b)=>b.ovr-a.ovr);if(players.length<2)continue;
   const selected=state.realDepthChart?.[role.key]?.slots?.[0]?.playerId,section=document.createElement('section');section.className='event-card';section.dataset.battleRole=role.key;
@@ -1183,7 +1183,7 @@ function renderCarouselModal(){
  const staffOffers=(state.jobOffers||[]).filter(o=>o.type==="STAFF_DEPARTURE"),headOffers=(state.jobOffers||[]).filter(o=>o.type==="HEAD_JOB"),unresolvedStaff=staffOffers.filter(o=>!["RETAINED","HIRED"].includes(o.status));
  const staffHtml=staffOffers.map((o,i)=>{const idx=state.jobOffers.indexOf(o);if(o.status==="RETAINED")return `<div class="offer-card resolved"><b>${o.coach.name} retained</b><span class="sub">${o.coach.role} returns after a ${carouselMoney(o.retainCost)} raise.</span></div>`;if(o.status==="HIRED")return `<div class="offer-card resolved"><b>${state.staff[o.key]?.name} hired</b><span class="sub">New ${state.staff[o.key]?.role} · ${o.hiredSpecialty||'Balanced staff fit'}</span></div>`;if(o.status==="SEARCH")return `<div class="offer-card"><b>Replace ${o.coach.name} — ${o.coach.role}</b><span class="sub">Choose a candidate. Ratings and one-time hiring cost are shown below.</span>${(o.candidates||[]).map((c,ci)=>`<div class="carousel-candidate"><strong>${c.coach.name} · ${c.fit} fit</strong><span>${c.specialty}</span><small>REC ${c.coach.recruiting} · DEV ${c.coach.development} · GAME ${c.coach.game} · Salary ${carouselMoney(c.salary)}</small><button class="btn primary full" onclick="hireCoordinator(${idx},${ci})" ${state.budget<c.hireCost?'disabled':''}>Hire · ${carouselMoney(c.hireCost)} cost</button></div>`).join('')}<button class="btn neutral full" onclick="promoteAnalyst(${idx})" ${state.budget<75000?'disabled':''}>Promote Analyst · $75k</button></div>`;return `<div class="offer-card"><b>${o.coach.name} received a head-coaching offer from ${o.destination}</b><span class="sub">${o.impact}</span><button class="btn primary full" onclick="retainCoordinator(${idx})" ${state.budget<o.retainCost?'disabled':''}>Retain with raise · ${carouselMoney(o.retainCost)}</button><button class="btn neutral full" onclick="letCoordinatorLeave(${idx})">Let Coach Leave & Interview Replacements</button></div>`}).join('')||'<p class="muted">No coordinator departures this offseason.</p>';
  const headHtml=headOffers.map(o=>{const i=state.jobOffers.indexOf(o),resolved=o.status!=="PENDING",careerFit=o.careerFit||window.SDF_V194?.jobFit?.(o.school,{jobType:o.jobType})||null;return `<div class="offer-card ${resolved?'resolved':''}"><div class="carousel-offer-head"><b>${o.jobType}: ${o.school.name}</b><span class="stage">${o.school.conference}</span></div><span class="sub">${o.reason}</span><div class="metric-grid compact">${metric("Program OVR",o.programPower)}${metric("Prestige",o.school.prestige)}${metric("Recent",o.school.recent)}${metric("Expected Wins",o.expectedWins)}${metric("Contract",`${o.years} years`)}${metric("Starting Security",`${o.security}%`)}${careerFit?metric("Career Fit",`${careerFit.score} · ${careerFit.label}`):''}</div>${careerFit?`<span class="sub">What they value: ${careerFit.priority} · Career Loyalty ${careerFit.loyalty}</span>`:''}<span class="sub">Salary ${carouselMoney(o.salary)} · ${o.status==='DECLINED'?'Declined':o.status==='ACCEPTED'?'Accepted':'Decision pending'}</span>${resolved?'':`<button class="btn primary full" onclick="acceptJob(${i})" ${window.SDF_SCENARIOS?.canChangeSchools(state)===false?'disabled title="End your scenario before changing schools"':''}>${window.SDF_SCENARIOS?.canChangeSchools(state)===false?'Scenario · School Locked':'Accept Job'}</button><button class="btn neutral full" onclick="declineJob(${i})">Decline</button>`}</div>`}).join('')||'<p class="muted">No head-coaching offers matched your current profile.</p>';
- $("modalBody").innerHTML=`<span class="eyebrow">COACHING CAROUSEL</span><h2>Staff & Job Market</h2><p class="muted">${state.carouselMessage||''}</p><div class="metric-grid">${metric("Current School",state.school.name)}${metric("Season Record",`${state.record.w}-${state.record.l}`)}${metric("Coach Reputation",state.coachCareer.reputation)}${metric("Program Prestige",state.school.prestige)}${metric("Available Budget",carouselMoney(state.budget))}</div><h3>Coordinator Market</h3>${staffHtml}<h3>Head-Coaching Opportunities</h3>${headHtml}${window.SDF_V193?.mustLeaveCurrentJob?.()?`<div class="carousel-stay danger"><b>Current job unavailable</b><span class="sub">Administration has dismissed you. Accept one of the head-coaching opportunities above.</span></div>`:`<div class="carousel-stay"><b>Stay at ${state.school.name}</b><span class="sub">Declining or ignoring head jobs keeps your coach and program-building progress here.</span></div>`}${unresolvedStaff.length?`<p class="warning-text">Resolve ${unresolvedStaff.length} coordinator decision${unresolvedStaff.length===1?'':'s'} before finishing.</p>`:''}<button class="btn success full" onclick="finishCarousel()" ${unresolvedStaff.length||window.SDF_V193?.mustLeaveCurrentJob?.()?'disabled':''}>${window.SDF_V193?.mustLeaveCurrentJob?.()?'Accept a New Job Above':'Stay / Finish Carousel'}</button>`;$("modal").classList.remove("hidden")
+ $("modalBody").innerHTML=`<span class="eyebrow">COACHING CAROUSEL</span><h2>Staff & Job Market</h2><p class="muted">${state.carouselMessage||''}</p><div class="metric-grid">${metric("Current School",state.school.name)}${metric("Season Record",`${state.record.w}-${state.record.l}`)}${metric("Coach Reputation",state.coachCareer.reputation)}${metric("Program Prestige",state.school.prestige)}${metric("Athletics Budget",carouselMoney(state.budget))}</div><h3>Coordinator Market</h3>${staffHtml}<h3>Head-Coaching Opportunities</h3>${headHtml}${window.SDF_V193?.mustLeaveCurrentJob?.()?`<div class="carousel-stay danger"><b>Current job unavailable</b><span class="sub">Administration has dismissed you. Accept one of the head-coaching opportunities above.</span></div>`:`<div class="carousel-stay"><b>Stay at ${state.school.name}</b><span class="sub">Declining or ignoring head jobs keeps your coach and program-building progress here.</span></div>`}${unresolvedStaff.length?`<p class="warning-text">Resolve ${unresolvedStaff.length} coordinator decision${unresolvedStaff.length===1?'':'s'} before finishing.</p>`:''}<button class="btn success full" onclick="finishCarousel()" ${unresolvedStaff.length||window.SDF_V193?.mustLeaveCurrentJob?.()?'disabled':''}>${window.SDF_V193?.mustLeaveCurrentJob?.()?'Accept a New Job Above':'Stay / Finish Carousel'}</button>`;$("modal").classList.remove("hidden")
 }
 function retainCoordinator(i){const o=state.jobOffers[i];if(!o||o.type!=="STAFF_DEPARTURE"||o.status!=="PENDING"||state.budget<o.retainCost)return;state.budget-=o.retainCost;o.status="RETAINED";o.resolved=true;o.coach.recruiting=clamp(o.coach.recruiting+1,45,99);o.coach.development=clamp(o.coach.development+1,45,99);window.SDF_V189?.onRetain?.(o.coach);renderCarouselModal();renderAll()}
 function letCoordinatorLeave(i){const o=state.jobOffers[i];if(!o||o.type!=="STAFF_DEPARTURE")return;o.status="SEARCH";o.candidates=carouselCoordinatorCandidates(o.key,o.coach);renderCarouselModal()}
@@ -1214,7 +1214,7 @@ function renderOffseasonHub(){
  if(!$("offseasonHub"))return;$("offseasonHub").classList.toggle("hidden",state.phase!=="PORTAL");
  document.querySelectorAll("[data-offseason-action]").forEach(b=>b.classList.toggle("done",!!state.offseasonTasks[b.dataset.offseasonAction]));
 }
-function handleOffseasonAction(action){if(action==="spring")runSpringPractice();if(action==="battles")runPositionBattles();if(action==="progression")runPlayerProgression();if(action==="staff")coordinatorCarousel();if(action==="draft")runDraft()}
+function handleOffseasonAction(action){if(action==="battles"&&state.phase==="PORTAL"&&!state.offseasonFlow217?.portalClosed){window.toast?.('Position battles open after the transfer portal closes.');return}if(action==="spring")runSpringPractice();if(action==="battles")runPositionBattles();if(action==="progression")runPlayerProgression();if(action==="staff")coordinatorCarousel();if(action==="draft")runDraft()}
 function seasonAwardsExpanded(){
  if(window.SDF_V175?.seasonAwards)return window.SDF_V175.seasonAwards();
  const candidates=state.roster.map(p=>({p,score:(p.stats.yards||0)/100+(p.stats.td||0)*3+(p.stats.tackles||0)/8+(p.stats.sacks||0)*3+(p.stats.int||0)*4+p.ovr/5})).sort((a,b)=>b.score-a.score);
@@ -1311,7 +1311,7 @@ if(location.protocol==="http:"||location.protocol==="https:"){
 
 (()=>{
 'use strict';
-const RELEASE='Android V27.4.49 · Build 250 · Custom Conferences &amp; Schedules';
+const RELEASE='Android V27.4.68 · Build 269 · Recruiting & Portal Improvements';
 const SAVE_PREFIX='SaturdayDynastyFootballAndroidV1';
 const LEGACY_PREFIXES=['SaturdayArchitectAndroidV1','SaturdayArchitectCompleteV9','SaturdayArchitectStatsV82','SaturdayArchitectDynastyV81','SaturdayArchitectRealignmentV74','SaturdayArchitectRecruitingV73','SaturdayArchitect128V72','SaturdayArchitectMobileV71'];
 const ui={activeTab:'dashboard',recruitPage:1,recruitPageSize:window.innerWidth<=760?30:75,rosterQuery:'',recruitQuery:''};
@@ -2064,15 +2064,17 @@ function recruitableNow(r){
  return !r.committedTo&&s.access.allowed&&!s.lockedOut&&!s.eligibility.locked
 }
 function filteredProspects(){
- const n=recruitRenderNeeds(),q=(document.getElementById('recruitSearch')?.value||'').trim().toLowerCase(),pos=$('positionFilter').value,starFilter=$('starFilter').value,region=$('recruitRegionFilter').value,status=$('statusFilter').value,sort=$('sortFilter').value;
- const list=state.recruits.filter(r=>{ensureRecruit(r);return(!q||`${r.name} ${r.city} ${r.home} ${r.pos}`.toLowerCase().includes(q))&&(pos==='ALL'||r.pos===pos)&&(starFilter==='ALL'||r.stars===Number(starFilter))&&(region==='ALL'||r.region===region)&&(status==='AVAILABLE'?!r.committedTo:status==='RECRUITABLE'?recruitableNow(r):status==='UNCONTACTED'?!r.committedTo&&!r.onBoard&&!r.offered&&Number(r.recruitInfluence?.[USER_ID()]||0)===0:status==='LATE'?lateOpportunity(r):status==='BOARD'?r.onBoard&&!r.committedTo:status==='OFFERED'?r.offered&&!r.committedTo:!!r.committedTo)});
+ const n=recruitRenderNeeds(),q=(document.getElementById('recruitSearch')?.value||'').trim().toLowerCase(),pos=$('positionFilter').value,starFilter=$('starFilter').value,region=$('recruitRegionFilter').value,status=$('statusFilter').value,sort=$('sortFilter').value,interestFilter=$('interestFilter')?.value||'ALL',scoutFilter=$('scoutFilter')?.value||'ALL';
+ const list=state.recruits.filter(r=>{ensureRecruit(r);const interest=interestFilter==='ALL'?0:Number(race(r).user?.score||0);return(!q||`${r.name} ${r.city} ${r.home} ${r.pos}`.toLowerCase().includes(q))&&(pos==='ALL'||r.pos===pos)&&(starFilter==='ALL'||r.stars===Number(starFilter))&&(region==='ALL'||r.region===region)&&(interestFilter==='ALL'||(interestFilter==='HIGH'?interest>=70:interestFilter==='WARM'?interest>=45:interest<45))&&(scoutFilter==='ALL'||(scoutFilter==='SCOUTED'?!!r.scouted:!r.scouted))&&(status==='AVAILABLE'?!r.committedTo:status==='RECRUITABLE'?recruitableNow(r):status==='UNCONTACTED'?!r.committedTo&&!r.onBoard&&!r.offered&&Number(r.recruitInfluence?.[USER_ID()]||0)===0:status==='LATE'?lateOpportunity(r):status==='BOARD'?r.onBoard&&!r.committedTo:status==='OFFERED'?r.offered&&!r.committedTo:!!r.committedTo)});
  if(sort==='INTEREST')list.sort((a,b)=>(race(a).user?.rank||99)-(race(b).user?.rank||99)||(race(b).user?.score||0)-(race(a).user?.score||0));
  else if(sort==='NEED')list.sort((a,b)=>n[b.pos].sev-n[a.pos].sev||a.rank-b.rank);
  else if(sort==='DISTANCE')list.sort((a,b)=>distance(state.school,a)-distance(state.school,b));
  else if(sort==='FIT')list.sort((a,b)=>weightedFit(b,state.school)-weightedFit(a,state.school));
+ else if(sort==='OVR')list.sort((a,b)=>(b.scouted?Number(b.ovr||0):-1)-(a.scouted?Number(a.ovr||0):-1)||a.rank-b.rank);
+ else if(sort==='POTENTIAL')list.sort((a,b)=>(b.scouted?Number(b.pot||0):-1)-(a.scouted?Number(a.pot||0):-1)||a.rank-b.rank);
  else list.sort((a,b)=>a.rank-b.rank);return list
 }
-function recruitingOverviewHtml(){const board=state.recruits.filter(r=>r.onBoard&&!r.committedTo).length,led=state.recruits.filter(r=>r.onBoard&&!r.committedTo&&race(r).user?.rank===1).length;return metric('Weekly Recruiting Hours',state.weeklyHours)+metric('Open Prospects',state.recruits.filter(r=>!r.committedTo).length)+metric('Recruitable Now',state.recruits.filter(recruitableNow).length)+metric('Recruiting Board',`${board}/${RECRUIT_BOARD_LIMIT}`)+metric('Board Slots',Math.max(0,RECRUIT_BOARD_LIMIT-board))+metric('Offers Left',state.scholarships)+metric('Signed Class',`${state.commits.length}/${CLASS_SIGNING_LIMIT}`)+metric('Battles Led',led)+metric('Late Opportunities',state.recruits.filter(lateOpportunity).length)+metric('Recruiting NIL Pool',formatNilMoney(state.nilBudget))+metric('NIL Offered',formatNilMoney(nilCommittedTotal()))+metric('Program Funds',formatNilMoney(state.budget))+metric('Recruiting Phase',state.recruitingPhase)}
+function recruitingOverviewHtml(){const board=state.recruits.filter(r=>r.onBoard&&!r.committedTo).length,led=state.recruits.filter(r=>r.onBoard&&!r.committedTo&&race(r).user?.rank===1).length;return metric('Weekly Recruiting Hours',state.weeklyHours)+metric('Open Prospects',state.recruits.filter(r=>!r.committedTo).length)+metric('Recruitable Now',state.recruits.filter(recruitableNow).length)+metric('Recruiting Board',`${board}/${RECRUIT_BOARD_LIMIT}`)+metric('Board Slots',Math.max(0,RECRUIT_BOARD_LIMIT-board))+metric('Offers Left',state.scholarships)+metric('Signed Class',`${state.commits.length}/${CLASS_SIGNING_LIMIT}`)+metric('Battles Led',led)+metric('Late Opportunities',state.recruits.filter(lateOpportunity).length)+metric('Recruiting NIL Pool',formatNilMoney(state.nilBudget))+metric('NIL Offered',formatNilMoney(nilCommittedTotal()))+metric('Athletics Budget',formatNilMoney(state.budget))+metric('Recruiting Phase',state.recruitingPhase)}
 function recruitTableRowHtml(r){const n=recruitRenderNeeds(),status=statusFor(r),reason=status.canRecruit?status.warning:status.activeReason;return`<tr data-recruit-id="${r.id}" class="${!status.canRecruit?'recruit-blocked':''}"><td>${r.rank}</td><td><button class="link-button" onclick="openRecruit('${r.id}')">${r.name}</button><span class="sub">${r.arch} · ${r.personality}</span><div class="motivation-inline">${r.motivations.slice(0,2).map(m=>`<span>${m.label}</span>`).join('')}</div><span class="sub recruit-contact-remaining">${contactHoursLeft(r)}/${contactCapFor(r)} hrs remaining</span></td><td>${r.pos}</td><td class="star">${star(r.stars)}${!status.access.allowed?'<span class="lock-badge">TIER</span>':status.lockedOut?'<span class="lock-badge">CUT</span>':status.eligibility.locked?'<span class="lock-badge">DEALBREAKER</span>':''}</td><td>${r.city}, ${r.home}<span class="sub">${distance(state.school,r)} mi${state.school.pipelines.includes(r.home)?' · PIPELINE':''}</span></td><td><span class="stage">${stageFor(r)}</span></td><td>${r.scouted?r.ovr:'??'}</td><td>${projectedRecruitUpside(r)}</td><td>${r.scouted?(r.scoutConfidence||0)+'%':'—'}</td><td>${n[r.pos].label}<span class="sub">PT grade ${letterGrade(playingTimeGrade(r,state.school))}</span></td><td><span class="dealbreaker-badge">${dealbreakerDisplay(r)}</span></td><td><div class="race-summary">${userRaceSummary(r)}<div class="race-compact">${raceCompact(r,3)}</div></div>${reason?`<span class="sub ineligible">${reason}</span>`:''}</td><td>${planSelect(r,status)}</td><td><div class="actions">${recruitButtons(r,status)}</div></td></tr>`}
 function recruitMobileCardHtml(r){const status=statusFor(r),rc=race(r),notice=status.canRecruit?status.warning:status.activeReason;return`<article data-recruit-id="${r.id}" class="mobile-data-card ${!status.canRecruit?'recruit-blocked':''}"><div class="mobile-data-head"><div><h3>#${r.rank} ${r.name}</h3><span class="sub">${r.pos} · ${r.arch} · ${r.city}, ${r.home}</span><span class="sub recruit-contact-remaining">${contactHoursLeft(r)}/${contactCapFor(r)} hrs remaining</span></div><span class="star">${star(r.stars)}</span></div><div class="motivation-row">${motivationChips(r)}</div><div class="mobile-data-grid"><div><small>YOUR RANK</small><b>#${rc.user?.rank||'—'}</b></div><div><small>YOUR INTEREST</small><b>${Math.round(rc.user?.score||0)}</b></div><div><small>LEADER</small><b>${rc.leader?.school.name||'—'}</b></div><div><small>FIT</small><b>${rc.user?.grade||'—'}</b></div><div><small>PLAYING TIME</small><b>${letterGrade(playingTimeGrade(r,state.school))}</b></div><div><small>NIL ASK</small><b>${formatNilMoney(nilOfferAmount(r))}</b></div><div><small>CONTACT HRS LEFT</small><b>${contactHoursLeft(r)} / ${contactCapFor(r)}</b></div></div><div class="mobile-race-list">${raceCompact(r,5)}</div>${notice?`<div class="recruit-status-message ${status.canRecruit?'warning':''}"><b>${status.canRecruit?'Dealbreaker warning':'Active recruiting locked'}</b><span>${notice}</span></div>`:planSelect(r,status)}${window.SDF_DYNASTY_STORY?.recruitCardHtml?.(r)||''}<div class="mobile-actions">${recruitButtons(r,status,true)}</div></article>`}
 function renderRecruitSummary(){return withRecruitReadFrame(renderRecruitSummaryContents)}
@@ -2194,7 +2196,7 @@ function requestRecruitFilterRender(search=false){
  recruitFilterRenderTimer=setTimeout(()=>{recruitFilterRenderTimer=null;window.renderRecruiting()},search?120:0)
 }
 // Replace the legacy property handlers instead of stacking another listener.
-['positionFilter','starFilter','recruitRegionFilter','statusFilter','sortFilter'].forEach(id=>{const el=$(id);if(el)el.onchange=()=>requestRecruitFilterRender()});
+['positionFilter','starFilter','recruitRegionFilter','interestFilter','scoutFilter','statusFilter','sortFilter'].forEach(id=>{const el=$(id);if(el)el.onchange=()=>requestRecruitFilterRender()});
 if($('recruitSearch'))$('recruitSearch').oninput=()=>requestRecruitFilterRender(true);
 document.addEventListener('toggle',event=>{if(event.target?.id==='recruitIntelV223'&&event.target.open)renderRecruitSummary()},true);
 
@@ -2202,7 +2204,7 @@ window.migrateDynastyCore?.();ensureAllRecruits();if(state.school)buildAiRecruit
 window.SDF_RECRUITING_V2={
  interestParts,feedbackSnapshot,rememberFeedback,nilReaction,weeklyContactHours,contactCapFor,contactHoursLeft,canUseAction,CONTACT_CAP,MAX_CONTACT_CAP,ACTIONS,ensureRecruit,race,weightedFit,schoolGrade,recalculateRecruit,
  performAction,MOTIVATIONS,lateOpportunity,maybeImmediateCommit,makeCuts,statusFor,boardCount,
- RECRUIT_BOARD_LIMIT,CLASS_SIGNING_LIMIT,RECRUITING_PERSISTENCE_VERSION,buildAiRecruitingBoards,initializeRecruitingModelAsync,
+ RECRUIT_BOARD_LIMIT,CLASS_SIGNING_LIMIT,RECRUITING_PERSISTENCE_VERSION,buildAiRecruitingBoards,initializeRecruitingModelAsync,filteredProspects,
  aiClassCount,aiTargetScore,renderRecruitingV2,updateRecruitCard,renderRecruitSummary,dealbreakerMet,
  openRecruit:(id)=>window.openRecruit(id),
  openNilNegotiation:(id)=>window.offerNil(id),
@@ -2248,9 +2250,9 @@ function completeFacilityProject(){
 function progressFacilityProject(){ensureV103();if(!state.facilityProject)return;state.facilityProject.remainingWeeks--;if(state.facilityProject.remainingWeeks<=0)completeFacilityProject();else state.news.push(`${FACILITIES[state.facilityProject.key].name} construction: ${state.facilityProject.remainingWeeks} week(s) remaining.`)}
 function applyWeeklyFacilityBenefits(){ensureV103();if(state.phase!=='REGULAR'||state.week>(state.schedule?.length||12))return;let key=`${state.year}-${state.week}`;if(state._facilityWeeklyBonusApplied===key)return;state._facilityWeeklyBonusApplied=key;state.weeklyHours+=Math.max(0,(level('recruiting')-1)*2);state.nilBudget+=Math.max(0,(level('nilCollective')-1)*6000)}
 function saveNow103(reason){try{window.SDF_RELEASE_TEST?.saveNow?.(reason,false,false)}catch{}}
-window.upgradeFacility=function(key){ensureV103();if(!FACILITIES[key])return;if(state.facilityProject){alert(`Finish the current ${FACILITIES[state.facilityProject.key].name} project first.`);return}let current=level(key);if(current>=5)return;let cost=facilityCost103(key);if(state.budget<cost){alert(`You need ${money(cost)}. Current program funds: ${money(state.budget)}.`);return}state.budget-=cost;state.facilityProject={key,targetLevel:current+1,remainingWeeks:projectWeeks(key),cost,startedYear:state.year,startedWeek:state.week};state.news.push(`Construction started on ${FACILITIES[key].name} Level ${current+1}.`);window.renderAll();saveNow103('Facility project started')};
+window.upgradeFacility=function(key){ensureV103();if(!FACILITIES[key])return;if(state.facilityProject){alert(`Finish the current ${FACILITIES[state.facilityProject.key].name} project first.`);return}let current=level(key);if(current>=5)return;let cost=facilityCost103(key);if(state.budget<cost){alert(`You need ${money(cost)} Athletics Budget. Current Athletics Budget: ${money(state.budget)}. Recruit NIL cannot pay for facilities.`);return}state.budget-=cost;state.facilityProject={key,targetLevel:current+1,remainingWeeks:projectWeeks(key),cost,startedYear:state.year,startedWeek:state.week};state.news.push(`Construction started on ${FACILITIES[key].name} Level ${current+1}. ${money(cost)} was paid from Athletics Budget.`);window.renderAll();saveNow103('Facility project started')};
 function renderFacilities103(){ensureV103();let grid=$v('facilityGrid');if(!grid)return;let project=state.facilityProject;let banner=project?`<div class="facility-project-banner"><b>${FACILITIES[project.key].icon} ${FACILITIES[project.key].name} upgrade underway</b><span>Level ${project.targetLevel} · ${project.remainingWeeks} week(s) remaining. Facility benefits apply when construction finishes.</span></div>`:'';
- grid.innerHTML=banner+`<div class="facility-summary">${Object.entries(FACILITIES).map(([key,d])=>{let lv=level(key),cost=lv<5?facilityCost103(key):0,busy=!!project,active=project?.key===key;return`<article class="facility-card-v103 ${active?'active-project':''}"><div class="facility-level-row"><h3>${d.icon} ${d.name}</h3><b>Level ${lv}/5</b></div><div class="facility-level-dots">${[1,2,3,4,5].map(n=>`<span class="${n<=lv?'on':''}"></span>`).join('')}</div><div class="facility-benefit">${d.benefit}</div><div class="facility-recruit-impact"><b>Recruiting/program impact</b><br>${d.impact}<br><strong>Next: ${nextFacilityEffect(key)}</strong></div><span class="sub">${lv>=5?'Maximum level':`${money(cost)} · ${projectWeeks(key)} week construction`}</span><button class="btn primary full" onclick="upgradeFacility('${key}')" ${lv>=5||busy||state.budget<cost?'disabled':''}>${active?'Construction Active':lv>=5?'Fully Upgraded':`Build Level ${lv+1}`}</button></article>`}).join('')}</div>`;
+ grid.innerHTML=`<section class="facility-budget-guide" aria-label="Facility funding"><div class="facility-budget-icon" aria-hidden="true">🏫</div><div><span class="eyebrow">FACILITY FUNDING</span><h3>Athletics Budget: ${money(state.budget)}</h3><p>Every facility upgrade below is paid from your <b>Athletics Budget</b>. Your <b>Recruit NIL Pool</b> is separate and cannot be used for construction.</p></div><div class="budget-reward-actions"><button class="btn neutral" type="button" onclick="SDF_HELP?.openTab('resources')">How money works</button><button class="btn primary" type="button" data-budget-reward>Watch for +$50K Athletics Budget</button></div></section>`+banner+`<div class="facility-summary">${Object.entries(FACILITIES).map(([key,d])=>{let lv=level(key),cost=lv<5?facilityCost103(key):0,busy=!!project,active=project?.key===key;return`<article class="facility-card-v103 ${active?'active-project':''}"><div class="facility-level-row"><h3>${d.icon} ${d.name}</h3><b>Level ${lv}/5</b></div><div class="facility-level-dots">${[1,2,3,4,5].map(n=>`<span class="${n<=lv?'on':''}"></span>`).join('')}</div><div class="facility-benefit">${d.benefit}</div><div class="facility-recruit-impact"><b>Recruiting/program impact</b><br>${d.impact}<br><strong>Next: ${nextFacilityEffect(key)}</strong></div><span class="facility-cost-label">${lv>=5?'Maximum level':`Costs ${money(cost)} Athletics Budget · ${projectWeeks(key)} week construction`}</span><button class="btn primary full" onclick="upgradeFacility('${key}')" ${lv>=5||busy||state.budget<cost?'disabled':''}>${active?'Construction Active':lv>=5?'Fully Upgraded':`Build Level ${lv+1} · ${money(cost)}`}</button></article>`}).join('')}</div>`;
 }
 const oldRenderProgram=window.renderProgram;window.renderProgram=function(){ensureV103();oldRenderProgram?.();renderFacilities103();let exp=$v('tierExplanation');if(exp)exp.innerHTML=`Your program is <b>${schoolTier(state.school).label}</b>. Recruit interest grades update when facility construction finishes. Athletic Facilities, Academics and NIL are direct recruit priorities; training, medical and stadium projects improve development, availability and game-day results.<div class="program-path"><div class="program-path-card"><b>Want better recruits?</b><span>Upgrade Training, Recruiting, Academics or NIL based on the priorities shown in each prospect profile.</span></div><div class="program-path-card"><b>Want more wins?</b><span>Training, Medical and Stadium upgrades improve development, availability and home-field strength.</span></div><div class="program-path-card"><b>Budget strategy</b><span>Only one construction project can run at a time, so choose the weakness hurting your current class.</span></div></div>`};
 function goProgram(section='facilities'){closeAnyModal();window.showTab('program');setSubview('programTab',section)}
@@ -2275,7 +2277,7 @@ const baseWeeklyPlanMod=window.weeklyGamePlanModifier;window.weeklyGamePlanModif
 window.updateEligibility=function(){state.roster.forEach(p=>{let base=state.academicPolicy==='Strict'?.015:state.academicPolicy==='Balanced'?.035:.07,facilityReduction=(level('academics')-1)*.006,academicRisk=(window.SDF_SEEDS?.random()??Math.random())<Math.max(.005,base-facilityReduction);state.playerEligibility[p.id]=!academicRisk;if(academicRisk)p.injury={weeks:1,type:'Academically ineligible'}})};
 const baseBegin=window.beginYear;window.beginYear=function(...args){let out=baseBegin.apply(this,args);ensureV103();state.nilBudget+=Math.max(0,(level('nilCollective')-1)*35000);applyWeeklyFacilityBenefits();return out};
 function renderNextSteps(){let el=$v('nextStepsPanel');if(!el)return;ensureV103();let next=currentOpponent?.(),board=(state.recruits||[]).filter(r=>r.onBoard&&!r.committedTo).length,injured=(state.roster||[]).filter(p=>p.injury).length,affordable=Object.keys(FACILITIES).some(k=>level(k)<5&&state.budget>=facilityCost103(k)),phase=state.phase;let items=[];
- if(phase==='REGULAR'){items.push({icon:'⭐',title:'Recruiting',text:`${state.weeklyHours} hours available · ${board} prospects on your board.`,tab:'recruiting',label:state.weeklyHours?'Use Recruiting Hours':'Review Your Board',attention:state.weeklyHours>0});items.push({icon:'📋',title:'Prepare for Week '+state.week,text:next?`${next.home?'Home vs':'Road at'} ${next.opponent}. Practice focus: ${state.weeklyPractice}.`:'No regular-season game remains.',tab:'gameplan',label:'Open Game Plan',attention:!!next});items.push({icon:'☷',title:'Roster Check',text:injured?`${injured} player(s) currently injured. Confirm replacements and snap shares.`:'Depth chart is available for manual rotations and snap shares.',tab:'roster',label:'Manage Roster',attention:injured>0});items.push({icon:'🏗️',title:'Build the Program',text:state.facilityProject?`${FACILITIES[state.facilityProject.key].name}: ${state.facilityProject.remainingWeeks} week(s) left.`:affordable?'Your budget can fund a facility upgrade that affects recruits and team performance.':'Review facility benefits and save toward the next project.',tab:'program',sub:'facilities',label:state.facilityProject?'View Construction':'Upgrade Facilities',attention:affordable&&!state.facilityProject})}
+ if(phase==='REGULAR'){items.push({icon:'⭐',title:'Recruiting',text:`${state.weeklyHours} hours available · ${board} prospects on your board.`,tab:'recruiting',label:state.weeklyHours?'Use Recruiting Hours':'Review Your Board',attention:state.weeklyHours>0});items.push({icon:'📋',title:'Prepare for Week '+state.week,text:next?`${next.home?'Home vs':'Road at'} ${next.opponent}. Practice focus: ${state.weeklyPractice}.`:'No regular-season game remains.',tab:'gameplan',label:'Open Game Plan',attention:!!next});items.push({icon:'☷',title:'Roster Check',text:injured?`${injured} player(s) currently injured. Confirm replacements and snap shares.`:'Depth chart is available for manual rotations and snap shares.',tab:'roster',label:'Manage Roster',attention:injured>0});items.push({icon:'🏗️',title:'Build the Program',text:state.facilityProject?`${FACILITIES[state.facilityProject.key].name}: ${state.facilityProject.remainingWeeks} week(s) left.`:affordable?`Your ${money(state.budget)} Athletics Budget can fund a facility upgrade.`:'Review facility benefits and save Athletics Budget toward the next project.',tab:'program',sub:'facilities',label:state.facilityProject?'View Construction':'Upgrade Facilities',attention:affordable&&!state.facilityProject})}
  else items.push({icon:'🏆',title:'Season Phase',text:`Current phase: ${phase}. Your postseason and offseason actions have their own dedicated hub.`,tab:phase==='CHAMP'||phase==='BOWLS'||phase==='POST'?'postseason':'season',label:'Continue Season',attention:true});
  el.innerHTML=`<div class="section-head"><div><span class="eyebrow">WHAT TO DO NEXT</span><h3>Coach’s Checklist</h3></div></div>${items.map(i=>`<article class="checklist-card ${i.attention?'attention':'done'}"><span class="check-icon">${i.icon}</span><h4>${i.title}</h4><p>${i.text}</p><button class="btn neutral" onclick="navigateCoachTask('${i.tab}','${i.sub||''}')">${i.label}</button></article>`).join('')}`}
 window.navigateCoachTask=function(tab,sub){window.showTab(tab);if(sub)setSubview(tab+'Tab',sub)};
@@ -2392,12 +2394,12 @@ window.beginYear=function(...args){
 
 function renderResourceGuide(){
  const el=$5('recruitingResourceGuide');if(!el||!state.school)return;
- el.innerHTML=`<article><span>⏱️</span><div><b>Recruiting Hours</b><strong>${state.weeklyHours}</strong><small>Staff time that refreshes every week. Rebuild programs begin near 350 hours; national powers can approach 1,000. Each prospect is capped at 50 contact hours per week.</small></div></article><article><span>💵</span><div><b>Recruiting NIL Pool</b><strong>${money5(state.nilBudget)}</strong><small>Used only for prospect NIL offers. It cannot pay coaches or build facilities.</small></div></article><article><span>🏫</span><div><b>Program Funds</b><strong>${money5(state.budget)}</strong><small>Used for facilities, staff changes and program operations—not recruit NIL offers.</small></div></article>`
+ el.innerHTML=`<article><span>⏱️</span><div><b>Recruiting Hours</b><strong>${state.weeklyHours}</strong><small>Staff time that refreshes every week. Rebuild programs begin near 350 hours; national powers can approach 1,000. Each prospect is capped at 50 contact hours per week.</small></div></article><article><span>💵</span><div><b>Recruit NIL Pool</b><strong>${money5(state.nilBudget)}</strong><small>Used only to sign recruits and retain transfer players. It cannot pay coaches or build facilities.</small></div></article><article><span>🏫</span><div><b>Athletics Budget</b><strong>${money5(state.budget)}</strong><small>Used for facilities, coaches, buyouts and program operations. It cannot fund player NIL offers.</small></div></article>`
 }
 const priorRecruitRender=window.renderRecruiting;
 window.renderRecruiting=function(...args){let out=priorRecruitRender.apply(this,args);renderResourceGuide();return out};
 const priorProgramRender=window.renderProgram;
-window.renderProgram=function(...args){let out=priorProgramRender.apply(this,args);if($5('programManagementCards'))$5('programManagementCards').innerHTML=$5('programManagementCards').innerHTML.replace(/>Budget</g,'>Program Funds<');return out};
+window.renderProgram=function(...args){let out=priorProgramRender.apply(this,args);if($5('programManagementCards'))$5('programManagementCards').innerHTML=$5('programManagementCards').innerHTML.replace(/>(Budget|Program Funds)</g,'>Athletics Budget<');return out};
 
 ensureRosterFields();
 if(state.school){renderResourceGuide();saveV105('V1.0.5 roster migration')}
@@ -2480,13 +2482,13 @@ function staffBuyout(role){let x=state.staffContracts?.[role];return x?Math.roun
 function candidate(role,i){let base=clamp(Math.round((state.school.prestige+state.school.recent)/2)+((i%4)-1)*5,48,94),c=makeCoach(role==='oc'?'Offensive Coordinator':'Defensive Coordinator',base),salary=staffSalary(c,role),scheme=role==='oc'?choice(['Pro Style','Spread','Air Raid','Power Run','Option','Tempo Spread']):choice(['4-3','3-4','4-2-5','3-3-5','Multiple']);window.SDF_V189?.decorateCoach?.(c,c.role,{schemeSpecialty:scheme,scheme});return{id:(window.SDF_SEEDS?.uuid()??crypto.randomUUID()),...c,salary,years:rand(2,4),signingBonus:Math.round(salary*(.18+i*.035)/10000)*10000,scheme}}
 function ensureStaffMarket(){['oc','dc'].forEach(role=>{if(!Array.isArray(state.staffMarket[role])||!state.staffMarket[role].length)state.staffMarket[role]=Array.from({length:5},(_,i)=>candidate(role,i))})}
 function hireCost(role,c){return staffBuyout(role)+Number(c.signingBonus||0)}
-window.hireStaffCandidate=(role,id)=>{ensure11();let c=state.staffMarket[role]?.find(x=>x.id===id);if(!c)return;let cost=hireCost(role,c);if(state.budget<cost){alert(`You need ${money11(cost)} in program funds.`);return}if(!confirm(`Hire ${c.name} for ${money11(c.salary)} per year? Buyout and signing costs total ${money11(cost)}.`))return;state.budget-=cost;state.staff[role]={name:c.name,role:c.role,recruiting:c.recruiting,development:c.development,game:c.game};state.staffContracts[role]={salary:c.salary,years:c.years,buyoutRate:.2};if(role==='oc')state.offense=c.scheme;else state.defense=c.scheme;state.staffMarket[role]=Array.from({length:5},(_,i)=>candidate(role,i));state.news.push(`${c.name} hired as ${c.role}. Immediate cost: ${money11(cost)}; annual salary: ${money11(c.salary)}.`);window.renderAll();save11('Staff hired')};
+window.hireStaffCandidate=(role,id)=>{ensure11();let c=state.staffMarket[role]?.find(x=>x.id===id);if(!c)return;let cost=hireCost(role,c);if(state.budget<cost){alert(`You need ${money11(cost)} in Athletics Budget.`);return}if(!confirm(`Hire ${c.name} for ${money11(c.salary)} per year? Buyout and signing costs total ${money11(cost)} from Athletics Budget.`))return;state.budget-=cost;state.staff[role]={name:c.name,role:c.role,recruiting:c.recruiting,development:c.development,game:c.game};state.staffContracts[role]={salary:c.salary,years:c.years,buyoutRate:.2};if(role==='oc')state.offense=c.scheme;else state.defense=c.scheme;state.staffMarket[role]=Array.from({length:5},(_,i)=>candidate(role,i));state.news.push(`${c.name} hired as ${c.role}. Immediate Athletics Budget cost: ${money11(cost)}; annual salary: ${money11(c.salary)}.`);window.renderAll();save11('Staff hired')};
 function coachSkillGrid(c){return`<div class="coach-ratings"><div><small>Recruit</small><b>${c.recruiting}</b></div><div><small>Develop</small><b>${c.development}</b></div><div><small>Game</small><b>${c.game}</b></div></div>`}
 function openStaffCandidates(role){ensure11();const current=state.staff[role],contract=state.staffContracts[role],candidates=state.staffMarket[role]||[],title=role==='oc'?'Replace Offensive Coordinator':'Replace Defensive Coordinator';$11('modalBody').innerHTML=`<span class="eyebrow">COACHING SEARCH</span><h2>${title}</h2><article class="current-coach-modal"><b>Current: ${current.name}</b><span>${current.role} · ${money11(contract.salary)}/yr · ${contract.years} years remaining</span>${coachSkillGrid(current)}<small>Replacing him triggers a ${money11(staffBuyout(role))} contract buyout.</small></article><div class="staff-candidate-popup">${candidates.map(c=>{const cost=hireCost(role,c);return`<article class="staff-candidate-card"><div><span class="eyebrow">${c.scheme}</span><h3>${c.name}</h3><span class="sub">${c.years}-year contract</span></div>${coachSkillGrid(c)}<div class="cost-line"><small>Annual salary</small><b>${money11(c.salary)}</b></div><div class="cost-line"><small>Signing bonus</small><b>${money11(c.signingBonus)}</b></div><div class="cost-line"><small>Current coach buyout</small><b>${money11(staffBuyout(role))}</b></div><div class="cost-line total"><small>Total due today</small><b>${money11(cost)}</b></div><button class="btn primary full" onclick="hireStaffCandidate('${role}','${c.id}')" ${state.budget<cost?'disabled':''}>Hire ${c.name}</button></article>`}).join('')}</div>`;$11('modal').classList.remove('hidden');$11('modalBody').scrollTop=0}
 window.openStaffCandidates=openStaffCandidates;
 function staffManagementHtml11(cards){
  const payroll=(state.coachCareer?.salary||0)+['oc','dc'].reduce((n,r)=>n+(state.staffContracts[r]?.salary||0),0);
- return `<div class="metric-grid">${metric('Program Funds',money11(state.budget))}${metric('Annual Staff Payroll',money11(payroll))}${metric('Coordinator Buyouts',money11(staffBuyout('oc')+staffBuyout('dc')))}</div><div class="staff-direction"><b>Current Staff</b><span>Review each coach’s Recruiting, Development, Game, specialties, and coordinator progression. Press Replace to open the candidate market with all immediate and annual costs shown before hiring.</span></div>`+cards.map(([role,c])=>{const head=role==='head',x=head?{salary:state.coachCareer?.salary||scaledHeadCoachSalary(),years:state.coachCareer?.contractYears||0}:state.staffContracts[role];return`<article class="staff-current-row" data-staff-key="${role}"><div><span class="eyebrow">${head?'HEAD COACH':role==='oc'?'OFFENSIVE COORDINATOR':'DEFENSIVE COORDINATOR'}</span><h3>${c.name}</h3><span class="sub">${head?'Program leader':role==='oc'?state.offense:state.defense} · ${money11(x.salary)}/year · ${x.years} years</span></div>${coachSkillGrid(c)}${head?'<button class="btn neutral" onclick="showTab(\'coach\')">Coach Skill Tree</button>':`<button class="btn warning" onclick="openStaffCandidates('${role}')">Replace</button>`}</article>`}).join('')
+ return `<div class="metric-grid">${metric('Athletics Budget',money11(state.budget))}${metric('Annual Staff Payroll',money11(payroll))}${metric('Coordinator Buyouts',money11(staffBuyout('oc')+staffBuyout('dc')))}</div><div class="staff-direction"><b>Current Staff</b><span>Coach salaries, hiring and buyouts use Athletics Budget. Review each coach’s Recruiting, Development, Game, specialties, and coordinator progression before replacing anyone.</span></div>`+cards.map(([role,c])=>{const head=role==='head',x=head?{salary:state.coachCareer?.salary||scaledHeadCoachSalary(),years:state.coachCareer?.contractYears||0}:state.staffContracts[role];return`<article class="staff-current-row" data-staff-key="${role}"><div><span class="eyebrow">${head?'HEAD COACH':role==='oc'?'OFFENSIVE COORDINATOR':'DEFENSIVE COORDINATOR'}</span><h3>${c.name}</h3><span class="sub">${head?'Program leader':role==='oc'?state.offense:state.defense} · ${money11(x.salary)}/year · ${x.years} years</span></div>${coachSkillGrid(c)}${head?'<button class="btn neutral" onclick="showTab(\'coach\')">Coach Skill Tree</button>':`<button class="btn warning" onclick="openStaffCandidates('${role}')">Replace</button>`}</article>`}).join('')
 }
 function renderStaff11(){
  ensure11();
@@ -2531,6 +2533,44 @@ function ensureRealDepth(){
  applyRealDepth();
 }
 
+const EMERGENCY_POSITION_FITS={
+ QB:['RB','WR','TE','P','K'],RB:['FB','WR','QB','TE'],WR:['TE','RB','CB','S'],TE:['WR','OT','IOL','RB'],
+ OT:['IOL','TE','DL'],IOL:['OT','DL','TE'],EDGE:['LB','DL','TE'],DL:['EDGE','IOL','OT','LB'],LB:['EDGE','S','CB','RB'],
+ CB:['S','WR','LB','RB'],S:['CB','LB','WR'],K:['P','QB'],P:['K','QB']
+};
+function emergencyCandidate(role,excluded=new Set()){
+ const healthy=(state.roster||[]).filter(p=>!p.injury&&!p.redshirt&&!excluded.has(p.id));
+ if(!healthy.length)return null;
+ const order=EMERGENCY_POSITION_FITS[role.pos]||[];
+ return healthy.slice().sort((a,b)=>{
+  const ai=order.indexOf(a.pos),bi=order.indexOf(b.pos),af=a.pos===role.pos?-1:ai<0?99:ai,bf=b.pos===role.pos?-1:bi<0?99:bi;
+  return af-bf||Number(b.ovr||0)-Number(a.ovr||0)
+ })[0]||null
+}
+function emergencyPenalty(player,role){
+ if(!player)return 45;if(player.pos===role.pos)return Number(player.ovr||45);const fits=EMERGENCY_POSITION_FITS[role.pos]||[],index=fits.indexOf(player.pos),penalty=index===0?10:index>=0?14:20;
+ return Math.max(40,Number(player.ovr||45)-penalty)
+}
+function emergencyLineup(){
+ const missing=[],used=new Set(),assignments={};
+ for(const role of ROLE_DEFS){
+  if((state.roster||[]).some(p=>p.pos===role.pos&&!p.injury&&!p.redshirt))continue;
+  missing.push(role.pos);let player=emergencyCandidate(role,used);if(!player)player=emergencyCandidate(role);
+  if(player){used.add(player.id);assignments[role.key]={playerId:player.id,player:player.name,naturalPos:player.pos,role:role.label,ovr:emergencyPenalty(player,role)}}
+ }
+ return{positions:[...new Set(missing)],assignments}
+}
+function recordEmergencyLineup(){
+ const lineup=emergencyLineup(),key=`${state.year}-${state.week}-${lineup.positions.join(',')}`;
+ state.emergencyLineupV258={...lineup,key,year:state.year,week:state.week};
+ if(lineup.positions.length&&state._emergencyLineupNoticeV258!==key){
+  state._emergencyLineupNoticeV258=key;state.news??=[];
+  const details=Object.values(lineup.assignments).slice(0,4).map(x=>`${x.player} (${x.naturalPos}) at ${x.role}`).join(', ');
+  state.news.push(`Emergency lineup activated for ${lineup.positions.join(', ')}. ${details||'Available players will cover the missing roles'} with an out-of-position rating penalty until someone returns.`)
+ }
+ return lineup
+}
+
 function normalizeRole(key){let slots=state.realDepthChart[key]?.slots||[],total=slots.reduce((n,s)=>n+Number(s.snapShare||0),0);if(!total){slots.forEach((s,i)=>s.snapShare=i===0?70:i===1?25:5);return}let rounded=0;slots.forEach((s,i)=>{s.snapShare=i===slots.length-1?100-rounded:Math.round(Number(s.snapShare||0)/total*100);rounded+=s.snapShare})}
 function applyRealDepth(){
  state.roster.forEach(p=>p.starter=false);
@@ -2543,10 +2583,10 @@ function applyRealDepth(){
 }
 window.setRealDepthPlayer=(role,index,id)=>{ensureRealDepth();let def=ROLE_DEFS.find(r=>r.key===role);if(id&&def){ROLE_DEFS.filter(r=>r.pos===def.pos).forEach(r=>(state.realDepthChart[r.key]?.slots||[]).forEach((slot,i)=>{if(!(r.key===role&&i===index)&&slot.playerId===id)slot.playerId=''}))}state.realDepthChart[role].slots[index].playerId=id;applyRealDepth();renderDepth11();save11('Depth chart')};
 window.setRealSnapShare=(role,index,value)=>{ensureRealDepth();state.realDepthChart[role].slots[index].snapShare=Number(value);normalizeRole(role);applyRealDepth();renderDepth11();save11('Snap share')};
-function roleRating(role){let d=state.realDepthChart[role.key],weighted=0,total=0;(d?.slots||[]).forEach(s=>{let p=state.roster.find(x=>x.id===s.playerId);if(p&&!p.injury&&!p.redshirt){weighted+=p.ovr*Number(s.snapShare||0);total+=Number(s.snapShare||0)}});return total?weighted/total:45}
+function roleRating(role){let d=state.realDepthChart[role.key],weighted=0,total=0;(d?.slots||[]).forEach(s=>{let p=state.roster.find(x=>x.id===s.playerId);if(p&&!p.injury&&!p.redshirt){weighted+=p.ovr*Number(s.snapShare||0);total+=Number(s.snapShare||0)}});if(total)return weighted/total;const emergency=emergencyCandidate(role);return emergency?emergencyPenalty(emergency,role):40}
 function renderDepth11(){let host=$11('depthChartManager');if(!host)return;ensureRealDepth();host.innerHTML=['Offense','Defense','Special Teams'].map(side=>`<section class="depth-side"><h3>${side}</h3><div class="real-depth-grid">${ROLE_DEFS.filter(r=>r.side===side).map(role=>{let players=state.roster.filter(p=>p.pos===role.pos&&!p.redshirt).sort((a,b)=>(a.injury?1:0)-(b.injury?1:0)||b.ovr-a.ovr),slots=state.realDepthChart[role.key].slots,total=slots.reduce((n,s)=>n+Number(s.snapShare||0),0);return`<article class="real-depth-role"><div class="depth-position-head"><h4>${role.label}</h4><b>${Math.round(roleRating(role))} OVR</b></div>${slots.map((s,i)=>`<div class="role-slot"><label>${i===0?'Starter':i===1?'Rotation':'Reserve'}<select onchange="setRealDepthPlayer('${role.key}',${i},this.value)"><option value="">Unassigned</option>${players.map(p=>`<option value="${p.id}" ${p.id===s.playerId?'selected':''} ${p.injury&&p.id!==s.playerId?'disabled':''}>${p.name} · ${classLabel(p)} · ${p.ovr}${p.injury?' · OUT':''}</option>`).join('')}</select></label><label>Snaps<input type="number" min="0" max="100" value="${s.snapShare}" onchange="setRealSnapShare('${role.key}',${i},this.value)"></label></div>`).join('')}<div class="snap-total">Total ${total}% · Snap shares directly control touches, targets and defensive statistics.</div></article>`}).join('')}</div></section>`).join('')}
 window.teamRatings=function(){ensureRealDepth();let off=ROLE_DEFS.filter(r=>r.side==='Offense'),def=ROLE_DEFS.filter(r=>r.side==='Defense'),weighted=arr=>Math.round(arr.reduce((n,r)=>n+roleRating(r)*r.weight,0)/arr.reduce((n,r)=>n+r.weight,0)),special=Math.round(roleRating(ROLE_DEFS.find(r=>r.key==='K')));return{offense:weighted(off),defense:weighted(def),special,overall:Math.round((weighted(off)+weighted(def)+special*.25)/2.25)}};
-function participants(keys){let map=new Map();ROLE_DEFS.filter(r=>keys.includes(r.key)).forEach(r=>(state.realDepthChart[r.key]?.slots||[]).forEach(s=>{let p=state.roster.find(x=>x.id===s.playerId);if(p&&!p.injury&&!p.redshirt)map.set(p.id,{p,weight:(map.get(p.id)?.weight||0)+Number(s.snapShare||0)*r.weight})}));return [...map.values()].sort((a,b)=>b.weight-a.weight)}
+function participants(keys){let map=new Map();ROLE_DEFS.filter(r=>keys.includes(r.key)).forEach(r=>{let found=false;(state.realDepthChart[r.key]?.slots||[]).forEach(s=>{let p=state.roster.find(x=>x.id===s.playerId);if(p&&!p.injury&&!p.redshirt){found=true;map.set(p.id,{p,weight:(map.get(p.id)?.weight||0)+Number(s.snapShare||0)*r.weight})}});if(!found){const p=emergencyCandidate(r,new Set(map.keys()))||emergencyCandidate(r);if(p)map.set(p.id,{p,weight:(map.get(p.id)?.weight||0)+100*r.weight,emergency:true,emergencyRole:r.key,effectiveOvr:emergencyPenalty(p,r)})}});return [...map.values()].sort((a,b)=>b.weight-a.weight)}
 function distribute(total,list,field,min=0){let weight=list.reduce((n,x)=>n+x.weight,0)||1,remaining=total;list.forEach((x,i)=>{let v=i===list.length-1?remaining:Math.max(min,Math.round(total*x.weight/weight));remaining-=v;x.p.seasonStats[field]=(x.p.seasonStats[field]||0)+Math.max(0,v)});return list}
 window.simDetailedPlayerStats=function(g,win,us,them){ensureRealDepth();state.roster.forEach(ensurePlayerStats);let qbs=participants(['QB1']),rbs=participants(['RB1','RB2']),rec=participants(['WR1','WR2','SLOT','TE1']),defs=participants(['LE','RE','DT1','DT2','MLB','WLB','SLB','CB1','CB2','NCB','FS','SS']),k=participants(['K'])[0]?.p,passYds=clamp(rand(150,365)+Math.round((teamRatings().offense-g.oppPower)*3),70,520),rushYds=clamp(rand(65,210)+Math.round((teamRatings().offense-g.oppPower)*2),25,330),passTD=Math.max(0,Math.round(us/14)+rand(-1,1)),rushTD=Math.max(0,Math.round((us-passTD*7)/14));qbs.forEach(({p,weight},i)=>{let share=weight/qbs.reduce((n,x)=>n+x.weight,0),att=Math.max(1,Math.round(rand(24,39)*share)),comp=Math.round(att*(.54+(p.ovr-65)/180));p.seasonStats.games++;p.seasonStats.passAtt+=att;p.seasonStats.passComp+=comp;p.seasonStats.passYds+=Math.round(passYds*share);p.seasonStats.passTD+=i?0:passTD;p.seasonStats.passINT+=i?0:rand(0,2);recordPlayerGame(p,state.week,g.opponent,win?'W':'L',{passYds:Math.round(passYds*share),passTD:i?0:passTD})});distribute(rand(22,39),rbs,'rushAtt');distribute(rushYds,rbs,'rushYds');if(rbs[0])rbs[0].p.seasonStats.rushTD+=rushTD;rbs.forEach(x=>{x.p.seasonStats.games++;recordPlayerGame(x.p,state.week,g.opponent,win?'W':'L',{rushYds:Math.round(rushYds*x.weight/(rbs.reduce((n,y)=>n+y.weight,0)||1))})});distribute(rand(16,31),rec,'rec');distribute(passYds,rec,'recYds');for(let i=0;i<passTD&&rec.length;i++)rec[i%rec.length].p.seasonStats.recTD++;rec.forEach(x=>{x.p.seasonStats.games++;recordPlayerGame(x.p,state.week,g.opponent,win?'W':'L',{recYds:Math.round(passYds*x.weight/(rec.reduce((n,y)=>n+y.weight,0)||1))})});defs.forEach(({p,weight})=>{let share=weight/(defs.reduce((n,x)=>n+x.weight,0)||1),t=Math.max(1,Math.round(rand(52,78)*share));p.seasonStats.games++;p.seasonStats.tackles+=t;if((window.SDF_SEEDS?.random()??Math.random())<.35)p.seasonStats.tfl+=rand(0,2);if(['EDGE','DL','LB'].includes(p.pos)&&(window.SDF_SEEDS?.random()??Math.random())<.24)p.seasonStats.sacks+=1;if(['CB','S','LB'].includes(p.pos)&&(window.SDF_SEEDS?.random()??Math.random())<.09)p.seasonStats.defINT+=1;recordPlayerGame(p,state.week,g.opponent,win?'W':'L',{tackles:t})});if(k){let fga=rand(0,3),fgm=Math.max(0,fga-((window.SDF_SEEDS?.random()??Math.random())<.25?1:0)),xpa=Math.floor(us/7);k.seasonStats.games++;k.seasonStats.fga+=fga;k.seasonStats.fgm+=fgm;k.seasonStats.xpa+=xpa;k.seasonStats.xpm+=xpa;k.seasonStats.points+=fgm*3+xpa}}
 function portalClass(p){return classLabel?classLabel(p):`Year ${p.year}`}
@@ -2554,11 +2594,38 @@ function portalFit(p){let need=needs()[p.pos],pt=clamp(50+need.sev*8+(p.ovr-(nee
 function portalSeed(text){let h=2166136261;for(let ch of String(text)){h^=ch.charCodeAt(0);h=Math.imul(h,16777619)}return Math.abs(h>>>0)}
 function ensurePortal(){if(!Array.isArray(state.portal))state.portal=[];state.portal.forEach((p,i)=>{p.portalInterest??=clamp(24+portalFit(p).overall*.45+rand(-8,8),20,78);p.portalNIL??=Math.round((10000+Math.max(0,p.ovr-68)*3500+rand(0,15000))/5000)*5000;p.portalRivals??=[choice(schools.filter(s=>s.id!==state.school.id)).name,choice(schools.filter(s=>s.id!==state.school.id)).name];p.portalRivals=[...new Set(p.portalRivals)].filter(n=>n&&n!==state.school.name);while(p.portalRivals.length<2){let n=choice(schools.filter(s=>s.id!==state.school.id&&!p.portalRivals.includes(s.name))).name;p.portalRivals.push(n)}p.portalRivalScores??={};p.portalRivals.forEach((name,j)=>{if(p.portalRivalScores[name]==null){let offset=(portalSeed(`${p.id}-${name}`)%19)-7+(j===0?3:0);p.portalRivalScores[name]=clamp(Math.round(p.portalInterest+offset),20,92)}});p.portalCommitted??=false;p.portalLost??=null;p.portalContact??=0})}
 function portalRank(p){ensurePortal();let rivals=p.portalRivals.map(name=>({name,score:Math.round(p.portalRivalScores?.[name]||20)})),all=[{name:state.school.name,score:Math.round(p.portalInterest),user:true},...rivals].sort((a,b)=>b.score-a.score);return{all,userRank:all.findIndex(x=>x.user)+1,leader:all[0]}}
-window.portalContact=(id,type)=>{ensurePortal();let p=state.portal.find(x=>x.id===id);if(!p||p.portalCommitted||p.portalLost)return;if(window.SDF_SCENARIOS?.allowed(p)===false){window.toast?.(window.SDF_SCENARIOS.reason(p),'error');return}let cost=type==='VISIT'?15:5,gain=type==='VISIT'?rand(9,15):rand(3,7);if(state.portalHours<cost)return;state.portalHours-=cost;p.portalInterest=clamp(p.portalInterest+gain,0,100);p.portalContact+=cost;if(p.portalInterest>=100)signPortal(p);renderPortal11();save11('Portal contact')};
-window.portalNil=(id)=>{ensurePortal();let p=state.portal.find(x=>x.id===id);if(!p||p.portalCommitted||p.portalLost||state.nilBudget<p.portalNIL)return;if(window.SDF_SCENARIOS?.allowed(p)===false){window.toast?.(window.SDF_SCENARIOS.reason(p),'error');return}state.nilBudget-=p.portalNIL;p.portalInterest=clamp(p.portalInterest+rand(8,14),0,100);p.portalNILOffered=p.portalNIL;if(p.portalInterest>=100)signPortal(p);renderPortal11();save11('Portal NIL')};
+window.portalContact=(id,type)=>{ensurePortal();let p=state.portal.find(x=>x.id===id);if(!p||state.offseasonFlow217?.portalClosed||p.portalCommitted||p.portalLost)return;if(window.SDF_SCENARIOS?.allowed(p)===false){window.toast?.(window.SDF_SCENARIOS.reason(p),'error');return}let cost=type==='VISIT'?15:5,gain=type==='VISIT'?rand(9,15):rand(3,7);if(state.portalHours<cost)return;state.portalHours-=cost;p.portalInterest=clamp(p.portalInterest+gain,0,100);p.portalContact+=cost;if(p.portalInterest>=100)signPortal(p);renderPortal11();save11('Portal contact')};
+window.portalNil=(id)=>{ensurePortal();let p=state.portal.find(x=>x.id===id);if(!p||state.offseasonFlow217?.portalClosed||p.portalCommitted||p.portalLost||state.nilBudget<p.portalNIL)return;if(window.SDF_SCENARIOS?.allowed(p)===false){window.toast?.(window.SDF_SCENARIOS.reason(p),'error');return}state.nilBudget-=p.portalNIL;p.portalInterest=clamp(p.portalInterest+rand(8,14),0,100);p.portalNILOffered=p.portalNIL;if(p.portalInterest>=100)signPortal(p);renderPortal11();save11('Portal NIL')};
 function signPortal(p){if(p.portalCommitted||p.portalLost||window.SDF_SCENARIOS?.allowed(p)===false)return;window.SDF_SCENARIOS?.portalSigned(p);p.portalCommitted=true;p.taken=true;const real=window.SDF_V198?.toUserRosterPlayer?.(p);state.roster.push(real||{...p,id:(window.SDF_SEEDS?.uuid()??crypto.randomUUID()),morale:80,starter:false,walkOn:false,scholarship:true,seasonStats:emptySeasonStats(),statHistory:p.statHistory||[],gameLog:[],stats:{games:0,yards:0,td:0,tackles:0,sacks:0,int:0}});state.achievementStats.portalAdds++;state.news.push(`${p.name} committed from the transfer portal${p.sourceTeamName?` from ${p.sourceTeamName}`:''}.`);playSound('commit')}
 window.retainTransfer=(id)=>{let d=state.portalDepartures.find(x=>x.player.id===id);if(!d||d.retained)return;let cost=d.nilAsk;if(state.nilBudget<cost)return;state.nilBudget-=cost;d.retained=true;let p=d.v198?{...d.player,morale:72,injury:null,starter:false}:{...d.player,year:Math.min(5,(Number(d.player.year)||1)+1),morale:72,injury:null,starter:false};state.roster.push(p);window.SDF_V198?.onRetainedTransfer?.(id);state.news.push(`${p.name} withdrew from the portal after a ${money11(cost)} retention package and returns as a ${portalClass(p)}.`);ensureRealDepth();renderPortal11();save11('Retained transfer')};
-function renderPortal11(){let o=$11('portalOverviewV11'),list=$11('portalListV11'),depart=$11('portalDepartureListV11'),dir=$11('portalDirectionV11'),btn=$11('portalAdvanceWeekBtn');if(!o)return;ensurePortal();let open=state.phase==='PORTAL';o.innerHTML=metric('Portal Status',open?`Week ${state.portalWeek}/4`:'Closed')+metric('Portal Hours',open?state.portalHours:'—')+metric('NIL Pool',money11(state.nilBudget))+metric('Signed Transfers',state.portal.filter(p=>p.portalCommitted).length);dir.innerHTML=open?`<b>The portal is open.</b> Contact players with a 5-hour call, host a 15-hour visit, or make a recruit-only NIL offer. Playing time, scheme, winning and location determine your starting position.`:`<b>The portal opens after the season.</b> You can always find this tab here. During the season it shows how the system works; after the season it becomes fully interactive.`;btn.disabled=!open;btn.textContent=open&&state.portalWeek>=4?'Finish Portal Window':'Advance Portal Week';depart.innerHTML=(state.portalDepartures||[]).map(d=>`<article class="portal-card ${d.retained?'signed':''}"><h4>${d.player.name}</h4><span class="sub">${d.player.pos} · ${portalClass(d.player)} · ${d.player.ovr} OVR</span><p>${d.reason}</p><b>Retention ask: ${money11(d.nilAsk)}</b><button class="btn warning full" onclick="retainTransfer('${d.player.id}')" ${!open||d.retained||state.nilBudget<d.nilAsk?'disabled':''}>${d.retained?'Returning to Team':'Try to Retain'}</button></article>`).join('')||'<p class="muted">No outgoing transfers recorded.</p>';list.innerHTML=(state.portal||[]).filter(p=>window.SDF_SCENARIOS?.allowed(p)!==false).map(p=>{let f=portalFit(p),race=portalRank(p);return`<article class="portal-card ${p.portalCommitted?'signed':p.portalLost?'lost':''}"><h4>${p.name}</h4><span class="sub">${p.pos} · ${p.arch} · ${portalClass(p)} · ${p.ovr} OVR / ${p.pot} POT${p.sourceTeamName?` · from ${p.sourceTeamName}`:''}</span><p>${p.reason||'Seeking a better opportunity'}</p><div class="portal-fit-row"><div><small>PLAYING TIME</small><b>${grade11(f.pt)}</b></div><div><small>SCHEME</small><b>${grade11(f.scheme)}</b></div><div><small>OVERALL FIT</small><b>${grade11(f.overall)}</b></div></div><b>${p.portalCommitted?'SIGNED TO YOU':p.portalLost?`SIGNED: ${p.portalLost}`:`#${race.userRank} · ${Math.round(p.portalInterest)} interest`}</b><span class="sub">Leader: ${race.leader.name} · NIL ask ${money11(p.portalNIL)}</span><div class="actions"><button class="btn neutral" onclick="portalContact('${p.id}','CALL')" ${!open||p.portalCommitted||p.portalLost||state.portalHours<5?'disabled':''}>Call · 5 hrs</button><button class="btn warning" onclick="portalContact('${p.id}','VISIT')" ${!open||p.portalCommitted||p.portalLost||state.portalHours<15?'disabled':''}>Visit · 15 hrs</button><button class="btn primary" onclick="portalNil('${p.id}')" ${!open||p.portalCommitted||p.portalLost||p.portalNILOffered||state.nilBudget<p.portalNIL?'disabled':''}>${p.portalNILOffered?'NIL Offered':'NIL '+money11(p.portalNIL)}</button></div></article>`}).join('')||'<p class="muted">Portal prospects will appear when the offseason begins.</p>'}
+function filterPortalProspects(){
+ const value=id=>$11(id)?.value||'ALL',query=($11('portalSearch')?.value||'').trim().toLowerCase(),position=value('portalPositionFilter'),classYear=value('portalClassFilter'),minimumOvr=Number(value('portalOverallFilter')||0),fitFilter=value('portalFitFilter'),interestFilter=value('portalInterestFilter'),status=value('portalStatusFilter'),sort=value('portalSortFilter');
+ let list=(state.portal||[]).filter(p=>{
+  if(window.SDF_SCENARIOS?.allowed(p)===false)return false;
+  if(query&&!`${p.name||''} ${p.pos||''} ${p.sourceTeamName||''} ${p.hometown||''} ${p.reason||''} ${p.arch||''}`.toLowerCase().includes(query))return false;
+  if(position!=='ALL'&&p.pos!==position)return false;
+  if(classYear!=='ALL'&&Number(p.year||1)!==Number(classYear))return false;
+  if(Number(p.ovr||0)<minimumOvr)return false;
+  if(status==='AVAILABLE'&&(p.portalCommitted||p.portalLost))return false;
+  if(status==='SIGNED'&&!p.portalCommitted)return false;
+  if(status==='LOST'&&!p.portalLost)return false;
+  const fit=fitFilter==='ALL'&&interestFilter==='ALL'?null:portalFit(p);
+  if(fitFilter==='FIT70'&&fit.overall<70||fitFilter==='FIT80'&&fit.overall<80||fitFilter==='PT80'&&fit.pt<80)return false;
+  if(interestFilter==='INTEREST50'&&Number(p.portalInterest||0)<50||interestFilter==='LEADING'&&portalRank(p).userRank!==1)return false;
+  return true
+ });
+ if(sort==='FIT')list.sort((a,b)=>portalFit(b).overall-portalFit(a).overall||Number(b.ovr||0)-Number(a.ovr||0));
+ else if(sort==='PT')list.sort((a,b)=>portalFit(b).pt-portalFit(a).pt||Number(b.ovr||0)-Number(a.ovr||0));
+ else if(sort==='INTEREST')list.sort((a,b)=>Number(b.portalInterest||0)-Number(a.portalInterest||0));
+ else if(sort==='POTENTIAL')list.sort((a,b)=>Number(b.pot||0)-Number(a.pot||0)||Number(b.ovr||0)-Number(a.ovr||0));
+ else if(sort==='CLASS')list.sort((a,b)=>Number(a.year||1)-Number(b.year||1)||Number(b.ovr||0)-Number(a.ovr||0));
+ else list.sort((a,b)=>Number(b.ovr||0)-Number(a.ovr||0)||Number(b.pot||0)-Number(a.pot||0));
+ return list
+}
+function renderPortal11(){
+ let o=$11('portalOverviewV11'),list=$11('portalListV11'),depart=$11('portalDepartureListV11'),dir=$11('portalDirectionV11'),btn=$11('portalAdvanceWeekBtn');if(!o)return;ensurePortal();let open=state.phase==='PORTAL'&&!state.offseasonFlow217?.portalClosed;o.innerHTML=metric('Portal Status',open?`Week ${state.portalWeek}/4`:'Closed')+metric('Portal Hours',open?state.portalHours:'—')+metric('NIL Pool',money11(state.nilBudget))+metric('Signed Transfers',state.portal.filter(p=>p.portalCommitted).length);dir.innerHTML=open?`<b>The portal is open.</b> Contact players with a 5-hour call, host a 15-hour visit, or make a recruit-only NIL offer. Playing time, scheme, winning and location determine your starting position.`:state.offseasonFlow217?.portalClosed?`<b>The portal is closed.</b> Your starters are set by current OVR; review any position battles before next season.`:`<b>The portal opens after the season.</b> You can always find this tab here. During the season it shows how the system works; after the season it becomes fully interactive.`;btn.disabled=!open;btn.textContent=open&&state.portalWeek>=4?'Finish Portal Window':'Advance Portal Week';depart.innerHTML=(state.portalDepartures||[]).map(d=>`<article class="portal-card ${d.retained?'signed':''}"><h4>${d.player.name}</h4><span class="sub">${d.player.pos} · ${portalClass(d.player)} · ${d.player.ovr} OVR</span><p>${d.reason}</p><b>Retention ask: ${money11(d.nilAsk)}</b><button class="btn warning full" onclick="retainTransfer('${d.player.id}')" ${!open||d.retained||state.nilBudget<d.nilAsk?'disabled':''}>${d.retained?'Returning to Team':'Try to Retain'}</button></article>`).join('')||'<p class="muted">No outgoing transfers recorded.</p>';
+ const prospects=filterPortalProspects();list.innerHTML=prospects.map(p=>{let fit=portalFit(p),race=portalRank(p);return`<article class="portal-card ${p.portalCommitted?'signed':p.portalLost?'lost':''}"><h4>${p.name}</h4><span class="sub">${p.pos} · ${p.arch} · ${portalClass(p)} · ${p.ovr} OVR / ${p.pot} POT${p.sourceTeamName?` · from ${p.sourceTeamName}`:''}</span><p>${p.reason||'Seeking a better opportunity'}</p><div class="portal-fit-row"><div><small>PLAYING TIME</small><b>${grade11(fit.pt)}</b></div><div><small>SCHEME</small><b>${grade11(fit.scheme)}</b></div><div><small>OVERALL FIT</small><b>${grade11(fit.overall)}</b></div></div><b>${p.portalCommitted?'SIGNED TO YOU':p.portalLost?`SIGNED: ${p.portalLost}`:`#${race.userRank} · ${Math.round(p.portalInterest)} interest`}</b><span class="sub">Leader: ${race.leader.name} · NIL ask ${money11(p.portalNIL)}</span><div class="actions"><button class="btn neutral" onclick="portalContact('${p.id}','CALL')" ${!open||p.portalCommitted||p.portalLost||state.portalHours<5?'disabled':''}>Call · 5 hrs</button><button class="btn warning" onclick="portalContact('${p.id}','VISIT')" ${!open||p.portalCommitted||p.portalLost||state.portalHours<15?'disabled':''}>Visit · 15 hrs</button><button class="btn primary" onclick="portalNil('${p.id}')" ${!open||p.portalCommitted||p.portalLost||p.portalNILOffered||state.nilBudget<p.portalNIL?'disabled':''}>${p.portalNILOffered?'NIL Offered':'NIL '+money11(p.portalNIL)}</button></div></article>`}).join('')||'<p class="muted">No portal players match those filters. Try clearing one or more filters.</p>'
+}
 window.setRecruitingMode=mode=>{let portal=mode==='portal';$11('highSchoolRecruitingBoard').classList.toggle('hidden',portal);$11('highSchoolCommitSection').classList.toggle('hidden',portal);$11('portalRecruitingSection').classList.toggle('hidden',!portal);$11('highSchoolRecruitingBtn').className=`btn ${portal?'neutral':'primary'}`;$11('transferPortalRecruitingBtn').className=`btn ${portal?'primary':'neutral'}`;state.recruitingView=portal?'portal':'highschool';if(portal)renderPortal11();window.scrollTo({top:0,behavior:'smooth'})};
 function advancePortalWeek(){if(state.phase!=='PORTAL')return;if(state.portalWeek>=4)return window.finishOffseason();ensurePortal();state.portal.forEach(p=>{if(p.portalCommitted||p.portalLost)return;p.portalRivals.forEach(name=>{let school=schools.find(s=>s.name===name),current=school?(window.SDF_V197?.programForTeam?.(school.id)||school):null,push=rand(2,6)+Math.round(((current?.prestige||65)-60)/18);p.portalRivalScores[name]=clamp((p.portalRivalScores[name]||20)+push,0,100)});let race=portalRank(p);if(race.leader.name!==state.school.name&&race.leader.score>=100){p.portalLost=race.leader.name;p.taken=true;window.SDF_V198?.commitPortalPlayer?.(p,p.portalLost);state.news.push(`${p.name} committed to ${p.portalLost} from the transfer portal.`)}else if(p.portalInterest>=100)signPortal(p)});state.portalWeek++;state.portalHours=40;renderPortal11();showInfoPopup('Portal Week Advanced',`The transfer window moved to Week ${state.portalWeek}. Your portal interest did not decrease, but rival programs gained influence and may have moved ahead.`);save11('Portal week')}
 function showInfoPopup(title,body,extra=''){let m=$11('modalBody');m.innerHTML=`<span class="eyebrow">SATURDAY DYNASTY FOOTBALL</span><h2>${title}</h2><p>${body}</p>${extra}<button class="btn primary full" onclick="document.getElementById('modal').classList.add('hidden')">Continue</button>`;$11('modal').classList.remove('hidden');playSound('popup')}
@@ -2596,7 +2663,9 @@ const priorRenderRecruit=window.renderRecruiting;window.renderRecruiting=functio
 window.renderDepthManager=renderDepth11;const priorRenderProgram=window.renderProgram;window.renderProgram=function(...args){let out=priorRenderProgram.apply(this,args);renderStaff11();return out};window.renderStaff=renderStaff11;
 const priorRenderAll=window.renderAll;window.renderAll=function(...args){let out=priorRenderAll.apply(this,args);if(!state.school)return out;ensure11();let label=phaseLabel();['advanceWeekBtn','recruitAdvanceBtn','mobileAdvance'].forEach(id=>{let b=$11(id);if(b){b.disabled=false;b.textContent=id==='mobileAdvance'?'Advance':label}});renderSchoolGrades();if(!$11('rosterTab').classList.contains('hidden'))window.renderDepthManager();if(!$11('programTab').classList.contains('hidden'))renderStaff11();if(state.recruitingView==='portal')renderPortal11();let count=state.commits?.length||0;if(count>lastCommitCount)playSound('commit');lastCommitCount=count;$11('soundSetting').checked=state.soundEnabled;return out};
 $11('highSchoolRecruitingBtn').onclick=()=>window.setRecruitingMode('highschool');$11('transferPortalRecruitingBtn').onclick=()=>window.setRecruitingMode('portal');$11('portalAdvanceWeekBtn').onclick=()=>window.advanceWeek();$11('soundSetting').onchange=updateSoundSetting;$11('closeGameSim').onclick=window.closeGameSimulation;$11('gameSimModal').addEventListener('click',e=>{if(e.target===$11('gameSimModal'))window.closeGameSimulation()});
-ensure11();lastCommitCount=state.commits?.length||0;if(state.recruitingView==='portal')window.setRecruitingMode('portal');window.SDF_V11_TEST={ROLE_DEFS,grade11,staffBuyout,portalFit,phaseLabel,ensureRealDepth,annualProgramAllocation,scaledHeadCoachSalary,auditProgramFinances,playSound,unlockAudio:unlockSystemAudio,audioContext:soundContext11,depthSnapshot:()=>JSON.parse(JSON.stringify(state.realDepthChart||{})),participantWeights:keys=>participants(keys).map(x=>({id:x.p.id,name:x.p.name,pos:x.p.pos,weight:x.weight}))};
+for(const id of ['portalPositionFilter','portalClassFilter','portalOverallFilter','portalFitFilter','portalInterestFilter','portalStatusFilter','portalSortFilter'])if($11(id))$11(id).onchange=renderPortal11;
+if($11('portalSearch'))$11('portalSearch').oninput=renderPortal11;
+ensure11();lastCommitCount=state.commits?.length||0;if(state.recruitingView==='portal')window.setRecruitingMode('portal');window.SDF_V11_TEST={ROLE_DEFS,grade11,staffBuyout,portalFit,filterPortalProspects,phaseLabel,ensureRealDepth,annualProgramAllocation,scaledHeadCoachSalary,auditProgramFinances,playSound,unlockAudio:unlockSystemAudio,audioContext:soundContext11,emergencyLineup,recordEmergencyLineup,emergencyCandidate,emergencyPenalty,depthSnapshot:()=>JSON.parse(JSON.stringify(state.realDepthChart||{})),participantWeights:keys=>participants(keys).map(x=>({id:x.p.id,name:x.p.name,pos:x.p.pos,weight:x.weight,emergency:!!x.emergency}))};
 })();
 
 (()=>{
@@ -2957,6 +3026,10 @@ function roleParticipants(keys){
  keys.forEach(key=>{
   const def=defs.find(r=>r.key===key),slots=state.realDepthChart?.[key]?.slots||[];
   slots.forEach(s=>{const p=state.roster.find(x=>x.id===s.playerId);if(!p||p.redshirt||p.injury)return;const weight=Math.max(.01,n(s.snapShare)/100*n(def?.weight,1));const old=map.get(p.id);map.set(p.id,{p,weight:(old?.weight||0)+weight})})
+  if(def&&!slots.some(s=>{const p=state.roster.find(x=>x.id===s.playerId);return p&&!p.redshirt&&!p.injury})){
+   const p=window.SDF_V11_TEST?.emergencyCandidate?.(def,new Set(map.keys()))||window.SDF_V11_TEST?.emergencyCandidate?.(def);
+   if(p){const old=map.get(p.id);map.set(p.id,{p,weight:(old?.weight||0)+n(def.weight,1),emergency:true})}
+  }
  });
  return [...map.values()];
 }
@@ -3013,7 +3086,7 @@ function gameConfig(g){
  }
 }
 function newLiveGame(){
- ensure12();const g=currentGame();if(!g||g.result)throw new Error('No unplayed regular-season game is available.');
+ ensure12();window.SDF_V11_TEST?.recordEmergencyLineup?.();const g=currentGame();if(!g||g.result)throw new Error('No unplayed regular-season game is available.');
  const cfg=gameConfig(g),coin=(window.SDF_SEEDS?.random()??Math.random())<.5?'us':'them';
  return{
   version:2,year:state.year,week:state.week,scheduleIndex:state.liveGameContext?-1:state.week-1,contextType:state.liveGameContext?.type||'REGULAR',gameLabel:state.liveGameContext?.label||`Week ${state.week}`,contextMeta:state.liveGameContext?.meta||null,opponent:g.opponent,oppId:g.oppId,home:g.home,neutral:!!state.liveGameContext?.meta?.neutral,rivalry:g.rivalry,conference:g.conference,weather:g.weather||'Clear',
@@ -3376,13 +3449,14 @@ function renderGameDay(){
  const host=$12('gameDayMatchup');if(!host||!state.school)return;const g=currentGame(),opp=g?teamById(g.oppId):null,resume=resumableLiveGame();
  if(g?.bye){host.innerHTML=window.SDF_CALENDAR243.byeHtml();return}
  if(!g){host.innerHTML='<div class="postseason-empty">No regular-season matchup is currently scheduled.</div>';return}
- host.innerHTML=`<div class="game-day-matchup"><div><img src="${logo(state.school.id)}"><b>${safe(state.school.name)}</b><span>${state.record.w}-${state.record.l} · ${teamRatings().overall} OVR</span></div><div class="game-day-middle"><span>WEEK ${state.week}</span><b>${g.home?'VS':'AT'}</b><small>${safe(g.weather||'Clear')} · ${g.conference?'Conference game':'Non-conference'}${g.rivalry?' · Rivalry':''}</small></div><div><img src="${logo(opp?.id)}"><b>${safe(g.opponent)}</b><span>${g.oppPower} projected power</span></div></div>${resume?`<div class="resume-live-banner resume-live-status-v229"><b>Live game in progress</b><span>${quarterText(state.liveGame.quarter)} · ${clockText(state.liveGame.clock)} · ${state.liveGame.score.us}-${state.liveGame.score.them}</span></div>`:''}`;
+ const emergency=window.SDF_V11_TEST?.emergencyLineup?.();
+ host.innerHTML=`<div class="game-day-matchup"><div><img src="${logo(state.school.id)}"><b>${safe(state.school.name)}</b><span>${state.record.w}-${state.record.l} · ${teamRatings().overall} OVR</span></div><div class="game-day-middle"><span>WEEK ${state.week}</span><b>${g.home?'VS':'AT'}</b><small>${safe(g.weather||'Clear')} · ${g.conference?'Conference game':'Non-conference'}${g.rivalry?' · Rivalry':''}</small></div><div><img src="${logo(opp?.id)}"><b>${safe(g.opponent)}</b><span>${g.oppPower} projected power</span></div></div>${emergency?.positions?.length?`<div class="resume-live-banner emergency-lineup-v258"><b>Emergency lineup ready</b><span>No healthy ${safe(emergency.positions.join(', '))}. The best available athletes will play out of position with a rating penalty; you can still play or simulate.</span></div>`:''}${resume?`<div class="resume-live-banner resume-live-status-v229"><b>Live game in progress</b><span>${quarterText(state.liveGame.quarter)} · ${clockText(state.liveGame.clock)} · ${state.liveGame.score.us}-${state.liveGame.score.them}</span></div>`:''}`;
  ['watchLiveGameBtn','watchLiveDashboardBtn'].forEach(id=>{const b=$12(id);if(b){b.disabled=!resume&&(!!g.result||state.phase!=='REGULAR');b.textContent=resume?'Resume Live Game':'Watch Game Live'}});
  const q=$12('quickSimGameBtn');if(q){q.hidden=!!resume;q.disabled=!!resume||!!g.result||state.phase!=='REGULAR';q.textContent='Open This Week’s Game'}
 }
 function repairQuickSimInjuries(){
  const base=window.simGame;if(typeof base!=='function'||base._v12Wrapped)return;
- const wrapped=function(...args){const before=new Map(state.roster.map(p=>[p.id,!!p.injury]));markGamesMissed();const out=base.apply(this,args);state.roster.forEach(p=>{if(!before.get(p.id)&&p.injury){normalizeInjury(p);p.injury.occurredYear=state.year;p.injury.occurredWeek=state.week;const exists=state.injuryHistory.some(x=>x.id===p.injury.id);if(!p.injury.id)p.injury.id=(window.SDF_SEEDS?.uuid()??crypto.randomUUID());if(!exists)state.injuryHistory.push({id:p.injury.id,playerId:p.id,player:p.name,pos:p.pos,...p.injury})}});return out};wrapped._v12Wrapped=true;window.simGame=wrapped;
+ const wrapped=function(...args){window.SDF_V11_TEST?.recordEmergencyLineup?.();const before=new Map(state.roster.map(p=>[p.id,!!p.injury]));markGamesMissed();const out=base.apply(this,args);state.roster.forEach(p=>{if(!before.get(p.id)&&p.injury){normalizeInjury(p);p.injury.occurredYear=state.year;p.injury.occurredWeek=state.week;const exists=state.injuryHistory.some(x=>x.id===p.injury.id);if(!p.injury.id)p.injury.id=(window.SDF_SEEDS?.uuid()??crypto.randomUUID());if(!exists)state.injuryHistory.push({id:p.injury.id,playerId:p.id,player:p.name,pos:p.pos,...p.injury})}});return out};wrapped._v12Wrapped=true;window.simGame=wrapped;
 }
 function wire12(){
  $12('watchLiveGameBtn')?.addEventListener('click',window.openLiveGameCenter);$12('watchLiveDashboardBtn')?.addEventListener('click',window.openLiveGameCenter);$12('quickSimGameBtn')?.addEventListener('click',()=>window.advanceWeek());$12('openFullInjuryReportBtn')?.addEventListener('click',()=>{window.showTab('roster');setTimeout(()=>document.querySelector('#rosterTab .tab-section-btn[data-key="injuries"]')?.click(),60)});$12('autoAdjustInjuriesBtn')?.addEventListener('click',window.autoAdjustForInjuries);
@@ -3632,8 +3706,9 @@ const $m=id=>document.getElementById(id);
 const cfg=()=>window.SDF_AD_CONFIG||{};
 const native=()=>!!(window.Capacitor?.isNativePlatform?.()||window.Capacitor?.getPlatform?.()==='android');
 const plugin=()=>window.Capacitor?.Plugins?.AdMob||null;
-let initialized=false,canRequestAds=false,busy=false,interstitialPrepared=false,interstitialShowing=false,initializingPromise=null,lastInitError=null;
+let initialized=false,canRequestAds=false,consentChecked=false,busy=false,interstitialPrepared=false,interstitialShowing=false,initializingPromise=null,lastInitError=null,lastConsentError=null,lastConsentStatus='UNKNOWN';
 let rewardListenersInstalled=false,rewardAttemptSequence=0,activeRewardAttempt=null;
+let activeInterstitialAttempt=null;
 let lastRewardStatus='Idle';
 const rewardListenerHandles=[];
 
@@ -3661,8 +3736,10 @@ function summarizeReward(reward){
  return amount?`${type} × ${amount}`:type;
 }
 function setRewardStatus(stage,detail=''){
- if(stage==='REWARDED'&&!cfg().useTestAds)window.SDF_JOURNEY?.record('reward_earned');
- if(stage==='LOAD FAILED'||stage==='SHOW FAILED')window.SDF_JOURNEY?.record('reward_failed');
+ const attempt=activeRewardAttempt;
+ const placement=attempt?.kind?'reward_'+String(attempt.kind).toLowerCase():undefined;
+ if(stage==='REWARDED'&&!cfg().useTestAds)window.SDF_JOURNEY?.record('reward_earned',undefined,placement);
+ if((stage==='LOAD FAILED'||stage==='SHOW FAILED')&&!cfg().useTestAds&&attempt&&!attempt.failureRecorded){attempt.failureRecorded=true;window.SDF_JOURNEY?.record('reward_failed',undefined,placement);}
  lastRewardStatus=detail?`${stage}: ${detail}`:stage;
  if(typeof state!=='undefined'&&state?.school){
   ensureState();
@@ -3685,7 +3762,7 @@ function grantReward(kind,rewardMeta,attempt=activeRewardAttempt){
  // AdMob can both fire the reward event and resolve showRewardVideoAd(). Each
  // completed video pays once, but there is no weekly limit on new videos.
  if(attempt?.granted)return false;
- const beforeHours=Number(state.weeklyHours||0),beforeNil=Number(state.nilBudget||0);
+ const beforeHours=Number(state.weeklyHours||0),beforeNil=Number(state.nilBudget||0),beforeBudget=Number(state.budget||0);
  if(kind==='HOURS'){
   const bonus=Number(cfg().rewardRecruitingHours||25);
   const baseCap=Math.max(Number(state.recruitingHoursCapacity||0),Number(window.calculateRecruitingHours?.()||0),beforeHours);
@@ -3700,21 +3777,27 @@ function grantReward(kind,rewardMeta,attempt=activeRewardAttempt){
   state.nilBudget=beforeNil+bonus;
   state.news??=[];
   state.news.push(`A booster spotlight added $${bonus.toLocaleString()} to the recruit NIL pool.`);
+ }else if(kind==='BUDGET'){
+  const bonus=Number(cfg().rewardBudgetAmount||50000);
+  state.budget=beforeBudget+bonus;
+  state.news??=[];
+  state.news.push(`A department sponsor added $${bonus.toLocaleString()} to the Athletics Budget.`);
  }else return false;
  markClaimed(kind);
  if(attempt){attempt.granted=true;attempt.earned=true;attempt.rewardMeta=rewardMeta||attempt.rewardMeta||null}
  persistReward(`Sponsor reward: ${kind}`);
- const afterHours=Number(state.weeklyHours||0),afterNil=Number(state.nilBudget||0);
+ const afterHours=Number(state.weeklyHours||0),afterNil=Number(state.nilBudget||0),afterBudget=Number(state.budget||0);
  if(kind==='HOURS')window.toast?.(`Sponsor reward received: +${afterHours-beforeHours} recruiting hours`);
- else window.toast?.(`Sponsor reward received: +$${(afterNil-beforeNil).toLocaleString()} recruit NIL`);
+ else if(kind==='NIL')window.toast?.(`Sponsor reward received: +$${(afterNil-beforeNil).toLocaleString()} recruit NIL`);
+ else window.toast?.(`Sponsor reward received: +$${(afterBudget-beforeBudget).toLocaleString()} Athletics Budget`);
  setRewardStatus('REWARDED',`${kind} · ${summarizeReward(rewardMeta)||'Google reward callback'}`);
- console.info('Sponsor reward granted',{kind,beforeHours,afterHours,beforeNil,afterNil,rewardMeta:rewardMeta||{}});
+ console.info('Sponsor reward granted',{kind,beforeHours,afterHours,beforeNil,afterNil,beforeBudget,afterBudget,rewardMeta:rewardMeta||{}});
  return true;
 }
 function currentAttempt(){return activeRewardAttempt&&!activeRewardAttempt.finished?activeRewardAttempt:null}
-function settleAttempt(kind,payload){
- const attempt=currentAttempt();
- if(!attempt)return;
+function settleAttempt(kind,payload,attempt=currentAttempt()){
+ // A late native callback from an old ad must never settle a newer attempt.
+ if(!attempt||currentAttempt()!==attempt)return;
  if(kind==='dismissed'){
   attempt.dismissed=true;
   attempt.resolveLifecycle?.({type:'dismissed',payload});
@@ -3723,7 +3806,14 @@ function settleAttempt(kind,payload){
   attempt.resolveLifecycle?.({type:'failed',payload});
  }
 }
-function waitForLifecycle(lifecycle,timeoutMs=30000){
+async function suspendMusicForAd(){
+ try{window.SDF_MUSIC?.suspend?.('native-ad')}catch(error){console.warn('Could not pause soundtrack for ad',error)}
+ // Give Android's WebView media player time to release audio focus before the
+ // Google full-screen activity starts. This matters most for back-to-back ads.
+ await new Promise(resolve=>setTimeout(resolve,180));
+}
+function resumeMusicAfterAd(){try{window.SDF_MUSIC?.resume?.('native-ad')}catch(error){console.warn('Could not resume soundtrack after ad',error)}}
+function waitForLifecycle(lifecycle,timeoutMs=850){
  return new Promise(resolve=>{
   const timer=setTimeout(()=>resolve({type:'dismiss-timeout'}),timeoutMs);
   lifecycle.then(value=>{clearTimeout(timer);resolve(value)},error=>{clearTimeout(timer);resolve({type:'lifecycle-error',error})});
@@ -3741,9 +3831,13 @@ async function installRewardListeners(){
   setRewardStatus('LOADED',info?.adUnitId||'rewarded ad ready');
  });
  await add('onRewardedVideoAdShowed',()=>{
-  const a=currentAttempt();if(a&&!a.shown&&!cfg().useTestAds)window.SDF_JOURNEY?.record('reward_shown');if(a)a.shown=true;
+  const a=currentAttempt();if(a&&!a.shown&&!cfg().useTestAds)window.SDF_JOURNEY?.record('reward_shown',undefined,'reward_'+String(a.kind||'').toLowerCase());if(a)a.shown=true;
   setRewardStatus('SHOWN','Watch until Google confirms the reward');
  });
+  await add('onRewardedVideoAdImpression',()=>{
+   const a=currentAttempt();if(!a||a.impression)return;a.impression=true;
+   if(!cfg().useTestAds)window.SDF_JOURNEY?.record('reward_impression',undefined,'reward_'+String(a.kind||'').toLowerCase());
+  });
  await add('onRewardedVideoAdReward',reward=>{
   const a=currentAttempt();
   if(!a){console.warn('Reward callback received with no active sponsor attempt',reward);return}
@@ -3763,22 +3857,42 @@ async function installRewardListeners(){
   setRewardStatus('SHOW FAILED',error?.message||'Google could not show the ad');
   settleAttempt('failed',error);
  });
- await add('interstitialAdShowed',()=>{if(!cfg().useTestAds)window.SDF_USAGE?.record('interstitial_shown')});
+  await add('interstitialAdShowed',()=>{
+   const a=activeInterstitialAttempt;
+   if(!a||a.shown)return;
+   a.shown=true;
+   if(!cfg().useTestAds)window.SDF_USAGE?.record('interstitial_shown',undefined,'season_end');
+   if(!state.monetization.seasonInterstitialYears.includes(a.year))state.monetization.seasonInterstitialYears.push(a.year);
+   persistReward('Season sponsor shown');
+  });
+   await add('interstitialAdImpression',()=>{
+    const a=activeInterstitialAttempt;if(!a||a.impression)return;a.impression=true;
+    if(!cfg().useTestAds)window.SDF_USAGE?.record('interstitial_impression',undefined,'season_end');
+   });
+  await add('interstitialAdDismissed',()=>{
+   const a=activeInterstitialAttempt;if(a)a.resolve?.('dismissed');
+  });
+  await add('interstitialAdFailedToShow',error=>{
+   const a=activeInterstitialAttempt;if(a){a.error=error;a.resolve?.('failed')}
+  });
  rewardListenersInstalled=true;
 }
 function statusText(){
  if(!native())return 'Ads are available only inside the installed Android app. The browser preview remains ad-free.';
  if(!plugin())return 'AdMob plugin is not available. Run SYNC_ANDROID.bat and rebuild the native Android project.';
- if(!initialized)return 'Initializing sponsor services…';
- if(!canRequestAds)return 'Ads are unavailable until privacy consent is resolved or an ad can be served.';
+ if(lastConsentError&&!canRequestAds)return `Google privacy check failed: ${lastConsentError}. Reopen the app online and try again.`;
+ if(lastInitError&&!initialized&&canRequestAds)return `AdMob could not initialize: ${lastInitError?.message||String(lastInitError)}. Tap a sponsor video to retry.`;
+ if(consentChecked&&!canRequestAds)return 'Google is still requiring privacy consent before ads can be requested.';
+ if(!initialized)return 'Checking privacy consent and initializing sponsor services…';
+ if(!canRequestAds)return 'Google privacy consent is not ready. Try again in a moment.';
  return cfg().useTestAds?'Google test ads are active. Test ads still grant in-game rewards.':'Production ad IDs are active.';
 }
 function render(){
  const panel=$m('adStatusPanel');if(!panel)return;ensureState();
- const c=cfg(),hoursUses=claimCount('HOURS'),nilUses=claimCount('NIL');
+ const c=cfg(),hoursUses=claimCount('HOURS'),nilUses=claimCount('NIL'),budgetUses=claimCount('BUDGET');
  const persisted=state?.monetization?.lastRewardStatus;
  const shownStatus=lastRewardStatus!=='Idle'?lastRewardStatus:(persisted?.stage?(persisted.detail?`${persisted.stage}: ${persisted.detail}`:persisted.stage):'No sponsor video completed yet');
- panel.innerHTML=`<div><small>EDITION</small><b>${c.useTestAds?'Safe test mode':'Production ads'}</b></div><div><small>AD STATUS</small><b>${statusText()}</b></div><div><small>VIDEOS THIS WEEK</small><b>Hours ${hoursUses} · NIL ${nilUses} · Unlimited</b></div><div><small>LAST VIDEO</small><b>${shownStatus}</b></div>`;
+ panel.innerHTML=`<div><small>EDITION</small><b>${c.useTestAds?'Safe test mode':'Production ads'}</b></div><div><small>AD STATUS</small><b>${statusText()}</b></div><div><small>VIDEOS THIS WEEK</small><b>Hours ${hoursUses} · NIL ${nilUses} · Budget ${budgetUses} · Unlimited</b></div><div><small>LAST VIDEO</small><b>${shownStatus}</b></div>`;
  const badge=$m('adEditionBadge');if(badge)badge.textContent=c.useTestAds?'TEST ADS':'ADS ACTIVE';
  const h=$m('rewardHoursAdBtn'),n=$m('rewardNilAdBtn');
  if(h){h.disabled=busy||!native()||!plugin();h.textContent=busy?'Ad In Progress…':'Watch Sponsor Video'}
@@ -3796,6 +3910,12 @@ function render(){
     ?'<span aria-hidden="true">…</span><span>Ad In Progress…</span>'
     :`<span aria-hidden="true">▶</span><span>Watch for +$${Math.round(Number(c.rewardNilAmount||10000)/1000)}K NIL</span>`;
  }
+ document.querySelectorAll?.('[data-budget-reward]')?.forEach(button=>{
+  button.disabled=busy||!native()||!plugin();
+  button.innerHTML=busy
+   ?'<span aria-hidden="true">…</span><span>Ad In Progress…</span>'
+   :`<span aria-hidden="true">▶</span><span>Watch for +$${Math.round(Number(c.rewardBudgetAmount||50000)/1000)}K Athletics Budget</span>`;
+ });
  const privacy=$m('adPrivacyOptionsBtn');if(privacy)privacy.disabled=!plugin();
 }
 
@@ -3809,66 +3929,117 @@ function openSponsorCenter(){
  },40);
 }
 
-async function initializeAds(force=false){
+async function initializeAds(){
  ensureState();render();
  const AdMob=plugin();if(!native()||!AdMob){render();return false}
- if(initializingPromise&&!force)return initializingPromise;
+ // Share an in-flight startup/consent request even when a button asks for a
+ // refresh. Parallel AdMob initialize calls can race native plugin state.
+ if(initializingPromise)return initializingPromise;
  initializingPromise=(async()=>{
   try{
-   if(!initialized||force){await AdMob.initialize({initializeForTesting:!!cfg().useTestAds,tagForChildDirectedTreatment:false,tagForUnderAgeOfConsent:false,maxAdContentRating:'Teen'});initialized=true}
    await installRewardListeners();
-   let info={canRequestAds:true};
-   try{
-    if(typeof AdMob.requestConsentInfo==='function'){
-     info=await AdMob.requestConsentInfo({tagForUnderAgeOfConsent:false})||{canRequestAds:true};
-     if(info.canRequestAds===false&&info.isConsentFormAvailable&&typeof AdMob.showConsentForm==='function')info=await AdMob.showConsentForm()||info;
+   let info={canRequestAds:typeof AdMob.requestConsentInfo!=='function'};
+   if(typeof AdMob.requestConsentInfo==='function'){
+    try{
+     info=await AdMob.requestConsentInfo({tagForUnderAgeOfConsent:false})||{canRequestAds:false};
+     consentChecked=true;
+     lastConsentStatus=String(info.status||'UNKNOWN');
+     lastConsentError=info.updateError?String(info.updateError):null;
+     if(info.updateError){
+      // UMP retains the last valid status if its refresh fails. Google says
+      // to check canRequestAds() on this path instead of blocking from a
+      // stale app-side default; the native patch returns that UMP-owned value.
+      console.warn('Consent status refresh failed; using UMP cached status',info.updateError);
+     }else if(typeof AdMob.showConsentForm==='function'){
+      // Google's UMP flow calls loadAndShowConsentFormIfRequired after each
+      // successful update. The native helper is a no-op when no form is due.
+      try{
+       const refreshed=await AdMob.showConsentForm();
+       if(refreshed){info=refreshed;lastConsentStatus=String(info.status||lastConsentStatus||'UNKNOWN')}
+       lastConsentError=null;
+      }catch(formErr){
+       lastConsentError=formErr?.message||String(formErr);
+       console.warn('Consent form could not complete',formErr);
+       // A prior valid UMP status can still permit ads when the optional form
+       // call failed; otherwise remain fail-closed until consent resolves.
+       if(info.canRequestAds!==true)throw formErr;
+      }
+     }
+    }catch(consentErr){
+     // Never infer consent. Preserve only an explicitly allowed status from
+     // UMP's cached native result; otherwise keep ads blocked and retry later.
+     console.warn('Consent status refresh failed',consentErr);
+     lastConsentError=consentErr?.message||String(consentErr);
+     info={canRequestAds:info?.canRequestAds===true};
     }
-   }catch(consentErr){console.warn('Consent status refresh failed; ad request will still be attempted',consentErr);info={canRequestAds:true}}
-   canRequestAds=info.canRequestAds!==false;lastInitError=null;render();
-   if(canRequestAds)prepareSeasonInterstitial();
-   return canRequestAds;
-  }catch(err){console.error('AdMob initialization failed',err);initialized=true;lastInitError=err;canRequestAds=false;render();return false}
+   }
+   canRequestAds=info.canRequestAds===true;
+   consentChecked=true;
+   if(!canRequestAds){render();return false}
+   if(!initialized){
+    await AdMob.initialize({initializeForTesting:!!cfg().useTestAds,tagForChildDirectedTreatment:false,tagForUnderAgeOfConsent:false,maxAdContentRating:'Teen'});
+    initialized=true;
+   }
+   lastInitError=null;render();
+   return initialized&&canRequestAds;
+  }catch(err){console.error('AdMob initialization failed',err);lastInitError=err;render();return false}
  })();
  try{return await initializingPromise}finally{initializingPromise=null}
 }
 async function showReward(kind){
- if(busy)return;
+ if(busy||interstitialShowing)return;
  const AdMob=plugin();if(!AdMob)return;
- if(!canRequestAds){setRewardStatus('CHECKING','Refreshing Google ad readiness…');await initializeAds(true);}
- // Do not permanently dead-end the button on a stale consent/init flag. The
- // prepare call is authoritative and will report no-fill/policy errors safely.
- if(!initialized)await initializeAds(true);
- const attempt={id:++rewardAttemptSequence,kind,startedAt:Date.now(),loaded:false,shown:false,earned:false,granted:false,dismissed:false,failed:false,finished:false,resolveLifecycle:null};
- activeRewardAttempt=attempt;busy=true;render();setRewardStatus('PREPARING',kind==='HOURS'?'Recruiting-hours sponsor':'NIL sponsor');
+ if(!['HOURS','NIL','BUDGET'].includes(kind))return;
+ const id=kind==='HOURS'?cfg().rewardedRecruitingId:kind==='NIL'?cfg().rewardedNilId:cfg().rewardedBudgetId;
+ if(!id){setRewardStatus('NOT CONFIGURED','This reward ad unit is missing from the app configuration');window.toast?.('This sponsor video is temporarily unavailable. Please try again after the next app update.','error');return}
+ // Reserve the shared fullscreen slot before any await. Rapid taps otherwise
+ // race through consent/init and overwrite the plugin's single loaded-ad slot.
+ busy=true;render();
+ let attempt=null,musicSuspended=false;
  try{
+  if(!initialized||!canRequestAds){setRewardStatus('CHECKING','Refreshing Google privacy consent and ad readiness…');await initializeAds()}
+  if(!initialized||!canRequestAds){
+   const detail=lastInitError&&canRequestAds?`AdMob initialization failed: ${lastInitError?.message||String(lastInitError)}`:lastConsentError?`Privacy check failed: ${lastConsentError}`:lastConsentStatus==='REQUIRED'?'Google still requires privacy consent before an ad can be requested':'Google privacy consent is not ready yet';
+   setRewardStatus('NOT READY',detail);
+   window.toast?.(lastInitError&&canRequestAds?'Google ads could not initialize. Tap the sponsor video to retry.':lastConsentError?'Google could not refresh privacy consent. Reopen the app online and try again.':'Google privacy consent is not ready yet. Please try again in a moment.','error');
+   return;
+  }
+  attempt={id:++rewardAttemptSequence,kind,startedAt:Date.now(),loaded:false,shown:false,earned:false,granted:false,dismissed:false,failed:false,finished:false,resolveLifecycle:null};
+  activeRewardAttempt=attempt;
+  setRewardStatus('PREPARING',kind==='HOURS'?'Recruiting-hours sponsor':kind==='NIL'?'NIL sponsor':'Athletics Budget sponsor');
+  await suspendMusicForAd();musicSuspended=true;
   await installRewardListeners();
-  const id=kind==='HOURS'?cfg().rewardedRecruitingId:cfg().rewardedNilId;
   await AdMob.prepareRewardVideoAd({adId:id,isTesting:!!cfg().useTestAds,immersiveMode:false});
   const lifecycle=new Promise(resolve=>{attempt.resolveLifecycle=resolve});
+  // The Android plugin resolves this promise when the reward is earned, which
+  // can be *before* the ad's final creative/close screen is gone. It is never
+  // safe to use this promise to resume WebView audio.
   const rewardResult=Promise.resolve(AdMob.showRewardVideoAd())
-   .then(reward=>({type:'reward',reward}))
-   .catch(error=>({type:'error',error}));
-  const result=await Promise.race([rewardResult,lifecycle]);
-  if(result?.type==='reward'){
-   attempt.earned=true;attempt.rewardMeta=result.reward||attempt.rewardMeta||null;
-   // Some plugin versions both fire onRewardedVideoAdReward and resolve
-   // showRewardVideoAd(). Never grant twice for the same watched ad.
-   if(!attempt.granted)grantReward(kind,result.reward,attempt);
-   // Google can report the earned reward before the full-screen ad is actually
-   // dismissed. Keep this attempt active/busy until dismissal so a late native
-   // Dismissed event can never be mistaken for the next sponsor video.
-   if(!attempt.dismissed){
-    await waitForLifecycle(lifecycle,30000);
-   }
-  }else if(result?.type==='error'){
-   throw result.error||new Error('Rewarded ad failed to show.');
-  }else if(result?.type==='failed'){
+   .then(reward=>{
+    if(reward){
+     attempt.earned=true;attempt.rewardMeta=reward||attempt.rewardMeta||null;
+     if(!attempt.granted)grantReward(kind,reward,attempt);
+    }
+    return {type:'reward',reward};
+   })
+   .catch(error=>{
+    settleAttempt('failed',error,attempt);
+    return {type:'error',error};
+   });
+  // Dismissed is the plugin's explicit "ad is no longer visible" signal.
+  // Do not release music or the button until it arrives. A rewarded creative
+  // may contain several videos after the reward callback.
+  const result=await lifecycle;
+  if(result?.type==='failed'){
    throw result.payload||new Error('Rewarded ad failed.');
-  }else if(result?.type==='dismissed'&&!attempt.granted){
-   // The native v8 plugin resolves showRewardVideoAd only from Google's earned
-   // callback. A dismissal without a reward can otherwise leave the Promise
-   // pending forever, so the dismissal event is our safe completion signal.
-   await new Promise(resolve=>setTimeout(resolve,350));
+  }
+  if(result?.type==='dismissed'&&!attempt.granted){
+   // A few Android builds dispatch Dismissed immediately before Rewarded.
+   // This short wait happens only after the full-screen ad has actually gone.
+   await Promise.race([
+    rewardResult,
+    new Promise(resolve=>setTimeout(resolve,1100))
+   ]);
    if(!attempt.granted){
     setRewardStatus('NO REWARD','Video closed before Google confirmed completion');
     window.toast?.('Sponsor video closed before the reward was confirmed. No weekly reward was used.','error');
@@ -3879,41 +4050,46 @@ async function showReward(kind){
   setRewardStatus('ERROR',err?.message||String(err));
   window.toast?.('The sponsor video could not complete. Your weekly reward is still available.','error');
  }finally{
-  attempt.finished=true;
-  if(activeRewardAttempt===attempt)activeRewardAttempt=null;
-  busy=false;render();
+  if(attempt)attempt.finished=true;
+  if(attempt&&activeRewardAttempt===attempt)activeRewardAttempt=null;
+  busy=false;render();if(musicSuspended)resumeMusicAfterAd();
  }
 }
 async function prepareSeasonInterstitial(){
  if(window.SDF_AD_POLICY?.shouldShowForcedAds?.()===false)return;
- if(!canRequestAds||!cfg().seasonInterstitialEnabled||interstitialPrepared)return;
+ if(!initialized||!canRequestAds||!cfg().seasonInterstitialEnabled||interstitialPrepared)return;
  try{await plugin().prepareInterstitial({adId:cfg().seasonInterstitialId,isTesting:!!cfg().useTestAds,immersiveMode:false});interstitialPrepared=true}catch(err){console.warn('Season interstitial preload failed',err)}
 }
 async function showSeasonInterstitial(){
  ensureState();const y=Number(state?.year||0),AdMob=plugin();
  if(window.SDF_AD_POLICY?.shouldShowForcedAds?.()===false)return false;
  if(!cfg().seasonInterstitialEnabled||state.monetization.seasonInterstitialYears.includes(y)||interstitialShowing)return false;
- if(!native()||!AdMob)return false;
- interstitialShowing=true;
+ if(!native()||!AdMob||busy)return false;
+ interstitialShowing=true;busy=true;render();
+ let musicSuspended=false;
  try{
   // Rewarded ads already recover from a stale init/consent flag. The season
   // interstitial must do the same instead of silently returning forever.
-  if(!initialized||!canRequestAds)await initializeAds(true);
-  if(!canRequestAds)return false;
+  if(!initialized||!canRequestAds)await initializeAds();
+  if(!initialized||!canRequestAds)return false;
+  await installRewardListeners();
   if(!interstitialPrepared)await prepareSeasonInterstitial();
-  if(!interstitialPrepared){
-   await new Promise(resolve=>setTimeout(resolve,650));
-   await initializeAds(true);
-   await prepareSeasonInterstitial();
-  }
   if(!interstitialPrepared)return false;
+  // Request only when the player actually reaches season end. Startup and
+  // next-season preloads created requests that could never become impressions
+  // when players left the app before the season ended (and could expire after
+  // an hour). Keep menu music playing while this on-demand request loads.
+  await suspendMusicForAd();musicSuspended=true;
+  const lifecycle=new Promise(resolve=>{activeInterstitialAttempt={year:y,shown:false,error:null,resolve}});
   await AdMob.showInterstitial();
-  if(!state.monetization.seasonInterstitialYears.includes(y))state.monetization.seasonInterstitialYears.push(y);
-  interstitialPrepared=false;persistReward('Season sponsor shown');
-  setTimeout(prepareSeasonInterstitial,1200);
-  return true;
+  interstitialPrepared=false;
+  // The plugin resolves showInterstitial() when show() is called, before the
+  // creative appears. Keep audio suspended until Google dismisses the ad.
+  const outcome=await lifecycle;
+  if(outcome==='failed')return false;
+  return !!activeInterstitialAttempt?.shown;
  }catch(err){console.warn('Season interstitial unavailable',err);interstitialPrepared=false;lastInitError=err;return false}
- finally{interstitialShowing=false;render()}
+ finally{activeInterstitialAttempt=null;interstitialShowing=false;busy=false;render();if(musicSuspended)resumeMusicAfterAd()}
 }
 async function privacyOptions(){try{await plugin()?.showPrivacyOptionsForm?.()}catch(err){console.warn('Privacy options unavailable',err);window.toast?.('Privacy options are not required or unavailable right now.')}}
 
@@ -3922,13 +4098,14 @@ window.renderAll=function(...args){const out=baseRender?.apply(this,args);render
 const baseFinish=window.finishSeason;
 window.finishSeason=function(...args){const out=baseFinish?.apply(this,args);setTimeout(showSeasonInterstitial,700);return out};
 window.openSponsorCenter=openSponsorCenter;
-window.SDF_MONETIZATION={initializeAds,showReward,showSeasonInterstitial,render,openSponsorCenter,getRewardDebug:()=>({status:lastRewardStatus,busy,initialized,canRequestAds,interstitialPrepared,interstitialShowing,lastInitError:lastInitError?.message||null,active:activeRewardAttempt?{...activeRewardAttempt,resolveLifecycle:undefined}:null})};
+window.SDF_MONETIZATION={initializeAds,showReward,showSeasonInterstitial,render,openSponsorCenter,getRewardDebug:()=>({status:lastRewardStatus,busy,initialized,canRequestAds,consentChecked,lastConsentStatus,lastConsentError,interstitialPrepared,interstitialShowing,lastInitError:lastInitError?.message||null,active:activeRewardAttempt?{...activeRewardAttempt,resolveLifecycle:undefined}:null})};
 
 document.addEventListener('DOMContentLoaded',()=>{
  $m('rewardHoursAdBtn')?.addEventListener('click',()=>showReward('HOURS'));
  $m('rewardNilAdBtn')?.addEventListener('click',()=>showReward('NIL'));
  $m('recruitRewardHoursAdBtn')?.addEventListener('click',()=>showReward('HOURS'));
  $m('recruitRewardNilAdBtn')?.addEventListener('click',()=>showReward('NIL'));
+ document.addEventListener('click',event=>{if(event.target?.closest?.('[data-budget-reward]'))showReward('BUDGET')});
  $m('adPrivacyOptionsBtn')?.addEventListener('click',privacyOptions);
  ['openSponsorDashboardBtn','openSponsorRecruitingBtn','openSponsorMobileBtn'].forEach(id=>$m(id)?.addEventListener('click',openSponsorCenter));
  render();setTimeout(initializeAds,350);
@@ -5048,19 +5225,32 @@ const POS=['QB','RB','WR','TE','OT','IOL','EDGE','DL','LB','CB','S','K','P'];
 const ARCH={QB:['Field General','Improviser','Scrambler'],RB:['Power Back','Elusive Back','Receiving Back'],WR:['Deep Threat','Route Runner','Physical'],TE:['Vertical Threat','Blocking','Possession'],OT:['Pass Protector','Power'],IOL:['Power','Agile'],EDGE:['Speed Rusher','Power Rusher','Run Stopper'],DL:['Run Stopper','Power Rusher'],LB:['Field General','Coverage','Run Stopper'],CB:['Man Cover','Zone Cover','Slot'],S:['Zone','Hybrid','Run Support'],K:['Accurate','Power'],P:['Directional','Power','Coffin Corner']};
 const DEV=['Normal','Impact','Star','Elite'];
 const PRODUCTS=[
+ ['all_access_pass','All Access Pass','$19.99','Own every permanent upgrade, every current scenario pack and every future scenario pack.','BEST VALUE',['Commissioner Mode + Remove Ads','Player Editor + Team Editor','All current and future scenario packs','Legend Supporter badge and treatment','Permanent Google Play unlock'],'Save versus buying the permanent upgrades separately'],
  ['commissioner_mode','Commissioner Mode','$9.99','The complete creative-control upgrade.','BEST VALUE',['No forced ads','Player Editor + roster-wide tools','Team Editor for all 128 programs','Create a Team','Create recruiting prospects','Every future Commissioner tool'],'Save versus buying all three upgrades separately'],
  ['remove_ads','Remove Ads','$4.99','Removes forced/interstitial ads. Optional rewarded sponsor videos still work.','',['Permanent on your Google Play account']],
  ['player_editor','Player Editor','$4.99','Edit your roster and create prospects for the national recruiting class.','',['Names, positions and archetypes','Overall, potential and development','Attributes, morale and injuries','Roster-wide health and morale tools','Create recruiting prospects']],
- ['team_editor','Team Editor','$4.99','Build a program or customize every team in your dynasty.','',['Edit all 128 programs','Names, colors and custom logos','Conference alignment and stadiums','Program ratings and academics','Create a Team with a generated roster']]
+ ['team_editor','Team Editor','$4.99','Build a program or customize every team in your dynasty.','',['Edit all 128 programs','Names, colors and custom logos','Conference alignment and stadiums','Program ratings and academics','Create a Team with a generated roster']],
+ ['scenario_impossible_rebuilds','Impossible Rebuilds','$1.99','Six brutal rebuild scenarios with permanent trophy tracking.','SCENARIO PACK',['Six new starting worlds','Clear rules and completion trophies','Permanent Google Play unlock']],
+ ['scenario_championship_pressure','Championship Pressure','$1.99','Six win-now scenarios built around narrow title windows.','SCENARIO PACK',['Six contender challenges','One- and two-season pressure runs','Permanent Google Play unlock']],
+ ['scenario_recruiting_nightmares','Recruiting Nightmares','$1.99','Six roster-building scenarios with strict recruiting limits.','SCENARIO PACK',['Six recruiting challenges','Star, class and roster restrictions','Permanent Google Play unlock']],
+ ['recruiting_boost','Recruiting Boost','$0.99','250 recruiting hours plus $100,000 Recruit NIL.','',['Exact reward · delivered to the active dynasty'],'','consumable'],
+ ['program_rescue','Program Rescue','$1.99','600 recruiting hours, $300,000 Recruit NIL, $1.5M Athletics Budget and full roster recovery.','',['NIL signs players · Athletics Budget funds facilities and staff'],'','consumable'],
+ ['season_booster','Season Booster','$2.99','1,250 recruiting hours, $750,000 Recruit NIL, $3M Athletics Budget and full roster recovery.','BEST BOOST',['NIL signs recruits and transfers','Athletics Budget funds facilities and staff','Exact, repeatable reward'],'','consumable'],
+ ['supporter_rookie','Rookie Supporter','$1.99','Support the solo developer and unlock a permanent supporter badge.','SUPPORTER',['Supporter badge','Gold menu accent','Credits recognition']],
+ ['supporter_all_american','All-American Supporter','$4.99','Extra support with an upgraded badge and menu accent.','SUPPORTER',['All-American badge','Premium menu accent','Credits recognition']],
+ ['supporter_legend','Legend Supporter','$9.99','The highest supporter tier for players helping build the game.','SUPPORTER',['Legend badge','Premium menu accent','Credits recognition']]
 ];
-let billing={ready:false,status:'Connecting to Google Play…',owned:[],prices:{}};
+const COMMISSIONER_INCLUDED=new Set(['commissioner_mode','remove_ads','player_editor','team_editor']);
+const ALL_ACCESS_INCLUDED=new Set(['all_access_pass','commissioner_mode','remove_ads','player_editor','team_editor','scenario_impossible_rebuilds','scenario_championship_pressure','scenario_recruiting_nightmares','supporter_rookie','supporter_all_american','supporter_legend']);
+const CONSUMABLES=new Set(PRODUCTS.filter(x=>x[7]==='consumable').map(x=>x[0]));
+let billing={ready:false,status:'Connecting to Google Play…',owned:[],prices:{},consumables:{}};
 let pendingProduct=null,lastOutcome=null;
 try{const p=JSON.parse(localStorage.getItem('SDF_PENDING_CHECKOUT236')||'null');if(p&&PRODUCTS.some(x=>x[0]===p.product)&&Date.now()-p.at<7*86400000)pendingProduct=p.product}catch{}
 function savePendingCheckout(){try{if(pendingProduct)localStorage.setItem('SDF_PENDING_CHECKOUT236',JSON.stringify({product:pendingProduct,at:Date.now()}));else localStorage.removeItem('SDF_PENDING_CHECKOUT236')}catch{}}
 let work=null,activePlayerId=null,profilePlayerId=null,profileWrapped=false,editorDirty=false,editorPreview=false;
 const native=()=>window.SDFBillingNative||null;
 const ownedSet=()=>new Set(Array.isArray(billing.owned)?billing.owned:[]);
-function owns(k){const o=ownedSet();return o.has('commissioner_mode')||o.has(k)}
+function owns(k){const o=ownedSet();return o.has(k)||(o.has('all_access_pass')&&ALL_ACCESS_INCLUDED.has(k))||(o.has('commissioner_mode')&&COMMISSIONER_INCLUDED.has(k))}
 function price(k,fallback){return billing.prices?.[k]||fallback}
 function rel(){return window.SDF_RELEASE_TEST}
 function sampleEditorState(){const school={...(schools?.[0]||{}),id:Number(schools?.[0]?.id||1),name:'Saturday State',conference:schools?.[0]?.conference||'Great Lakes',prestige:65,recent:62,facilities:68,pro:61,nil:64,academics:72},mk=(id,name,pos,ovr,year,dev,morale,injury=null)=>({id,name,pos,arch:(ARCH[pos]||['Balanced'])[0],ovr,pot:Math.min(99,ovr+7),year,dev,morale,hometown:'Columbus, OH',injury,attrs:{speed:ovr,strength:ovr-2,skill:ovr+2,awareness:ovr-1}});return{school,stadium:{name:'Saturday Stadium',capacity:52000},teamIdentityOverrides:{},world:(schools||[]).slice(1).map(t=>({...t})),roster:[mk('preview-qb','Jordan Carter','QB',82,3,'Star',84),mk('preview-rb','Malik Brooks','RB',78,2,'Impact',68),mk('preview-wr','Devin Hayes','WR',75,4,'Normal',55,{type:'Ankle',weeks:2}),mk('preview-cb','Andre Lewis','CB',80,1,'Elite',76)]}}
@@ -5091,9 +5281,9 @@ function applyAdPolicy(){
 }
 function normalizeState(next){
  if(!next||typeof next!=='object')return;
- billing={ready:!!next.ready,status:String(next.status||'Google Play Billing'),owned:Array.isArray(next.owned)?next.owned:[],prices:next.prices&&typeof next.prices==='object'?next.prices:{}};
- if(pendingProduct){const status=billing.status;let outcome=billing.owned.includes(pendingProduct)?'purchase_confirmed':/cancel/i.test(status)?'checkout_canceled':/pending/i.test(status)?'checkout_pending':/error|unavailable|could not|not available|No eligible/i.test(status)?'checkout_failed':null;if(outcome&&outcome!==lastOutcome){window.SDF_JOURNEY?.record(outcome,pendingProduct);lastOutcome=outcome;if(outcome!=='checkout_pending'){pendingProduct=null;savePendingCheckout();}}}
- applyAdPolicy();renderShop();updateButtons();
+ billing={ready:!!next.ready,status:String(next.status||'Google Play Billing'),owned:Array.isArray(next.owned)?next.owned:[],prices:next.prices&&typeof next.prices==='object'?next.prices:{},consumables:next.consumables&&typeof next.consumables==='object'?next.consumables:{}};
+ if(pendingProduct){const status=billing.status,delivered=CONSUMABLES.has(pendingProduct)&&Number(billing.consumables[pendingProduct]||0)>0;let outcome=billing.owned.includes(pendingProduct)||delivered?'purchase_confirmed':/cancel/i.test(status)?'checkout_canceled':/pending/i.test(status)?'checkout_pending':/error|unavailable|could not|not available|No eligible/i.test(status)?'checkout_failed':null;if(outcome&&outcome!==lastOutcome){window.SDF_JOURNEY?.record(outcome,pendingProduct);lastOutcome=outcome;if(outcome!=='checkout_pending'){pendingProduct=null;savePendingCheckout();}}}
+ applyAdPolicy();window.SDF_PREMIUM251?.claimPending?.();renderShop();updateButtons();
  window.dispatchEvent(new CustomEvent('sdf:play-entitlements',{detail:{...billing}}));
 }
 window.onSDFBillingState=normalizeState;
@@ -5102,10 +5292,10 @@ function refreshBilling(){try{const n=native();if(!n)return normalizeState({read
 function ensureShop(){if($p('#sdfPlayShop'))return;const o=document.createElement('div');o.id='sdfPlayShop';o.innerHTML=`<section class="sdf-premium-box"><header class="sdf-premium-head"><div><div class="sdf-premium-ey">GOOGLE PLAY · PERMANENT UPGRADES</div><h2>Dynasty Shop</h2><p>One-time purchases restore through the Google account used by Play Store.</p></div><button class="sdf-premium-close" aria-label="Close">×</button></header><div class="sdf-premium-body"><div id="sdfPlayStatus" class="sdf-play-status"></div><div class="sdf-shop-intro"><b>Commissioner Mode unlocks the complete toolbox.</b><p>Edit players and every program, create teams and recruits, remove forced ads, and receive future Commissioner tools.</p></div><button type="button" class="journey-preview-entry" id="sdfCommissionerPreview">Try an interactive Commissioner Mode sample</button><div id="sdfPlayProducts" class="sdf-product-grid"></div><button id="sdfRestorePurchases" class="sdf-restore">Restore Google Play Purchases</button></div></section>`;document.body.append(o);$p('#sdfCommissionerPreview').onclick=()=>window.SDF_JOURNEY?.openPreview();$p('.sdf-premium-close',o).onclick=closeShop;o.onclick=e=>{if(e.target===o)closeShop()};$p('#sdfRestorePurchases').onclick=()=>{const n=native();if(n){n.restore();setShopStatus('Checking your Google Play account…')}else setShopStatus('Google Play Billing is unavailable in this build.',true)}}
 function setShopStatus(t,bad=false){const x=$p('#sdfPlayStatus');if(!x)return;x.textContent=t;x.className='sdf-play-status '+(bad?'bad':billing.ready?'good':'')}
 let shopFocus=null;
-function renderShop(){const grid=$p('#sdfPlayProducts');if(!grid)return;setShopStatus(billing.status,!billing.ready&&/error|unavailable|could not/i.test(billing.status));grid.innerHTML='';for(const [k,n,fallback,d,badge,features=[],saving=''] of PRODUCTS){const own=owns(k),card=document.createElement('article');card.dataset.product=k;card.className='sdf-product'+(k==='commissioner_mode'?' featured':'')+(shopFocus===k?' focused':'');card.innerHTML=`${badge?`<span class="sdf-product-badge">${badge}</span>`:''}<h3>${n}</h3><div><span class="sdf-product-price">${esc(price(k,fallback))}</span> <span class="sdf-product-once">ONE-TIME</span></div><p>${esc(d)}</p>${features.length?`<ul class="sdf-product-list">${features.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}${saving?`<span class="sdf-product-saving">${esc(saving)}</span>`:''}<button ${own?'disabled':''}>${own?'OWNED':`BUY ${esc(price(k,fallback))}`}</button>${own?'<div class="sdf-owned">✓ Google Play account unlock</div>':''}`;card.querySelector('button').onclick=()=>purchase(k);grid.append(card)}}
+function renderShop(){const grid=$p('#sdfPlayProducts');if(!grid)return;setShopStatus(billing.status,!billing.ready&&/error|unavailable|could not/i.test(billing.status));grid.innerHTML='';for(const [k,n,fallback,d,badge,features=[],saving='',type='permanent'] of PRODUCTS){const repeat=type==='consumable',own=!repeat&&owns(k),card=document.createElement('article');card.dataset.product=k;card.dataset.productType=type;card.className='sdf-product'+(k==='commissioner_mode'?' featured':'')+(shopFocus===k?' focused':'');card.innerHTML=`${badge?`<span class="sdf-product-badge">${badge}</span>`:''}<h3>${n}</h3><div><span class="sdf-product-price">${esc(price(k,fallback))}</span> <span class="sdf-product-once">${repeat?'REPEATABLE':'ONE-TIME'}</span></div><p>${esc(d)}</p>${features.length?`<ul class="sdf-product-list">${features.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}${saving?`<span class="sdf-product-saving">${esc(saving)}</span>`:''}<button ${own?'disabled':''}>${own?'OWNED':`BUY ${esc(price(k,fallback))}`}</button>${own?'<div class="sdf-owned">✓ Google Play account unlock</div>':''}`;card.querySelector('button').onclick=()=>purchase(k);grid.append(card)}}
 function openShop(focus=null){shopFocus=PRODUCTS.some(x=>x[0]===focus)?focus:null;window.SDF_JOURNEY?.record('shop_opened',shopFocus||undefined);ensureShop();refreshBilling();$p('#sdfPlayShop').classList.add('open');renderShop();if(shopFocus)setTimeout(()=>$p(`[data-product="${shopFocus}"]`)?.scrollIntoView?.({block:'center'}),0)}
 function closeShop(){$p('#sdfPlayShop')?.classList.remove('open')}
-function purchase(k){if(owns(k))return;const n=native();if(!n)return setShopStatus('Google Play Billing is unavailable in this build.',true);pendingProduct=k;lastOutcome=null;savePendingCheckout();window.SDF_JOURNEY?.record('checkout_started',k);setShopStatus('Opening Google Play checkout…');try{n.purchase(k)}catch{pendingProduct=null;savePendingCheckout();window.SDF_JOURNEY?.record('checkout_failed',k);setShopStatus('Could not open Google Play checkout. Please try again.',true)}}
+function purchase(k){if(!CONSUMABLES.has(k)&&owns(k))return;const n=native();if(!n)return setShopStatus('Google Play Billing is unavailable in this build.',true);if(CONSUMABLES.has(k)&&!window.SDF_PREMIUM251?.canReceiveBoost?.())return setShopStatus('Load a dynasty before purchasing a resource boost.',true);pendingProduct=k;lastOutcome=null;savePendingCheckout();window.SDF_JOURNEY?.record('checkout_started',k);setShopStatus('Opening Google Play checkout…');try{n.purchase(k)}catch{pendingProduct=null;savePendingCheckout();window.SDF_JOURNEY?.record('checkout_failed',k);setShopStatus('Could not open Google Play checkout. Please try again.',true)}}
 
 function ensureEditor(){if($p('#sdfAndroidEditor'))return;const o=document.createElement('div');o.id='sdfAndroidEditor';o.innerHTML=`<section class="sdf-premium-box"><header class="sdf-premium-head"><div><div class="sdf-premium-ey">COMMISSIONER TOOLS</div><h2 id="sdfEditorTitle"></h2><p id="sdfEditorSubtitle"></p></div><button class="sdf-premium-close" aria-label="Close">×</button></header><div class="sdf-premium-body"><div id="sdfEditorToast" class="sdf-editor-toast"></div><div id="sdfEditorContent"></div></div></section>`;document.body.append(o);$p('.sdf-premium-close',o).onclick=closeEditor;o.onclick=e=>{if(e.target===o)closeEditor()}}
 function showEditor(title,sub,html){ensureEditor();editorDirty=false;$p('#sdfEditorTitle').textContent=title;$p('#sdfEditorSubtitle').textContent=sub;$p('#sdfEditorContent').innerHTML=html;$p('#sdfEditorToast').textContent='';$p('#sdfAndroidEditor').classList.add('open');const mark=e=>{if(!editorPreview&&e.target.closest?.('.sdf-form,.sdf-conference-manager'))editorDirty=true};$p('#sdfEditorContent').addEventListener('input',mark);$p('#sdfEditorContent').addEventListener('change',mark)}
@@ -5118,15 +5308,15 @@ function openExactPreview(kind='team'){editorPreview=true;if(kind==='player')ope
 function requireOwned(k){if(owns(k))return true;openShop(k);setShopStatus(`Unlock ${k==='player_editor'?'Player Editor':'Team Editor'} or Commissioner Mode to use this tool.`);return false}
 function pfind(id){return current()?.roster?.find(p=>String(p.id)===String(id))}
 function archOptions(pos,cur){return(ARCH[pos]||[]).map(a=>`<option ${a===cur?'selected':''}>${esc(a)}</option>`).join('')}
-function renderPlayerForm(){const p=pfind(activePlayerId),h=$p('#sdfPlayerForm');if(!p||!h)return;const a=p.attrs||{};h.innerHTML=`<div class="sdf-form"><label class="wide">PLAYER NAME<input id="peName" maxlength="32" value="${esc(p.name)}"></label><label>POSITION<select id="pePos">${POS.map(x=>`<option ${x===p.pos?'selected':''}>${x}</option>`).join('')}</select></label><label>ARCHETYPE<select id="peArch">${archOptions(p.pos,p.arch)}</select></label><label>CLASS / YEAR<select id="peYear">${[1,2,3,4].map(y=>`<option value="${y}" ${Number(p.year)===y?'selected':''}>Year ${y}</option>`).join('')}</select></label><label>DEVELOPMENT<select id="peDev">${DEV.map(d=>`<option ${d===p.dev?'selected':''}>${d}</option>`).join('')}</select></label><label>OVERALL<input id="peOvr" type="number" min="40" max="99" value="${clamp(p.ovr,40,99)}"></label><label>POTENTIAL<input id="pePot" type="number" min="40" max="99" value="${clamp(p.pot,40,99)}"></label><label>MORALE<input id="peMorale" type="number" min="0" max="99" value="${clamp(p.morale,0,99)}"></label><label>HOMETOWN<input id="peHome" maxlength="42" value="${esc(p.hometown||'')}"></label><div class="sdf-form-section">CORE ATTRIBUTES</div><label>SPEED<input id="peSpeed" type="number" min="35" max="99" value="${clamp(a.speed??p.ovr,35,99)}"></label><label>STRENGTH<input id="peStrength" type="number" min="35" max="99" value="${clamp(a.strength??p.ovr,35,99)}"></label><label>SKILL<input id="peSkill" type="number" min="35" max="99" value="${clamp(a.skill??p.ovr,35,99)}"></label><label>AWARENESS<input id="peAware" type="number" min="35" max="99" value="${clamp(a.awareness??p.ovr,35,99)}"></label></div><div class="sdf-ed-actions"><button id="peHeal" class="sdf-secondary">Heal Injury</button><button id="peSave" class="sdf-save">Save Player</button></div>`;$p('#pePos').onchange=e=>$p('#peArch').innerHTML=archOptions(e.target.value,'');$p('#peHeal').onclick=()=>{p.injury=null;const id=p.id,name=p.name;if(commit(`Player Editor healed ${name}`)){openPlayerEditor(id,true);setTimeout(()=>editorToast(`${name} is healthy.`),0)}};$p('#peSave').onclick=savePlayer;lockPreviewControls()}
-function savePlayer(){const s=current(),p=pfind(activePlayerId);if(!s||!p)return;const name=($p('#peName').value||'').trim();if(!name)return editorToast('Player name is required.',true);const oldPos=p.pos;p.name=name.slice(0,32);p.pos=$p('#pePos').value;p.arch=$p('#peArch').value||(ARCH[p.pos]||['Balanced'])[0];p.year=clamp($p('#peYear').value,1,4);p.dev=$p('#peDev').value;p.ovr=clamp($p('#peOvr').value,40,99);p.pot=Math.max(p.ovr,clamp($p('#pePot').value,40,99));p.morale=clamp($p('#peMorale').value,0,99);p.hometown=($p('#peHome').value||'').trim().slice(0,42);p.attrs=p.attrs||{};p.attrs.speed=clamp($p('#peSpeed').value,35,99);p.attrs.strength=clamp($p('#peStrength').value,35,99);p.attrs.skill=clamp($p('#peSkill').value,35,99);p.attrs.awareness=clamp($p('#peAware').value,35,99);if(oldPos!==p.pos){p.starter=false;s.depthChart={}}s.news=s.news||[];s.news.push(`Commissioner Mode edited ${p.name}: ${p.pos}, ${p.ovr} OVR, ${p.pot} potential.`);const id=p.id,n=p.name;if(commit(`Player Editor: ${n}`)){openPlayerEditor(id,true);setTimeout(()=>editorToast(`${n} saved.`),0)}}
-function rosterAction(type){const s=current();if(!s?.roster?.length)return;let changed=0;if(type==='heal'){for(const p of s.roster)if(p.injury){p.injury=null;changed++}}else{for(const p of s.roster)if(Number(p.morale)<70){p.morale=70;changed++}}if(!changed)return editorToast(type==='heal'?'No injured players to heal.':'Every player already has at least 70 morale.');if(commit(type==='heal'?'Player Editor healed entire roster':'Player Editor restored roster morale')){openPlayerEditor(activePlayerId,true);setTimeout(()=>editorToast(`${changed} player${changed===1?'':'s'} updated.`),0)}}
-function openPlayerEditor(id=null,skip=false){if(!skip&&!requireOwned('player_editor'))return;const s=begin();if(!s?.school||!Array.isArray(s.roster)){work=null;window.toast?.('Load a dynasty before opening Player Editor.','error');return}const ps=s.roster.slice().sort((a,b)=>POS.indexOf(a.pos)-POS.indexOf(b.pos)||Number(b.ovr)-Number(a.ovr));activePlayerId=id&&ps.some(p=>String(p.id)===String(id))?id:ps[0]?.id;showEditor('Player Editor',`${editorPreview?'Read-only preview · ':''}${s.school.name} · edit roster identity, ratings and development`,`<div class="sdf-ed-grid"><aside class="sdf-ed-panel"><div class="sdf-roster-tools"><button id="peHealRoster">Heal Roster</button><button id="peMoraleRoster">Restore Morale</button></div><input id="peSearch" class="sdf-ed-search" type="search" placeholder="Search player or position"><div class="sdf-player-list">${ps.map(p=>`<button class="sdf-player-row ${String(p.id)===String(activePlayerId)?'active':''}" data-id="${esc(p.id)}" data-q="${esc(`${p.name} ${p.pos} ${p.hometown||''}`.toLowerCase())}"><span><b>${esc(p.name)}</b><br><small>${p.pos} · Year ${p.year}</small></span><strong>${p.ovr}</strong></button>`).join('')}</div></aside><section id="sdfPlayerForm" class="sdf-ed-panel"></section></div>`);$p('#peHealRoster').onclick=()=>rosterAction('heal');$p('#peMoraleRoster').onclick=()=>rosterAction('morale');$p('#peSearch').oninput=e=>$$p('.sdf-player-row',$p('#sdfAndroidEditor')).forEach(b=>b.hidden=!b.dataset.q.includes(e.target.value.trim().toLowerCase()));$$p('.sdf-player-row',$p('#sdfAndroidEditor')).forEach(b=>b.onclick=()=>{if(!discardAllowed())return;editorDirty=false;activePlayerId=b.dataset.id;$$p('.sdf-player-row',$p('#sdfAndroidEditor')).forEach(x=>x.classList.toggle('active',x===b));renderPlayerForm()});renderPlayerForm();decoratePreview('player')}
+function renderPlayerForm(){const p=pfind(activePlayerId),h=$p('#sdfPlayerForm');if(!p||!h)return;const a=p.attrs||{},s=current(),teams=leagueTeams(s);h.innerHTML=`<div class="sdf-form"><label class="wide">PLAYER NAME<input id="peName" maxlength="32" value="${esc(p.name)}"></label><label>POSITION<select id="pePos">${POS.map(x=>`<option ${x===p.pos?'selected':''}>${x}</option>`).join('')}</select></label><label>ARCHETYPE<select id="peArch">${archOptions(p.pos,p.arch)}</select></label><label>CLASS / YEAR<select id="peYear">${[1,2,3,4].map(y=>`<option value="${y}" ${Number(p.year)===y?'selected':''}>Year ${y}</option>`).join('')}</select></label><label>RECRUITING STARS<select id="peStars">${[1,2,3,4,5].map(y=>`<option value="${y}" ${Number(p.stars||p.signedStars||3)===y?'selected':''}>${y} star</option>`).join('')}</select></label><label>DEVELOPMENT<select id="peDev">${DEV.map(d=>`<option ${d===p.dev?'selected':''}>${d}</option>`).join('')}</select></label><label>OVERALL<input id="peOvr" type="number" min="40" max="99" value="${clamp(p.ovr,40,99)}"></label><label>POTENTIAL<input id="pePot" type="number" min="40" max="99" value="${clamp(p.pot,40,99)}"></label><label>MORALE<input id="peMorale" type="number" min="0" max="99" value="${clamp(p.morale,0,99)}"></label><label>HOMETOWN<input id="peHome" maxlength="42" value="${esc(p.hometown||'')}"></label><label><input id="peRedshirt" type="checkbox" ${p.redshirt?'checked':''}> CURRENTLY REDSHIRTED</label><label><input id="peRedshirtUsed" type="checkbox" ${p.redshirtUsed?'checked':''}> REDSHIRT SEASON USED</label><label class="wide">TRANSFER TO PROGRAM<select id="peDestination"><option value="${s.school.id}">Keep at ${esc(s.school.name)}</option>${teams.filter(t=>Number(t.id)!==Number(s.school.id)).map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('')}</select></label><div class="sdf-form-section">CORE ATTRIBUTES</div><label>SPEED<input id="peSpeed" type="number" min="35" max="99" value="${clamp(a.speed??p.ovr,35,99)}"></label><label>STRENGTH<input id="peStrength" type="number" min="35" max="99" value="${clamp(a.strength??p.ovr,35,99)}"></label><label>SKILL<input id="peSkill" type="number" min="35" max="99" value="${clamp(a.skill??p.ovr,35,99)}"></label><label>AWARENESS<input id="peAware" type="number" min="35" max="99" value="${clamp(a.awareness??p.ovr,35,99)}"></label></div><div class="sdf-ed-actions"><button id="peHeal" class="sdf-secondary">Heal Injury</button><button id="peSave" class="sdf-save">Save Player</button></div>`;$p('#pePos').onchange=e=>$p('#peArch').innerHTML=archOptions(e.target.value,'');$p('#peHeal').onclick=()=>{p.injury=null;const id=p.id,name=p.name;if(commit(`Player Editor healed ${name}`)){openPlayerEditor(id,true);setTimeout(()=>editorToast(`${name} is healthy.`),0)}};$p('#peSave').onclick=savePlayer;lockPreviewControls()}
+function savePlayer(){const s=current(),p=pfind(activePlayerId);if(!s||!p)return;const name=($p('#peName').value||'').trim();if(!name)return editorToast('Player name is required.',true);const oldPos=p.pos;p.name=name.slice(0,32);p.pos=$p('#pePos').value;p.arch=$p('#peArch').value||(ARCH[p.pos]||['Balanced'])[0];p.year=clamp($p('#peYear').value,1,4);p.stars=clamp($p('#peStars').value,1,5);p.signedStars=p.stars;p.dev=$p('#peDev').value;p.ovr=clamp($p('#peOvr').value,40,99);p.pot=Math.max(p.ovr,clamp($p('#pePot').value,40,99));p.morale=clamp($p('#peMorale').value,0,99);p.hometown=($p('#peHome').value||'').trim().slice(0,42);p.redshirt=$p('#peRedshirt').checked;p.redshirtUsed=$p('#peRedshirtUsed').checked;p.attrs=p.attrs||{};p.attrs.speed=clamp($p('#peSpeed').value,35,99);p.attrs.strength=clamp($p('#peStrength').value,35,99);p.attrs.skill=clamp($p('#peSkill').value,35,99);p.attrs.awareness=clamp($p('#peAware').value,35,99);if(oldPos!==p.pos){p.starter=false;s.depthChart={}}const destination=Number($p('#peDestination').value),transferred=destination!==Number(s.school.id);if(transferred){s.aiRosters??={};s.aiRosters[destination]??=[];s.aiRosters[destination].push({...p,starter:false,morale:75,rosterOrigin:`Commissioner transfer from ${s.school.name}`});s.roster=s.roster.filter(x=>String(x.id)!==String(p.id));s.depthChart={};s.realDepthChart={}}s.news=s.news||[];s.news.push(transferred?`Commissioner Mode transferred ${p.name} to ${leagueTeams(s).find(t=>Number(t.id)===destination)?.name||'another program'}.`:`Commissioner Mode edited ${p.name}: ${p.pos}, ${p.ovr} OVR, ${p.pot} potential.`);const id=transferred?null:p.id,n=p.name;if(commit(`Player Editor: ${n}`)){openPlayerEditor(id,true);setTimeout(()=>editorToast(`${n} ${transferred?'transferred':'saved'}.`),0)}}
+function rosterAction(type){const s=current();if(!s?.roster?.length)return;let changed=0;if(type==='heal'){for(const p of s.roster)if(p.injury){p.injury=null;changed++}}else if(type==='morale'){for(const p of s.roster)if(Number(p.morale)<70){p.morale=70;changed++}}else if(type==='overall'){for(const p of s.roster){const before=Number(p.ovr);p.ovr=clamp(before+1,40,99);p.pot=Math.max(p.ovr,Number(p.pot));changed+=p.ovr!==before}}else if(type==='potential'){for(const p of s.roster){const before=Number(p.pot);p.pot=clamp(before+3,40,99);changed+=p.pot!==before}}if(!changed)return editorToast('No roster values needed an update.');if(commit(`Player Editor bulk ${type} update`)){openPlayerEditor(activePlayerId,true);setTimeout(()=>editorToast(`${changed} player${changed===1?'':'s'} updated.`),0)}}
+function openPlayerEditor(id=null,skip=false){if(!skip&&!requireOwned('player_editor'))return;const s=begin();if(!s?.school||!Array.isArray(s.roster)){work=null;window.toast?.('Load a dynasty before opening Player Editor.','error');return}const ps=s.roster.slice().sort((a,b)=>POS.indexOf(a.pos)-POS.indexOf(b.pos)||Number(b.ovr)-Number(a.ovr));activePlayerId=id&&ps.some(p=>String(p.id)===String(id))?id:ps[0]?.id;showEditor('Player Editor',`${editorPreview?'Read-only preview · ':''}${s.school.name} · edit roster identity, ratings and development`,`<div class="sdf-ed-grid"><aside class="sdf-ed-panel"><div class="sdf-roster-tools"><button id="peHealRoster">Heal Roster</button><button id="peMoraleRoster">Restore Morale</button><button id="peOverallRoster">+1 Team OVR</button><button id="pePotentialRoster">+3 Potential</button></div><input id="peSearch" class="sdf-ed-search" type="search" placeholder="Search player, position or hometown"><div class="sdf-player-list">${ps.map(p=>`<button class="sdf-player-row ${String(p.id)===String(activePlayerId)?'active':''}" data-id="${esc(p.id)}" data-q="${esc(`${p.name} ${p.pos} ${p.hometown||''}`.toLowerCase())}"><span><b>${esc(p.name)}</b><br><small>${p.pos} · Year ${p.year}${p.redshirt?' · RS':''}</small></span><strong>${p.ovr}</strong></button>`).join('')}</div></aside><section id="sdfPlayerForm" class="sdf-ed-panel"></section></div>`);$p('#peHealRoster').onclick=()=>rosterAction('heal');$p('#peMoraleRoster').onclick=()=>rosterAction('morale');$p('#peOverallRoster').onclick=()=>rosterAction('overall');$p('#pePotentialRoster').onclick=()=>rosterAction('potential');$p('#peSearch').oninput=e=>$$p('.sdf-player-row',$p('#sdfAndroidEditor')).forEach(b=>b.hidden=!b.dataset.q.includes(e.target.value.trim().toLowerCase()));$$p('.sdf-player-row',$p('#sdfAndroidEditor')).forEach(b=>b.onclick=()=>{if(!discardAllowed())return;editorDirty=false;activePlayerId=b.dataset.id;$$p('.sdf-player-row',$p('#sdfAndroidEditor')).forEach(x=>x.classList.toggle('active',x===b));renderPlayerForm()});renderPlayerForm();decoratePreview('player')}
 let activeTeamId=null,pendingTeamLogo=null;
 function leagueTeams(s){return window.SDF_V195?.teamList?.(s)||[s.school]}
-function teamFormHtml(s,id){const c=window.SDF_V195?.resolvedTeam?.(s,id)||s.school,t=c.stadium||{},confs=window.SDF_V195?.conferences?.()||[...new Set(schools.map(x=>x.conference))],cn=x=>window.SDF_CONFERENCES?.name(x,s)||x;return`<section id="sdfTeamForm" class="sdf-ed-panel sdf-team-editor-v195"><div class="sdf-form"><div class="sdf-team-brand-row-v195"><img id="teLogoPreview" class="sdf-team-logo-preview-v195" src="${esc(c.logo||'icon-192.png')}" alt=""><div><b>${esc(c.name)}</b><div class="sub">${esc(cn(c.conference))} · Program ID ${c.id}</div></div></div><label class="wide">PROGRAM NAME<input id="teName" maxlength="38" value="${esc(c.name)}"></label><label>ABBREVIATION<input id="teAbbr" maxlength="5" value="${esc(c.abbr||'')}"></label><label>CONFERENCE<select id="teConference">${confs.map(x=>`<option value="${esc(x)}" ${x===c.conference?'selected':''}>${esc(cn(x))}</option>`).join('')}</select></label><label>CITY<input id="teCity" maxlength="28" value="${esc(c.city||'')}"></label><label>STATE<input id="teState" maxlength="3" value="${esc(c.state||'')}"></label><div class="sdf-form-section">BRANDING</div><label>PRIMARY COLOR<input id="tePrimary" type="color" value="${esc(c.primary||'#2563eb')}"></label><label>SECONDARY COLOR<input id="teSecondary" type="color" value="${esc(c.secondary||'#22d3ee')}"></label><label>ACCENT COLOR<input id="teAccent" type="color" value="${esc(c.accent||'#ffffff')}"></label><label>TEAM LOGO<input id="teLogo" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml"></label><div class="sdf-team-editor-note-v195">Custom logos are resized for dynasty saves and follow this save on Android and web. Conference edits change league alignment; already-played games stay on the current season schedule.</div><div class="sdf-form-section">PROGRAM RATINGS</div><label>PRESTIGE<input id="tePrestige" type="number" min="20" max="99" value="${clamp(c.prestige,20,99)}"></label><label>RECENT SUCCESS<input id="teRecent" type="number" min="20" max="99" value="${clamp(c.recent,20,99)}"></label><label>FACILITIES REPUTATION<input id="teFacilities" type="number" min="20" max="99" value="${clamp(c.facilities,20,99)}"></label><label>PRO PIPELINE<input id="tePro" type="number" min="20" max="99" value="${clamp(c.pro,20,99)}"></label><label>NIL REPUTATION<input id="teNil" type="number" min="20" max="99" value="${clamp(c.nil,20,99)}"></label><label>ACADEMICS<input id="teAcademics" type="number" min="20" max="99" value="${clamp(c.academics,20,99)}"></label><div class="sdf-form-section">STADIUM</div><label>STADIUM NAME<input id="teStadium" maxlength="40" value="${esc(t.name||'Memorial Stadium')}"></label><label>CAPACITY<input id="teCapacity" type="number" min="10000" max="150000" step="500" value="${clamp(t.capacity||55000,10000,150000)}"></label></div><div class="sdf-ed-actions"><button id="teResetLogo" class="sdf-secondary">Reset Logo</button><button id="teSave" class="sdf-save">Save Program</button></div></section>`}
+function teamFormHtml(s,id){const c=window.SDF_V195?.resolvedTeam?.(s,id)||s.school,t=c.stadium||{},confs=window.SDF_V195?.conferences?.()||[...new Set(schools.map(x=>x.conference))],teams=leagueTeams(s),cn=x=>window.SDF_CONFERENCES?.name(x,s)||x,rival=Number(c.rivalId||((s.dynamicRivalries||[]).find(r=>[Number(r.a),Number(r.b)].includes(Number(c.id)))?.a===Number(c.id)?(s.dynamicRivalries||[]).find(r=>Number(r.a)===Number(c.id))?.b:(s.dynamicRivalries||[]).find(r=>Number(r.b)===Number(c.id))?.a)||0);return`<section id="sdfTeamForm" class="sdf-ed-panel sdf-team-editor-v195"><div class="sdf-form"><div class="sdf-team-brand-row-v195"><img id="teLogoPreview" class="sdf-team-logo-preview-v195" src="${esc(c.logo||'icon-192.png')}" alt=""><div><b>${esc(c.name)}</b><div class="sub">${esc(cn(c.conference))} · Program ID ${c.id}</div></div></div><label class="wide">PROGRAM NAME<input id="teName" maxlength="38" value="${esc(c.name)}"></label><label>ABBREVIATION<input id="teAbbr" maxlength="5" value="${esc(c.abbr||'')}"></label><label>CONFERENCE<select id="teConference">${confs.map(x=>`<option value="${esc(x)}" ${x===c.conference?'selected':''}>${esc(cn(x))}</option>`).join('')}</select></label><label>CITY<input id="teCity" maxlength="28" value="${esc(c.city||'')}"></label><label>STATE<input id="teState" maxlength="3" value="${esc(c.state||'')}"></label><div class="sdf-form-section">BRANDING</div><label>PRIMARY COLOR<input id="tePrimary" type="color" value="${esc(c.primary||'#2563eb')}"></label><label>SECONDARY COLOR<input id="teSecondary" type="color" value="${esc(c.secondary||'#22d3ee')}"></label><label>ACCENT COLOR<input id="teAccent" type="color" value="${esc(c.accent||'#ffffff')}"></label><label>TEAM LOGO<input id="teLogo" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml"></label><div class="sdf-team-editor-note-v195">Custom logos are resized for dynasty saves and follow this save on Android and web. Conference edits change league alignment; already-played games stay on the current season schedule.</div><div class="sdf-form-section">PROGRAM IDENTITY</div><label>OFFENSIVE STYLE<select id="teOffense">${['Spread','Air Raid','Power Run','Option','Tempo Spread'].map(x=>`<option ${x===(c.offense||'Spread')?'selected':''}>${x}</option>`).join('')}</select></label><label>DEFENSIVE STYLE<select id="teDefense">${['4-2-5','4-3','3-4','3-3-5'].map(x=>`<option ${x===(c.defense||'4-2-5')?'selected':''}>${x}</option>`).join('')}</select></label><label class="wide">PRIMARY RIVAL<select id="teRival"><option value="0">No custom rival</option>${teams.filter(x=>Number(x.id)!==Number(c.id)).map(x=>`<option value="${x.id}" ${Number(x.id)===rival?'selected':''}>${esc(x.name)}</option>`).join('')}</select></label><label class="wide">RECRUITING PIPELINES<input id="tePipelines" maxlength="80" value="${esc((c.pipelines||[]).join(', '))}" placeholder="OH, PA, FL"></label><div class="sdf-form-section">PROGRAM RATINGS</div><label>PRESTIGE<input id="tePrestige" type="number" min="20" max="99" value="${clamp(c.prestige,20,99)}"></label><label>RECENT SUCCESS<input id="teRecent" type="number" min="20" max="99" value="${clamp(c.recent,20,99)}"></label><label>FACILITIES REPUTATION<input id="teFacilities" type="number" min="20" max="99" value="${clamp(c.facilities,20,99)}"></label><label>PRO PIPELINE<input id="tePro" type="number" min="20" max="99" value="${clamp(c.pro,20,99)}"></label><label>NIL REPUTATION<input id="teNil" type="number" min="20" max="99" value="${clamp(c.nil,20,99)}"></label><label>ACADEMICS<input id="teAcademics" type="number" min="20" max="99" value="${clamp(c.academics,20,99)}"></label><label>SEASON EXPECTATION<input id="teExpectation" type="number" min="1" max="12" value="${clamp(c.expectation||6,1,12)}"></label><div class="sdf-form-section">STADIUM &amp; RESOURCES</div><label>STADIUM NAME<input id="teStadium" maxlength="40" value="${esc(t.name||'Memorial Stadium')}"></label><label>CAPACITY<input id="teCapacity" type="number" min="10000" max="150000" step="500" value="${clamp(t.capacity||55000,10000,150000)}"></label>${Number(c.id)===Number(s.school.id)?`<label>ATHLETICS BUDGET<input id="teBudget" type="number" min="0" step="100000" value="${Math.max(0,Number(s.budget||0))}"></label><label>RECRUIT NIL POOL<input id="teNilBudget" type="number" min="0" step="10000" value="${Math.max(0,Number(s.nilBudget||0))}"></label>`:''}</div><div class="sdf-ed-actions"><button id="teResetLogo" class="sdf-secondary">Reset Logo</button><button id="teSave" class="sdf-save">Save Program</button></div></section>`}
 function renderTeamForm(){const s=current(),host=$p('#sdfTeamForm');if(!s||!host)return;const tmp=document.createElement('div');tmp.innerHTML=teamFormHtml(s,activeTeamId);host.replaceWith(tmp.firstElementChild);pendingTeamLogo=null;$p('#teLogo').onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{pendingTeamLogo=await window.SDF_V195?.readLogoFile?.(f);if(pendingTeamLogo)$p('#teLogoPreview').src=pendingTeamLogo}catch(err){editorToast(err?.message||'Could not load logo.',true)}};$p('#teResetLogo').onclick=()=>{pendingTeamLogo='__RESET__';const base=window.SDF_V195?.defaultLogo?.(activeTeamId)||'icon-192.png';$p('#teLogoPreview').src=base};$p('#teSave').onclick=saveTeam;lockPreviewControls()}
-function saveTeam(){const s=current();if(!s?.school||!activeTeamId)return;const api=window.SDF_V195;if(!api?.applyTeamEdit)return editorToast('Build 195 Team Editor runtime is unavailable.',true);const changes={name:$p('#teName').value,abbr:$p('#teAbbr').value,conference:$p('#teConference').value,city:$p('#teCity').value,state:$p('#teState').value,primary:$p('#tePrimary').value,secondary:$p('#teSecondary').value,accent:$p('#teAccent').value,prestige:$p('#tePrestige').value,recent:$p('#teRecent').value,facilities:$p('#teFacilities').value,pro:$p('#tePro').value,nil:$p('#teNil').value,academics:$p('#teAcademics').value,stadiumName:$p('#teStadium').value,stadiumCapacity:$p('#teCapacity').value};if(pendingTeamLogo)changes.logoData=pendingTeamLogo;api.applyTeamEdit(s,activeTeamId,changes);const team=api.resolvedTeam(s,activeTeamId),id=activeTeamId,name=team.name;if(commit(`League Team Editor: ${name}`)){openTeamEditor(id,true);setTimeout(()=>editorToast(`${name} saved.`),0)}}
+function saveTeam(){const s=current();if(!s?.school||!activeTeamId)return;const api=window.SDF_V195;if(!api?.applyTeamEdit)return editorToast('Build 195 Team Editor runtime is unavailable.',true);const changes={name:$p('#teName').value,abbr:$p('#teAbbr').value,conference:$p('#teConference').value,city:$p('#teCity').value,state:$p('#teState').value,primary:$p('#tePrimary').value,secondary:$p('#teSecondary').value,accent:$p('#teAccent').value,prestige:$p('#tePrestige').value,recent:$p('#teRecent').value,facilities:$p('#teFacilities').value,pro:$p('#tePro').value,nil:$p('#teNil').value,academics:$p('#teAcademics').value,expectation:$p('#teExpectation').value,stadiumName:$p('#teStadium').value,stadiumCapacity:$p('#teCapacity').value};if(pendingTeamLogo)changes.logoData=pendingTeamLogo;api.applyTeamEdit(s,activeTeamId,changes);const override=s.teamIdentityOverrides[String(activeTeamId)]??={};override.offense=$p('#teOffense').value;override.defense=$p('#teDefense').value;override.pipelines=$p('#tePipelines').value.split(',').map(x=>x.trim().toUpperCase()).filter(Boolean).slice(0,8);override.expectation=clamp($p('#teExpectation').value,1,12);const team=api.resolvedTeam(s,activeTeamId),rivalId=Number($p('#teRival').value);s.dynamicRivalries=(s.dynamicRivalries||[]).filter(r=>![Number(r.a),Number(r.b)].includes(Number(activeTeamId)));if(rivalId)s.dynamicRivalries.push({a:Number(activeTeamId),b:rivalId,name:`${team.name}–${leagueTeams(s).find(t=>Number(t.id)===rivalId)?.name||'Rival'} Rivalry`,createdByCommissioner:true});if(Number(activeTeamId)===Number(s.school.id)){s.rivalId=rivalId||s.rivalId;s.school.pipelines=override.pipelines;s.school.expectation=override.expectation;s.offense=override.offense;s.defense=override.defense;s.budget=Math.max(0,Number($p('#teBudget')?.value||s.budget));s.nilBudget=Math.max(0,Number($p('#teNilBudget')?.value||s.nilBudget))}const id=activeTeamId,name=team.name;if(commit(`League Team Editor: ${name}`)){openTeamEditor(id,true);setTimeout(()=>editorToast(`${name} saved.`),0)}}
 function openTeamEditor(id=null,skip=false){if(typeof id==='boolean'){skip=id;id=null}if(!skip&&!requireOwned('team_editor'))return;const s=begin();if(!s?.school){work=null;window.toast?.('Load a dynasty before opening Team Editor.','error');return}const teams=leagueTeams(s),cn=x=>window.SDF_CONFERENCES?.name(x,s)||x;activeTeamId=id&&teams.some(t=>Number(t.id)===Number(id))?Number(id):Number(s.school.id);showEditor('League Team Editor',`${editorPreview?'Read-only preview · ':''}edit identity, branding, conference, ratings and stadium for all 128 programs`,`<div class="sdf-ed-grid"><aside class="sdf-ed-panel"><h3>All Programs</h3><button id="teConferenceManager" class="sdf-editor-filter">${owns('commissioner_mode')||editorPreview?'Conference Manager':'🔒 Conference Manager'}</button><input id="teSearch" class="sdf-ed-search" type="search" placeholder="Search team or conference"><div class="sdf-player-list">${teams.map(t=>`<button class="sdf-player-row ${Number(t.id)===Number(activeTeamId)?'active':''}" data-id="${t.id}" data-q="${esc(`${t.name} ${t.abbr||''} ${t.conference} ${cn(t.conference)} ${t.city||''} ${t.state||''}`.toLowerCase())}"><span><b>${esc(t.name)}</b><br><small>${esc(cn(t.conference))} · ${esc(t.abbr||'')}</small></span><img src="${esc(t.logo||'icon-192.png')}" alt="" style="width:30px;height:30px;object-fit:contain"></button>`).join('')}</div></aside>${teamFormHtml(s,activeTeamId)}</div>`);$p('#teConferenceManager').onclick=()=>{if(!discardAllowed())return;editorDirty=false;openConferenceManager(true)};$p('#teSearch').oninput=e=>$$p('.sdf-player-row',$p('#sdfAndroidEditor')).forEach(b=>b.hidden=!b.dataset.q.includes(e.target.value.trim().toLowerCase()));$$p('.sdf-player-row',$p('#sdfAndroidEditor')).forEach(b=>b.onclick=()=>{if(!discardAllowed())return;editorDirty=false;activeTeamId=Number(b.dataset.id);$$p('.sdf-player-row',$p('#sdfAndroidEditor')).forEach(x=>x.classList.toggle('active',x===b));renderTeamForm()});renderTeamForm();decoratePreview('team')}
 
 function openConferenceManager(skip=false){if(!editorPreview&&!skip&&!owns('commissioner_mode')){openShop('commissioner_mode');setShopStatus('Conference Manager is included with Commissioner Mode.');return}if(!editorPreview&&skip&&!owns('commissioner_mode')){openShop('commissioner_mode');setShopStatus('Conference Manager is included with Commissioner Mode.');return}const s=begin();if(!s?.school)return;window.SDF_CONFERENCES?.ensure(s);const teams=leagueTeams(s),confs=window.SDF_V195?.conferences?.()||[...new Set(teams.map(t=>t.conference))],eco=s.conferenceEcosystem||{},activity=Number(s.realismSettings?.realignment??1),cn=x=>window.SDF_CONFERENCES?.name(x,s)||x,ca=x=>window.SDF_CONFERENCES?.abbr(x,s)||x.slice(0,4),ci=x=>window.SDF_CONFERENCES?.id(x,s)||x;showEditor('Conference Manager',`${editorPreview?'Read-only preview · ':''}rename conferences, organize every program and control automatic promotion and relegation`,`<section class="sdf-ed-panel"><div class="sdf-form"><label class="wide"><input id="cmAuto" type="checkbox" ${eco.autoRealignment===false?'':'checked'}> AUTOMATIC PROMOTION &amp; RELEGATION</label><label class="wide">REALIGNMENT ACTIVITY<select id="cmActivity"><option value="0.5" ${activity<.75?'selected':''}>Conservative · up to 1 swap</option><option value="1" ${activity>=.75&&activity<1.3?'selected':''}>Normal · up to 2 swaps</option><option value="1.5" ${activity>=1.3?'selected':''}>Active · up to 3 swaps</option></select></label></div><p class="sdf-team-editor-note-v195">Conference names are display labels backed by permanent IDs, so renaming does not damage schedules, standings or old saves. Manual team assignments take effect immediately.</p><input id="cmSearch" class="sdf-ed-search" type="search" placeholder="Search team or conference"><div class="sdf-conference-manager">${confs.map(conf=>`<section><h3>${esc(cn(conf))} <small>${teams.filter(t=>t.conference===conf).length} teams</small></h3><span class="sdf-conference-id">ID: ${esc(ci(conf))}</span><div class="sdf-conference-identity"><input data-conf-name="${esc(ci(conf))}" maxlength="32" value="${esc(cn(conf))}" aria-label="Conference name"><input data-conf-abbr="${esc(ci(conf))}" maxlength="6" value="${esc(ca(conf))}" aria-label="Conference abbreviation"></div>${teams.filter(t=>t.conference===conf).map(t=>`<label class="sdf-conference-team" data-q="${esc(`${t.name} ${cn(conf)} ${conf}`.toLowerCase())}"><span>${esc(t.name)}</span><select data-team-id="${t.id}" data-original="${esc(t.conference)}">${confs.map(c=>`<option value="${esc(c)}" ${c===t.conference?'selected':''}>${esc(cn(c))}</option>`).join('')}</select></label>`).join('')}</section>`).join('')}</div><div class="sdf-ed-actions"><button id="cmBack" class="sdf-secondary">Back to Team Editor</button><button id="cmSave" class="sdf-save">Save Conference Setup</button></div></section>`);$p('#cmSearch').oninput=e=>$$p('.sdf-conference-team',$p('#sdfAndroidEditor')).forEach(row=>row.hidden=!row.dataset.q.includes(e.target.value.trim().toLowerCase()));$p('#cmBack').onclick=()=>{if(!discardAllowed())return;editorDirty=false;openTeamEditor(null,true)};$p('#cmSave').onclick=()=>saveConferenceManager();decoratePreview('conference')}
@@ -5145,7 +5335,7 @@ function injectButtons(){
 }
 function updateButtons(){const defs=[['#sdfAndroidPlayerEditorBtn','player_editor','PLAYER EDITOR'],['#sdfAndroidTeamEditorBtn','team_editor','TEAM EDITOR'],['#sdfProfilePlayerEditorBtn','player_editor','EDIT PLAYER']];for(const [sel,k,label] of defs){const b=$p(sel);if(!b)continue;const ok=owns(k);b.classList.toggle('locked',!ok);b.textContent=ok?`✦ ${label}`:`🔒 ${label}`}}
 
-window.SDF_ANDROID_COMMERCE={openShop,closeShop,openPreview:openExactPreview,refresh:refreshBilling,owns,purchase,getState:()=>({ready:billing.ready,owned:[...billing.owned]})};
+window.SDF_ANDROID_COMMERCE={openShop,closeShop,openPreview:openExactPreview,refresh:refreshBilling,owns,purchase,getState:()=>({...billing,owned:[...billing.owned]})};
 window.SDF_COMMISSIONER={openPlayerEditor,openTeamEditor,openConferenceManager,hasPlayerEditor:()=>owns('player_editor'),hasTeamEditor:()=>owns('team_editor'),hasCommissioner:()=>owns('commissioner_mode'),removeAds:()=>owns('remove_ads')};
 const init=()=>{ensureShop();ensureEditor();injectButtons();refreshBilling();setInterval(refreshBilling,15000)};
 document.readyState==='loading'?document.addEventListener('DOMContentLoaded',init):init();
@@ -5162,8 +5352,9 @@ const ENDPOINT=`${SUPABASE_URL}/functions/v1/send-feedback`;
 const MAX_FILE_BYTES=4*1024*1024;
 // Release verification checks these diagnostic values against the installed
 // Android package so feedback can no longer report an old build number.
-const APP_VERSION='V27.4.49';
-const BUILD_CODE=250;
+const RELEASE_LABEL=String(document.getElementById('releaseLabel')?.textContent||'');
+const APP_VERSION=RELEASE_LABEL.match(/\bAndroid\s+(V[\d.]+)/i)?.[1]||'Vunknown';
+const BUILD_CODE=Number(RELEASE_LABEL.match(/\bBuild\s+(\d+)\b/i)?.[1])||0;
 const $f=(s,r=document)=>r.querySelector(s);
 
 const style=document.createElement('style');
@@ -5255,13 +5446,13 @@ const $h=(selector,root=document)=>root.querySelector(selector);
 const esc=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 
 const GUIDES={
- dynastystory:{label:'Dynasty story & challenges',icon:'★',summary:'Remember your players, save season recaps and try three free coaching challenges.',sections:[
+ dynastystory:{label:'Dynasty story & scenarios',icon:'★',summary:'Remember your players, save season recaps and take on 32 distinct coaching scenarios.',sections:[
   ['Open your story','On Home, scroll to the Coach’s briefing and choose Open story & challenges. Season recap, Player journeys and Challenges each have their own tab.'],
-  ['Choose a challenge','From Dynasty Menu, open Scenarios and press Start on a challenge. The team picker shows only qualifying programs; create your coach to begin automatically. You can also accept a challenge in an existing fresh Year 1, Week 1 dynasty before playing. Rebuild in Three needs a program with 55 prestige or lower and eight wins in one season within three years. Homegrown Class needs five home-state recruits confirmed at Signing Day. Rivalry Run needs three rivalry wins within three years. Ten more scenarios offer enforced starting rosters, a preseason portal rescue, title objectives, and one-, two- or three-star recruiting caps. Build a Dynasty lasts ten years. Read each card for its rules. Commissioner edits end trophy eligibility.'],
-  ['Track the run','One challenge saves with each dynasty. Stay at the starting program. Your dynasty continues if the challenge ends; these are free personal goals with no gameplay bonus or leaderboard.'],
+  ['Choose a scenario','From Dynasty Menu, open Scenarios and press Start. The team picker shows only eligible programs and each scenario explains its school, roster, recruiting and deadline rules. The game includes 14 free scenarios and 18 scenarios in three optional packs. Every scenario allows at least two seasons, so you can complete a recruiting cycle. Build a Dynasty lasts ten years; Worst to First locks you to the lowest-rated program for an eight-year title run.'],
+  ['Track the run','One scenario saves with each dynasty. Follow its school and roster restrictions while it is active. Your dynasty continues normally after success, failure or voluntarily ending the scenario. Completed scenarios earn an achievement and a permanent trophy marker.'],
   ['Keep the memories','Season recap uses recorded results and player stats. A recap is saved before offseason roster changes. Save recap image exports a PNG you can share. Player journeys open the saved career story and show growth since the first recorded rating.'],
   ['Understand recruiting','After a contact or weekly update, open a recruit’s Profile → Recruiting for the actual interest change, contact hours and score components. Interest is a score, not a commitment percentage.']
- ],tip:'A fresh dynasty can start one of three challenges. Existing dynasties still get stories, recaps and recruiting feedback.'},
+ ],tip:'Editing a scenario with Commissioner or editor tools ends the scenario first, then continues the save as a normal dynasty.'},
  dashboard:{label:'Home',icon:'⌂',summary:'Start here each week. Details stays visible, with your matchup and shortcuts in Overview.',sections:[
   ['Read the next game','Check your opponent, venue and week. Open Game Center when you are ready, or use Game Plan to prepare first.'],
   ['Use the shortcuts','Recruiting hours, injuries and available coach points give you useful places to start. Tap a card to open its screen.'],
@@ -5269,7 +5460,8 @@ const GUIDES={
   ['Dynasty options','Use the three-dot menu beside Details for Save dynasty, Dynasty menu, Settings and Delete dynasty.'],
   ['Find the rest','The bottom bar opens Home, Recruit, Roster and Game Day. More contains Game Plan, Coach, Season, Program, Stats and the other screens.']
  ],tip:'A useful week: recruit → check depth and injuries → prepare → play → advance.'},
- recruiting:{label:'Recruiting',icon:'★',summary:'Build a focused board, learn about your targets and compete for commitments with your weekly hours.',sections:[
+recruiting:{label:'Recruiting',icon:'★',summary:'Build a focused board, learn about your targets and compete for commitments with your weekly hours.',sections:[
+  ['Know the three resources','Recruiting Hours are staff time and refresh weekly. Recruit NIL Pool pays recruit and transfer offers. Athletics Budget pays facilities, coaches and program operations; it cannot be used for NIL. Your current totals are shown together above the board.'],
   ['Find your targets','Use the single Board, Commits and Transfer Portal tab row to switch views. Filters narrow positions, stars and recruiting status. Prioritize positions your roster will need.'],
   ['Work from the card','Use the weekly recruiting plan and card actions for routine contact, scouting and offers. Costs and disabled-action messages show what is available now.'],
   ['Open Profile','Overview explains fit; Recruiting contains contact and special actions; Scouting shows evaluation; Schools compares the race. Visits, promises and NIL live in the profile.'],
@@ -5288,7 +5480,7 @@ const GUIDES={
  ],tip:'Use Team for your base identity and Game Plan for the upcoming opponent.'},
  gameplan:{label:'Game Plan',icon:'▦',summary:'Prepare for the next matchup with opponent scouting, practice focus and tactical preferences.',sections:[
   ['Opponent','Review strength, tendencies and personnel. Look for a weakness your roster can attack.'],
-  ['Practice','Choose a weekly focus that supports the matchup and your team’s needs.'],
+  ['Practice','Choose a weekly focus that supports the matchup and your team’s needs. The selected card, confirmation message and practice status show that the choice saved.'],
   ['Tendencies','Adjust aggression, tempo, run/pass balance, blitzing, coverage and fourth-down decisions. The live simulation uses these choices.']
  ],tip:'Finish preparation before opening the game. The live screen follows your plan and depth chart.'},
  gameday:{label:'Game Day',icon:'◉',summary:'Check the matchup and injury watch, then enter Game Center to play your scheduled game.',sections:[
@@ -5327,7 +5519,7 @@ const GUIDES={
   ['Records & Class Rankings','Track game, season and career records and compare recruiting classes.']
  ],tip:'If a talented player is not producing, check snap share and tactics before changing the depth order.'},
  season:{label:'Season',icon:'▤',summary:'Available actions follow the current phase from the regular season through the offseason.',sections:[
-  ['Schedule & Standings','Review results, upcoming games and the conference race. Eligible non-conference games expose scheduling controls.'],
+  ['Schedule & Standings','Review results, upcoming games, bye weeks and the conference race. Before the season begins, Custom Schedule lets you replace eligible non-conference opponents and lists only teams available that week.'],
   ['Signing Day & Conference','When these phases arrive, use the available actions to settle recruiting decisions and conference championships.'],
   ['Bowls / CFP','Follow postseason matchups and play your program’s games. The final screen continues the postseason flow.'],
   ['Offseason','Follow the roadmap through spring practice, position battles, development, the carousel and draft before the portal.']
@@ -5343,12 +5535,20 @@ const GUIDES={
   ['Open the portal','After the review stops, Open Transfer Portal begins the four-week transfer market. Recruit incoming players and consider eligible retention opportunities.'],
   ['Begin the next year','Continue through the portal and use the next-season action when available. Review your new roster and depth chart before the opener.']
  ],tip:'You do not need to make every offseason choice. The roadmap tracks what comes next.'},
- program:{label:'Program',icon:'▣',summary:'Manage the people, resources and long-term identity behind the football team.',sections:[
+resources:{label:'Money & resources',icon:'$',summary:'Recruit NIL Pool and Athletics Budget are separate balances with different jobs.',sections:[
+  ['Recruit NIL Pool','This is player-offer money. Spend it on NIL offers for recruits and eligible transfer players. It cannot build facilities, hire coaches or cover buyouts.'],
+  ['Athletics Budget','This is department money. Spend it on facilities, coaches, buyouts and program operations. It cannot be offered to recruits or transfer players.'],
+  ['Recruiting Hours','Hours represent weekly staff attention. Contacting and scouting prospects spends hours; the total refreshes for a new recruiting week. Hours are neither cash balance.'],
+  ['Optional sponsor rewards','Sponsor Center offers unlimited optional videos for recruiting hours, Recruit NIL or $50,000 Athletics Budget. The budget reward also appears where department money is spent in Program → Facilities and Staff. Videos are never required.'],
+  ['Where to look','Recruiting shows all three resources together. Program → Facilities repeats your Athletics Budget and labels every construction price with the balance it uses.']
+ ],tip:'NIL follows players. Athletics Budget runs the department. Recruiting Hours measure staff time.'},
+ program:{label:'Program & facilities',icon:'▣',summary:'Manage the people, Athletics Budget and long-term identity behind the football team.',sections:[
   ['Administration','Review confidence, job security, boosters and fans. Read available actions and their costs before spending resources.'],
   ['Identity & traditions','Choose an identity that fits how you build. Results and investment develop traditions over time.'],
-  ['Facilities & staff','Balance training, recruiting, medical, stadium and academic investment with the funds and staff your program needs.'],
+  ['Facilities','Facility construction uses Athletics Budget only. The Facilities panel shows the current balance, labels every project cost and explains its gameplay effect. Recruit NIL Pool cannot pay for construction. An optional department sponsor video adds $50,000 Athletics Budget.'],
+  ['Staff & operations','Coach hires and buyouts also use Athletics Budget. Review the current balance before committing to a facility project or staff move. The same optional budget sponsor appears here because this section spends department funds.'],
   ['Promises & culture','Review obligations and trust. Playing time, captains and promise outcomes affect the locker room.']
- ],tip:'Align your roster plan, recruiting promises and spending with the same priorities.'},
+ ],tip:'NIL follows players; Athletics Budget runs the department. Open the Money & resources guide for the complete split.'},
  rankings:{label:'Rankings & the nation',icon:'#',summary:'Follow your national standing and inspect other programs in the dynasty.',sections:[
   ['Top 25 & Playoff','Review national rankings, committee résumé and the projected field. Results and strength of schedule matter alongside quality.'],
   ['Conferences','Inspect strength and membership. Conference changes can occur as your dynasty develops.'],
@@ -5357,8 +5557,10 @@ const GUIDES={
  dynasty:{label:'Dynasty',icon:'∞',summary:'Manage your career, achievements, saved dynasty and optional extras.',sections:[
   ['Career & Saves','Review jobs, reputation and milestones. Export a dynasty backup using the save controls.'],
   ['Achievements, rivalries & draft','Track long-term goals, series history and players who reach the pro draft.'],
-  ['Sponsor Rewards','Optional videos offer recruiting-hour and NIL bonuses: up to three claims of each per dynasty week. Check the displayed availability. Videos are not required to play.'],
-  ['Optional tools','Editors and commissioner tools show their access requirements. App preferences and Help & Tutorial are in Settings.']
+  ['Sponsor Rewards','Unlimited optional videos offer recruiting hours, Recruit NIL or $50,000 Athletics Budget. Each reward names the resource it changes; videos are not required to play.'],
+  ['Scenarios & extras','Scenarios offer focused rule sets and goals with at least two seasons to complete them. The game has 14 free scenarios and 18 in optional packs. Boosts, Supporter tiers and editor access are explained in the Shop before purchase.'],
+  ['Create and edit','Create a Team is available from Dynasty Menu. Team Editor changes programs, Player Editor can edit players and create recruiting prospects, and previews show the same fields in read-only form before purchase.'],
+  ['Commissioner tools','Commissioner Mode opens Rules Center, team and player editors, editable conference names and membership, promotion and relegation controls, and custom schedules. The schedule editor lists only opponents available that week and prevents duplicate games. Editing a scenario converts it to a normal dynasty before any change is saved.']
  ],tip:'Export a backup for a dynasty you want to keep, particularly before changing phones.'},
  history:{label:'History',icon:'⌛',summary:'Your permanent record grows as you complete seasons.',sections:[
   ['Seasons','Look back at year-by-year records, recruiting and program progress.'],
@@ -5370,18 +5572,20 @@ const GUIDES={
   ['Sound & music','Game Sound Effects and Background Music are separate. Music Volume adjusts the soundtrack.'],
   ['Display','Text Size, Layout Density and Reduce Motion let you choose a comfortable presentation.'],
   ['Help & Tutorial','Open Guidebook to search topics, replay the coach walkthrough or reset tips. The First-visit page tips switch controls automatic page guides.']
+  ,['Messages & privacy','System messages appear once when they apply to your version. Usage & privacy controls let you share basic game totals and separately choose whether to allow ID-based usage tracking.']
  ],tip:'Help is also in More. Page guide on each main screen opens help for that screen.'}
 };
 
 const WELCOME=[
  {title:'Welcome, Coach.',path:'A quick start for your dynasty',body:'You run the program. Start with a few weekly decisions, then explore the deeper systems as your team grows.',steps:[['Find your way','The bottom bar opens Home, Recruit, Roster and Game Day. More holds the other screens.'],['Keep it manageable','Section buttons show one part of a screen at a time. Profiles have their own tabs.'],['Come back any time','More → Help & Tutorial reopens every guide and this walkthrough.']],tip:'This tour explains the controls. It does not advance your dynasty.'},
  {title:'Your weekly routine',path:'Home → Details → Overview',body:'Home brings together the next matchup and useful work before kickoff.',steps:[['Recruit','Spend weekly hours on priority prospects.'],['Prepare','Review injuries and depth, then choose a Game Plan.'],['Play and continue','Enter Game Center, review the final, then use the current week or phase action.']],tip:'Make these decisions in the order that suits you.'},
- {title:'Build a focused recruiting board',path:'Recruit → Board → Profile',body:'Every prospect compares you with other schools. Concentrate hours on needs and races you can win.',steps:[['Use the board','Filter targets, choose a weekly plan and use available card actions.'],['Open the profile','Overview shows fit; Recruiting holds contact, visits, promises and NIL.'],['Check the competition','Scouting shows evaluation. Schools shows the race. Interest is not a commitment probability.']],tip:'Read costs before spending. Only promise roles your roster plan can support.'},
+ {title:'Know your three resources',path:'Recruit → Resource guide',body:'Recruiting Hours, Recruit NIL Pool and Athletics Budget are separate. Each pays for a different kind of decision.',steps:[['Recruiting Hours','Weekly staff time for contact and scouting. It refreshes as the recruiting calendar moves.'],['Recruit NIL Pool','Player-offer money for recruits and transfers. It cannot build facilities.'],['Athletics Budget','Department money for facilities, coaches, buyouts and operations. It cannot fund NIL offers.']],tip:'Sponsor Center has unlimited optional videos for all three resources. The $50,000 budget sponsor also appears in Facilities and Staff.'},
+ {title:'Build a focused recruiting board',path:'Recruit → Board → Profile',body:'Every prospect compares you with other schools. Concentrate hours on needs and races you can win.',steps:[['Use the board','Filter targets, choose a weekly plan and use available card actions.'],['Open the profile','Overview shows fit; Recruiting holds contact, visits, promises and Recruit NIL offers.'],['Check the competition','Scouting shows evaluation. Schools shows the race. Interest is not a commitment probability.']],tip:'Read costs before spending. Only promise roles your roster plan can support.'},
  {title:'Put the right players on the field',path:'Roster → Depth Chart',body:'The simulation uses your depth order and snap shares, so the rotation matters.',steps:[['Pick a unit and position','Choose Offense, Defense or Special Teams, then a position. QB opens first on offense.'],['Set the rotation','Change depth order and snap shares. Other shares rebalance to total 100%.'],['Check availability','Use Injuries and Roles & Risk. Open Profile for development and career details.']],tip:'All Players gives you search and Depth, Redshirt, Captain and Profile actions.'},
  {title:'Prepare for the opponent',path:'More → Game Plan',body:'Your base schemes live in Team. Game Plan adjusts your approach to this matchup.',steps:[['Read Opponent','Review strengths, tendencies and personnel.'],['Choose Practice','Set the weekly preparation focus.'],['Adjust Tendencies','Review run/pass balance, tempo, aggression and defense before kickoff.']],tip:'Finish preparation before opening Game Center.'},
  {title:'Watch the game your way',path:'Game Day → Game Center',body:'Follow the score and situation at the top, then choose the detail view you want.',steps:[['Set the pace','Pause or Resume, choose a speed, or use Sim to final.'],['Choose a view','Play by play follows each snap. Team stats compares both sides. Your players shows production.'],['Take a break','Save & exit pauses and saves the game. Return through Game Day → Resume Game.']],tip:'Continue Dynasty or Continue Postseason on the final screen returns you to the next step.'},
  {title:'Beyond the regular season',path:'More → Season / Postseason',body:'The calendar moves through signing day, championships, bowls and the playoff.',steps:[['Finish the postseason','Use the available matchup and Continue Postseason controls.'],['Follow the offseason roadmap','Review practice, battles, development, the carousel and draft. Let Staff Handle can make optional choices.'],['Work the portal','After those stops, continue through the four-week portal and begin the next season.']],tip:'The roadmap shows what is complete and what comes next.'},
- {title:'Build beyond one season',path:'More → Coach / Program / Dynasty',body:'Staff, development and program resources shape the career you build.',steps:[['Develop the coach','Spend skill points and review coordinator growth on Coach.'],['Support the program','Review facilities, funds, administration, culture and promises on Program.'],['Keep the career','Track progress in Stats and History. Export a backup from dynasty save controls.']],tip:'Optional sponsor rewards and editor tools are separate from the weekly routine.'},
+ {title:'Build beyond one season',path:'More → Coach / Program / Dynasty',body:'Staff, development and department decisions shape the career you build.',steps:[['Develop the coach','Spend skill points and review coordinator growth on Coach.'],['Invest in facilities','Program → Facilities spends Athletics Budget and shows the effect, price, construction time and optional budget sponsor.'],['Explore scenarios and tools','Dynasty contains 32 scenarios, achievements, optional rewards and purchased editor or Commissioner tools. Every scenario allows at least two seasons.']],tip:'Track progress in Stats and History, and export a backup from dynasty save controls.'},
  {title:'You are ready to coach.',path:'Help is always close by',body:'Explore at your pace. Return to this walkthrough or open a short guide whenever you need one.',steps:[['Get a quick answer','Use Page guide on a main screen or search More → Help & Tutorial.'],['Make it comfortable','More → Settings contains sound, music, text size, density and reduced motion.'],['Choose your tips','Turn first-visit page tips on or off in the guidebook. Your preference stays on this device.']],tip:'Start with Home and the next matchup. The rest will build from there.'}
 ];
 
@@ -5735,7 +5939,7 @@ function renderAssignments(){
 function recruitStaffHtml(r){const lead=leadRecruiter(r),rows=lead.all;return`<section class="recruit-profile-section recruit-staff-v189"><h3>Staff Recruiting Match</h3><p class="muted">Your lead recruiter's assignment, specialties, Recruiting rating and HC relationship now change every contact action.</p><div class="staff-recruit-lead"><div><span class="eyebrow">LEAD RECRUITER</span><h3>${esc(lead.coach?.name||'Staff')}</h3><span>${esc(lead.coach?.role||'')} · ${lead.mult>=1?'+':''}${Math.round((lead.mult-1)*100)}% contact influence</span></div><b>${lead.reasons.length?esc(lead.reasons.join(' · ')):'No specialty match'}</b></div><div class="staff-recruit-breakdown">${rows.map(x=>`<span><b>${esc(x.coach?.name||x.key)}</b><small>${x.mult>=1?'+':''}${Math.round((x.mult-1)*100)}%</small></span>`).join('')}</div></section>`}
 function enhanceRecruitModal(id){const r=(state.recruits||[]).find(x=>x.id===id),body=document.getElementById('modalBody');if(!r||!body||body.querySelector('.recruit-staff-v189'))return;const sections=body.querySelectorAll('.recruit-profile-section'),target=sections[sections.length-1];if(target)target.insertAdjacentHTML('beforebegin',recruitStaffHtml(r));else body.insertAdjacentHTML('beforeend',recruitStaffHtml(r))}
 function openCandidateMarket(role){ensure();const current=state.staff[role],contract=state.staffContracts?.[role]||{},candidates=state.staffMarket?.[role]||[],body=document.getElementById('modalBody');if(!body)return;const key=role,title=role==='oc'?'Replace Offensive Coordinator':'Replace Defensive Coordinator';body.innerHTML=`<span class="eyebrow">COACHING SEARCH · BUILD 189</span><h2>${title}</h2><p class="muted">Coordinator ratings matter, but so do recruiting territory, position development, scheme comfort, loyalty and ambition. Hiring no longer automatically changes your offensive or defensive scheme.</p><article class="current-coach-modal"><b>Current: ${esc(current.name)}</b><span>${esc(current.role)} · ${Math.round(Number(contract.salary||0)/1000)}k/yr</span>${profileHtml(current,key)}</article><div class="staff-candidate-popup">${candidates.map(c=>{decorateCoach(c,c.role,{scheme:c.scheme});const cost=(window.SDF_V11_TEST?.staffBuyout?window.SDF_V11_TEST.staffBuyout(role):0)+Number(c.signingBonus||0),p=c.staffProfileV189,currentScheme=role==='oc'?state.offense:state.defense,fit=String(p.schemeSpecialty)===String(currentScheme)?'A':'C';return`<article class="staff-candidate-card"><div><span class="eyebrow">${esc(p.schemeSpecialty)} · CURRENT FIT ${fit}</span><h3>${esc(c.name)}</h3><span class="sub">${c.years}-year contract · ${esc(candidateSpecialtyLabel(c))}</span></div><div class="coach-ratings"><div><small>Recruit</small><b>${c.recruiting}</b></div><div><small>Develop</small><b>${c.development}</b></div><div><small>Game</small><b>${c.game}</b></div></div>${profileHtml(c,key)}<div class="cost-line"><small>Annual salary</small><b>$${Math.round(c.salary/1000)}k</b></div><div class="cost-line total"><small>Total due today</small><b>$${Math.round(cost/1000)}k</b></div><button class="btn primary full" onclick="hireStaffCandidate('${role}','${c.id}')" ${state.budget<cost?'disabled':''}>Hire ${esc(c.name)}</button></article>`}).join('')}</div>`;document.getElementById('modal')?.classList.remove('hidden')}
-function hireCandidate(role,id){ensure();const c=state.staffMarket?.[role]?.find(x=>x.id===id);if(!c)return;const buyout=window.SDF_V11_TEST?.staffBuyout?window.SDF_V11_TEST.staffBuyout(role):0,cost=buyout+Number(c.signingBonus||0);if(state.budget<cost)return alert(`You need $${Math.round(cost/1000)}k in program funds.`);if(!confirm(`Hire ${c.name} for $${Math.round(c.salary/1000)}k per year? Your current ${role==='oc'?'offensive':'defensive'} scheme will stay ${role==='oc'?state.offense:state.defense}.`))return;state.budget-=cost;state.staff[role]=hireableCoach(c,role);state.staffContracts[role]={salary:c.salary,years:c.years,buyoutRate:.2};state.staffMarket[role]=[];state.news?.push(`${c.name} hired as ${c.role}. Staff specialties are now active; the existing scheme was retained.`);window.renderAll?.();window.SDF_RELEASE_TEST?.saveNow?.('Staff hired',false,false)}
+function hireCandidate(role,id){ensure();const c=state.staffMarket?.[role]?.find(x=>x.id===id);if(!c)return;const buyout=window.SDF_V11_TEST?.staffBuyout?window.SDF_V11_TEST.staffBuyout(role):0,cost=buyout+Number(c.signingBonus||0);if(state.budget<cost)return alert(`You need $${Math.round(cost/1000)}k in Athletics Budget.`);if(!confirm(`Hire ${c.name} for $${Math.round(c.salary/1000)}k per year? Hiring costs come from Athletics Budget; your current ${role==='oc'?'offensive':'defensive'} scheme will stay ${role==='oc'?state.offense:state.defense}.`))return;state.budget-=cost;state.staff[role]=hireableCoach(c,role);state.staffContracts[role]={salary:c.salary,years:c.years,buyoutRate:.2};state.staffMarket[role]=[];state.news?.push(`${c.name} hired as ${c.role}. Staff specialties are now active; the existing scheme was retained.`);window.renderAll?.();window.SDF_RELEASE_TEST?.saveNow?.('Staff hired',false,false)}
 function wrapPortalContact(){const base=window.portalContact;if(!base||base._v189)return;const wrapped=function(id,type){const p=(state.portal||[]).find(x=>x.id===id);if(!p)return base.apply(this,arguments);const before=Number(p.portalInterest||0),out=base.apply(this,arguments),after=Number(p.portalInterest||0),gain=Math.max(0,after-before);if(gain>0){const mult=recruitingMultiplier(portalProxy(p));const extra=Math.max(0,Math.round(gain*(mult-1)));if(extra){p.portalInterest=clip(Number(p.portalInterest||0)+extra,0,100);p.lastStaffPortalBonusV189=extra}}return out};wrapped._v189=true;window.portalContact=wrapped}
 function wrapRecruitModals(){for(const name of ['openRecruit','openRecruitQuickMenu']){const base=window[name];if(!base||base._v189)continue;const wrapped=function(id,...args){const out=base.apply(this,[id,...args]);enhanceRecruitModal(id);return out};wrapped._v189=true;window[name]=wrapped}}
 const baseRenderAll=window.renderAll,baseBeginYear=window.beginYear;
@@ -6115,14 +6319,14 @@ function overrideBy(s,id){return s?.teamIdentityOverrides?.[String(id)]||s?.team
 function resolvedTeam(s,id){
  id=Number(id);const baseSchool=BASE_SCHOOLS[id]||schools.find(x=>Number(x.id)===id)||{},w=worldBy(s,id)||{},o=overrideBy(s,id)||{},brand=TEAM_BRANDING?.[id]||BASE_BRANDS[id]||{};
  const user=Number(s?.school?.id)===id?s.school:null;
- return{...baseSchool,id,name:o.name??user?.name??w.name??baseSchool.name??`Program ${id}`,abbr:o.abbr??brand.abbr??'',city:o.city??user?.city??baseSchool.city??'',state:o.state??user?.state??baseSchool.state??'',region:user?.region??w.region??baseSchool.region??'',lat:n(user?.lat??w.lat??baseSchool.lat,0),lon:n(user?.lon??w.lon??baseSchool.lon,0),pipelines:Array.isArray(user?.pipelines)?[...user.pipelines]:Array.isArray(w.pipelines)?[...w.pipelines]:Array.isArray(baseSchool.pipelines)?[...baseSchool.pipelines]:[],conference:o.conference??user?.conference??w.conference??baseSchool.conference??'Independents',prestige:n(o.prestige,user?.prestige??w.prestige??baseSchool.prestige??50),recent:n(o.recent,user?.recent??w.recent??baseSchool.recent??50),facilities:n(o.facilities,user?.facilities??w.facilities??baseSchool.facilities??50),pro:n(o.pro,user?.pro??w.pro??baseSchool.pro??50),nil:n(o.nil,user?.nil??baseSchool.nil??50),academics:n(o.academics,user?.academics??baseSchool.academics??50),expectation:n(user?.expectation??w.expectation??baseSchool.expectation,6),hours:n(user?.hours??w.hours??baseSchool.hours,500),tag:user?.tag??w.tag??baseSchool.tag??'',primary:o.primary??brand.primary??'#2563eb',secondary:o.secondary??brand.secondary??'#22d3ee',accent:o.accent??brand.accent??'#ffffff',logo:o.logoData??brand.logo??`assets/logos/team-${id}.svg`,stadium:{name:o.stadiumName??(user?s?.stadium?.name:null)??'Memorial Stadium',capacity:n(o.stadiumCapacity,(user?s?.stadium?.capacity:null)??55000)}}
+ return{...baseSchool,id,name:o.name??user?.name??w.name??baseSchool.name??`Program ${id}`,abbr:o.abbr??brand.abbr??'',city:o.city??user?.city??baseSchool.city??'',state:o.state??user?.state??baseSchool.state??'',region:user?.region??w.region??baseSchool.region??'',lat:n(user?.lat??w.lat??baseSchool.lat,0),lon:n(user?.lon??w.lon??baseSchool.lon,0),pipelines:Array.isArray(o.pipelines)?[...o.pipelines]:Array.isArray(user?.pipelines)?[...user.pipelines]:Array.isArray(w.pipelines)?[...w.pipelines]:Array.isArray(baseSchool.pipelines)?[...baseSchool.pipelines]:[],conference:o.conference??user?.conference??w.conference??baseSchool.conference??'Independents',prestige:n(o.prestige,user?.prestige??w.prestige??baseSchool.prestige??50),recent:n(o.recent,user?.recent??w.recent??baseSchool.recent??50),facilities:n(o.facilities,user?.facilities??w.facilities??baseSchool.facilities??50),pro:n(o.pro,user?.pro??w.pro??baseSchool.pro??50),nil:n(o.nil,user?.nil??baseSchool.nil??50),academics:n(o.academics,user?.academics??baseSchool.academics??50),expectation:n(o.expectation,user?.expectation??w.expectation??baseSchool.expectation,6),offense:o.offense??user?.offense??w.offense??'Spread',defense:o.defense??user?.defense??w.defense??'4-2-5',hours:n(user?.hours??w.hours??baseSchool.hours,500),tag:user?.tag??w.tag??baseSchool.tag??'',primary:o.primary??brand.primary??'#2563eb',secondary:o.secondary??brand.secondary??'#22d3ee',accent:o.accent??brand.accent??'#ffffff',logo:o.logoData??brand.logo??`assets/logos/team-${id}.svg`,stadium:{name:o.stadiumName??(user?s?.stadium?.name:null)??'Memorial Stadium',capacity:n(o.stadiumCapacity,(user?s?.stadium?.capacity:null)??55000)}}
 }
 function applyIdentityOverrides(s=state){
  resetGlobalIdentity();
  for(const w of s?.world||[]){const school=schools.find(x=>Number(x.id)===Number(w.id));if(school&&w.conference)school.conference=w.conference}
  if(s?.school){const school=schools.find(x=>Number(x.id)===Number(s.school.id));if(school&&s.school.conference)school.conference=s.school.conference}
- for(const school of schools){const id=Number(school.id),o=overrideBy(s,id);if(!o)continue;for(const k of ['name','city','state','conference','prestige','recent','facilities','pro','nil','academics'])if(o[k]!=null)school[k]=o[k];const b=TEAM_BRANDING[id]||(TEAM_BRANDING[id]={});if(o.primary)b.primary=o.primary;if(o.secondary)b.secondary=o.secondary;if(o.accent)b.accent=o.accent;if(o.abbr)b.abbr=o.abbr;if(o.logoData)b.logo=o.logoData}
- if(s?.school){const o=overrideBy(s,s.school.id);if(o){for(const k of ['name','city','state','conference','prestige','recent','facilities','pro','nil','academics'])if(o[k]!=null)s.school[k]=o[k];if(o.stadiumName||o.stadiumCapacity){s.stadium??={};if(o.stadiumName)s.stadium.name=o.stadiumName;if(o.stadiumCapacity)s.stadium.capacity=o.stadiumCapacity}}}
+ for(const school of schools){const id=Number(school.id),o=overrideBy(s,id);if(!o)continue;for(const k of ['name','city','state','conference','prestige','recent','facilities','pro','nil','academics','expectation','offense','defense'])if(o[k]!=null)school[k]=o[k];if(Array.isArray(o.pipelines))school.pipelines=[...o.pipelines];const w=worldBy(s,id);if(w){for(const k of ['expectation','offense','defense'])if(o[k]!=null)w[k]=o[k];if(Array.isArray(o.pipelines))w.pipelines=[...o.pipelines]}const b=TEAM_BRANDING[id]||(TEAM_BRANDING[id]={});if(o.primary)b.primary=o.primary;if(o.secondary)b.secondary=o.secondary;if(o.accent)b.accent=o.accent;if(o.abbr)b.abbr=o.abbr;if(o.logoData)b.logo=o.logoData}
+ if(s?.school){const o=overrideBy(s,s.school.id);if(o){for(const k of ['name','city','state','conference','prestige','recent','facilities','pro','nil','academics','expectation'])if(o[k]!=null)s.school[k]=o[k];if(Array.isArray(o.pipelines))s.school.pipelines=[...o.pipelines];if(o.offense)s.offense=o.offense;if(o.defense)s.defense=o.defense;if(o.stadiumName||o.stadiumCapacity){s.stadium??={};if(o.stadiumName)s.stadium.name=o.stadiumName;if(o.stadiumCapacity)s.stadium.capacity=o.stadiumCapacity}}}
 }
 function syncTeamRows(s,id,values){
  id=Number(id);const w=worldBy(s,id);if(w)Object.assign(w,values);if(Number(s?.school?.id)===id)Object.assign(s.school,values);
@@ -6492,7 +6696,8 @@ const TRACKS={
 let settings={enabled:true,volume:14};
 try{const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}');if(typeof saved.enabled==='boolean')settings.enabled=saved.enabled;if(Number.isFinite(Number(saved.volume)))settings.volume=Math.max(0,Math.min(30,Number(saved.volume)))}catch{}
 const player=new Audio();player.loop=false;player.preload='metadata';player.setAttribute('playsinline','');
-let currentKey=null,unlocked=false,fadeToken=0,trackToken=0,cueReady=false,duckTimer=null,duckFactor=1;
+let currentKey=null,unlocked=false,fadeToken=0,trackToken=0,cueReady=false,duckTimer=null,duckFactor=1,resumeTimer=null;
+const suspendReasons=new Set();
 const TRACK_START_SECONDS=5;
 // Each approved track has its auditioned cue. The unchanged menu keeps its
 // five-second entry; new live tracks do not inherit the old 15.5-second skip.
@@ -6516,8 +6721,28 @@ function fadeTo(target,duration=240,done){
  const token=++fadeToken,start=Number(player.volume||0),begin=performance.now(),end=Math.max(0,Math.min(1,target));
  const step=now=>{if(token!==fadeToken)return;const p=Math.max(0,Math.min(1,(now-begin)/Math.max(1,duration)));player.volume=Math.max(0,Math.min(1,start+(end-start)*p));if(p<1)requestAnimationFrame(step);else done?.()};requestAnimationFrame(step)
 }
-function canPlay(){return unlocked&&settings.enabled&&document.visibilityState!=='hidden'}
+function canPlay(){return unlocked&&settings.enabled&&document.visibilityState!=='hidden'&&!suspendReasons.size}
 function pausePlayback(){++fadeToken;player.pause()}
+function suspend(reason='external'){
+ clearTimeout(resumeTimer);resumeTimer=null;
+ suspendReasons.add(String(reason||'external'));
+ player.muted=true;
+ pausePlayback();
+}
+function resume(reason='external'){
+ suspendReasons.delete(String(reason||'external'));
+ clearTimeout(resumeTimer);resumeTimer=null;
+ if(!suspendReasons.size&&unlocked&&document.visibilityState!=='hidden'){
+  // Native rewarded ads may briefly return focus between consecutive screens.
+  // Keep the WebView audio muted until the full-screen transition settles.
+  resumeTimer=setTimeout(()=>{
+   resumeTimer=null;
+   if(suspendReasons.size||document.visibilityState==='hidden')return;
+   player.muted=false;
+   sync(true);
+  },550);
+ }
+}
 function resumePlayer(immediate=false,token=trackToken){
  if(!canPlay()||!cueReady||player.readyState<1)return;
  player.play().then(()=>{
@@ -6547,7 +6772,7 @@ function sync(immediate=false){
  const enabled=!!settings.enabled;if(!enabled||document.visibilityState==='hidden'){pausePlayback();return}
  startTrack(desiredTrack(),immediate)
 }
-function unlock(){if(unlocked)return;unlocked=true;sync(true)}
+function unlock(){if(unlocked)return;unlocked=true;if(!suspendReasons.size)player.muted=false;sync(true)}
 function duck(ms=1100){
  if(!settings.enabled||player.paused)return;duckFactor=.38;fadeTo(baseVolume(),80);clearTimeout(duckTimer);duckTimer=setTimeout(()=>{duckFactor=1;fadeTo(baseVolume(),320)},Math.max(250,Number(ms)||1100))
 }
@@ -6559,15 +6784,19 @@ function wireControls(){
 wireControls();
 document.addEventListener('pointerdown',unlock,{once:true,capture:true});document.addEventListener('keydown',unlock,{once:true,capture:true});
 document.addEventListener('click',()=>setTimeout(()=>sync(false),70),true);document.addEventListener('change',()=>setTimeout(()=>sync(false),40),true);
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')pausePlayback();else if(unlocked)sync(true)});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')suspend('visibility');else{resume('visibility');if(unlocked)sync(true)}});
+window.addEventListener?.('blur',()=>suspend('window-blur'));
+window.addEventListener?.('focus',()=>resume('window-blur'));
+window.addEventListener?.('pagehide',()=>suspend('pagehide'));
+window.addEventListener?.('pageshow',()=>resume('pagehide'));
 setInterval(()=>{if(unlocked)sync(false)},900);
-window.SDF_MUSIC={sync,duck,tracks:TRACKS,getState:()=>({enabled:settings.enabled,volume:settings.volume,currentKey,desired:desiredTrack(),playing:!player.paused})};
+window.SDF_MUSIC={sync,duck,suspend,resume,tracks:TRACKS,getState:()=>({enabled:settings.enabled,volume:settings.volume,currentKey,desired:desiredTrack(),playing:!player.paused,suspended:[...suspendReasons]})};
 })();
 
 (()=>{
 'use strict';
-// Build 217: guided offseason flow. Every major offseason stop is surfaced before
-// the transfer portal, but none of the optional coach decisions are mandatory.
+// Build 217: guided offseason flow. Optional development and staff stops come
+// before the transfer portal; starter battles follow portal close.
 // A coach can make choices, close the screen and press Advance to let the staff
 // handle the step automatically, or use the Let Staff Handle control directly.
 const VERSION='27.4.16',BUILD=217;
@@ -6579,7 +6808,6 @@ const baseSetRecruitingMode=window.setRecruitingMode;
 let enteringOffseason=false;
 const PREP=[
  {key:'spring',label:'Spring Practice',desc:'Choose a team focus, or let the staff choose one for you.'},
- {key:'battles',label:'Position Battles',desc:'Set the depth chart yourself, or let the staff choose the starters.'},
  {key:'progression',label:'Player Development',desc:'Assign optional individual focuses, or leave development to your staff.'},
  {key:'staff',label:'Coaching Carousel',desc:'Handle staff and job decisions yourself, or let the AI resolve them.'},
  {key:'draft',label:'Pro Draft',desc:'Review where your departing players were selected.'}
@@ -6590,8 +6818,10 @@ function ensureFlow(){
  if(!state?.school)return null;
  state.offseasonFlow217??={year:Number(state.year||1),stage:'PREP',presented:{},autoHandled:{}};
  const f=state.offseasonFlow217;
- if(Number(f.year)!==Number(state.year)){f.year=Number(state.year||1);f.stage='PREP';f.presented={};f.autoHandled={}}
+ if(Number(f.year)!==Number(state.year)){f.year=Number(state.year||1);f.stage='PREP';f.presented={};f.autoHandled={};f.portalClosed=false;f.postPortalBattleComplete=false;f.postPortalDepthSet=false}
  f.presented??={};f.autoHandled??={};
+ f.portalClosed??=false;f.postPortalBattleComplete??=false;
+ f.postPortalDepthSet??=false;
  if(state.phase==='PORTAL'&&!missing().length&&f.stage==='PREP')f.stage='PORTAL_READY';
  return f
 }
@@ -6688,6 +6918,7 @@ function runTask(key){
 }
 function openPortal(){
  const f=ensureFlow(),left=missing();if(state.phase!=='PORTAL')return false;
+ if(f?.portalClosed){if(!f.postPortalBattleComplete)window.SDF_POST_PORTAL_V269?.openBattles?.();return false}
  if(left.length){
   popup('One quick offseason stop first',`${left[0].label} is next. You do not have to make any choices — use Let Staff Handle or press Advance after viewing it.`);
   return presentStep(left[0].key)
@@ -6700,6 +6931,8 @@ function openPortal(){
 }
 function runNext(){
  const f=ensureFlow();if(state.phase!=='PORTAL')return baseAdvance?.apply(window,arguments);
+ if(f.portalClosed&&!f.postPortalBattleComplete){window.SDF_POST_PORTAL_V269?.openBattles?.();return true}
+ if(f.portalClosed&&f.postPortalBattleComplete)return baseAdvance?.apply(window,arguments);
  const n=nextStep();
  if(n){
   if(f.presented[n.key]){autoResolve(n.key);const after=nextStep();if(after)return presentStep(after.key);f.stage='PORTAL_READY';renderGuide();return true}
@@ -6714,24 +6947,25 @@ function renderGuide(){
  if(host){
   const cards=PREP.map((x,i)=>{const done=!!t[x.key],auto=!!f.autoHandled[x.key],seen=!!f.presented[x.key],active=!done&&n?.key===x.key;return `<article class="checklist-card ${done?'done':active?'attention':''}"><span class="check-icon">${done?'✓':i+1}</span><h4>${x.label}</h4><p>${x.desc}</p>${done?`<b>${auto?'Staff Handled':'Complete'}</b>`:active?`<button class="btn primary" onclick="SDF_V217_OFFSEASON.runTask('${x.key}')">${seen?'Return to':'View'} ${x.label}</button><span class="sub">Optional: make your choices or let the staff handle it.</span>`:'<span class="muted">Coming up next in the offseason flow.</span>'}</article>`}).join('');
   const ready=!n,portalOpen=f.stage==='PORTAL';
-  host.innerHTML=`<div class="section-head"><div><span class="eyebrow">OFFSEASON ROADMAP</span><h3>Offseason Checklist</h3><p class="muted">We will show each major offseason stop before the portal. Every decision is optional — make it yourself or let the AI staff handle it.</p></div></div>${cards}<article class="checklist-card ${ready?'attention':''}"><span class="check-icon">${portalOpen?'✓':'6'}</span><h4>Transfer Portal</h4><p>${portalOpen?`Portal Week ${Number(state.portalWeek||1)} of 4 is active.`:ready?'Your offseason review is complete. Open the transfer portal when ready.':'The portal comes after the guided offseason screens above.'}</p>${ready&&!portalOpen?'<button class="btn primary" onclick="SDF_V217_OFFSEASON.openPortal()">Open Transfer Portal</button>':''}</article>`
+  const portalClosed=!!f.portalClosed,postBattles=f.stage==='POST_PORTAL_BATTLES',battleDone=!!f.postPortalBattleComplete;
+  host.innerHTML=`<div class="section-head"><div><span class="eyebrow">OFFSEASON ROADMAP</span><h3>Offseason Checklist</h3><p class="muted">Review development and staff decisions, work the transfer portal, then confirm the best starters after the roster is complete.</p></div></div>${cards}<article class="checklist-card ${portalOpen?'attention':portalClosed||battleDone?'done':''}"><span class="check-icon">${portalClosed||battleDone?'✓':'5'}</span><h4>Transfer Portal</h4><p>${portalClosed||battleDone?'The transfer window is closed.':portalOpen?`Portal Week ${Number(state.portalWeek||1)} of 4 is active.`:ready?'Your offseason review is complete. Open the transfer portal when ready.':'The portal comes after the guided offseason screens above.'}</p>${ready&&!portalOpen&&!portalClosed?'<button class="btn primary" onclick="SDF_V217_OFFSEASON.openPortal()">Open Transfer Portal</button>':''}</article>${portalClosed||battleDone?`<article class="checklist-card ${battleDone?'done':'attention'}"><span class="check-icon">${battleDone?'✓':'6'}</span><h4>Position Battles</h4><p>${battleDone?'Your post-portal starters are confirmed.':`Portal closed. The depth chart is set to each position’s best eligible OVR; review close calls and choose a different starter if you prefer.`}</p>${postBattles&&!battleDone?'<button class="btn primary" onclick="SDF_POST_PORTAL_V269.openBattles()">Review Position Battles</button>':''}${battleDone?'<b>Complete</b>':''}</article>`:''}`
  }
- const label=n?(f.presented[n.key]?`Let Staff Handle ${n.label} →`:`View ${n.label} →`):f.stage==='PORTAL'?state.portalWeek>=4?`Begin Year ${Number(state.year)+1} →`:`Advance to Portal Week ${Number(state.portalWeek||1)+1}`:'Open Transfer Portal →';
- ['advanceWeekBtn','recruitAdvanceBtn','mobileAdvance'].forEach(id=>{const b=$217(id);if(b){b.disabled=false;b.textContent=id==='mobileAdvance'?(n?(f.presented[n.key]?'Staff Handle':'View '+n.label):f.stage==='PORTAL'?(state.portalWeek>=4?'Begin Next Year':'Advance Portal'):'Open Portal'):label}});
+ const label=n?(f.presented[n.key]?`Let Staff Handle ${n.label} →`:`View ${n.label} →`):f.portalClosed&&!f.postPortalBattleComplete?'Review Position Battles →':f.stage==='PORTAL'?state.portalWeek>=4?'Close Portal & Review Starters →':`Advance to Portal Week ${Number(state.portalWeek||1)+1}`:f.postPortalBattleComplete?`Begin Year ${Number(state.year)+1} →`:'Open Transfer Portal →';
+ ['advanceWeekBtn','recruitAdvanceBtn','mobileAdvance'].forEach(id=>{const b=$217(id);if(b){b.disabled=false;b.textContent=id==='mobileAdvance'?(n?(f.presented[n.key]?'Staff Handle':'View '+n.label):f.portalClosed&&!f.postPortalBattleComplete?'Review Starters':f.stage==='PORTAL'?(state.portalWeek>=4?'Close Portal':'Advance Portal'):f.postPortalBattleComplete?'Begin Next Year':'Open Portal'):label}});
  const mode=$217('transferPortalRecruitingBtn');if(mode){mode.disabled=false;mode.textContent=n?`Transfer Portal · ${missing().length} Stop${missing().length===1?'':'s'} First`:'Transfer Portal'};
- const portalAdvance=$217('portalAdvanceWeekBtn');if(portalAdvance)portalAdvance.disabled=f.stage!=='PORTAL'
+ const portalAdvance=$217('portalAdvanceWeekBtn');if(portalAdvance)portalAdvance.disabled=f.stage!=='PORTAL'||f.portalClosed
 }
 window.setRecruitingMode=function(mode,...args){
  if(mode==='portal'&&state?.phase==='PORTAL'){
   const n=nextStep();if(n&&!enteringOffseason){state.recruitingView='highschool';popup('Offseason first',`${n.label} is next. You can make choices or let the AI staff handle it.`);presentStep(n.key);return false}
-  const f=ensureFlow();if(f&&!n)f.stage='PORTAL'
+  const f=ensureFlow();if(f?.portalClosed&&!f.postPortalBattleComplete){popup('Portal closed','Position battles now show the best available players at each position. Confirm your starters before the next season.');window.SDF_POST_PORTAL_V269?.openBattles?.();return false}if(f&&!n&&f.stage==='PORTAL_READY')f.stage='PORTAL'
  }
  return typeof baseSetRecruitingMode==='function'?baseSetRecruitingMode.call(this,mode,...args):undefined
 };
 window.offseason=function(...args){
  enteringOffseason=true;let out;try{out=baseOffseason?.apply(this,args)}finally{enteringOffseason=false}
  if(state?.phase==='PORTAL'){
-  state.offseasonFlow217={year:Number(state.year||1),stage:'PREP',presented:{},autoHandled:{}};
+  state.offseasonFlow217={year:Number(state.year||1),stage:'PREP',presented:{},autoHandled:{},portalClosed:false,postPortalBattleComplete:false};
   state.recruitingView='highschool';if(typeof baseSetRecruitingMode==='function')baseSetRecruitingMode.call(window,'highschool');
   window.showTab?.('dashboard');renderGuide();setTimeout(()=>presentNext(),120);window.SDF_RELEASE_TEST?.saveNow?.('Guided offseason opened',false,true)
  }
@@ -6740,6 +6974,81 @@ window.offseason=function(...args){
 window.advanceWeek=function(...args){if(state?.phase==='PORTAL')return runNext(...args);return baseAdvance?.apply(this,args)};
 window.renderAll=function(...args){const out=baseRenderAll?.apply(this,args);renderGuide();return out};
 window.SDF_V217_OFFSEASON={VERSION,BUILD,PREP,missing,runTask,presentStep,presentNext,autoResolve,runNext,openPortal,renderGuide,ensureFlow};
+})();
+
+(()=>{
+'use strict';
+const VERSION='27.4.68',BUILD=269;
+const flow=window.SDF_V217_OFFSEASON;
+
+function autoSetBestDepth(){
+ if(!state?.school||!Array.isArray(state.roster))return false;
+ state.depthChart??={};
+ const positions=[...new Set([...Object.keys(state.depthChart),...state.roster.map(p=>p.pos).filter(Boolean)])];
+ for(const pos of positions){
+  const players=state.roster.filter(p=>p.pos===pos&&!p.injury&&!p.redshirt).sort((a,b)=>Number(b.ovr||0)-Number(a.ovr||0));
+  state.depthChart[pos]={slots:Array.from({length:3},(_,i)=>({playerId:players[i]?.id||'',snapShare:[70,25,5][i]}))};
+ }
+ state.realDepthChart??={};
+ const usedStarters=new Set(),roles=window.SDF_V11_TEST?.ROLE_DEFS||[];
+ for(const role of roles){
+  const players=state.roster.filter(p=>p.pos===role.pos&&!p.injury&&!p.redshirt).sort((a,b)=>Number(b.ovr||0)-Number(a.ovr||0));
+  const starter=players.find(p=>!usedStarters.has(p.id))||players[0]||null;
+  if(starter)usedStarters.add(starter.id);
+  const reserves=players.filter(p=>p.id!==starter?.id).slice(0,2);
+  state.realDepthChart[role.key]={slots:[starter,...reserves].map((p,i)=>({playerId:p?.id||'',snapShare:[70,25,5][i]}))};
+  while(state.realDepthChart[role.key].slots.length<3){const i=state.realDepthChart[role.key].slots.length;state.realDepthChart[role.key].slots.push({playerId:'',snapShare:[70,25,5][i]})}
+ }
+ state.roster.forEach(p=>p.starter=false);
+ if(roles.length){
+  window.SDF_V11_TEST?.ensureRealDepth?.();
+  const started=new Set();
+  for(const role of roles){
+   const slots=state.realDepthChart[role.key]?.slots||[];
+   const starter=slots.map(slot=>state.roster.find(p=>p.id===slot.playerId)).find(p=>p&&p.pos===role.pos&&!p.injury&&!p.redshirt&&!started.has(p.id));
+   if(starter){starter.starter=true;started.add(starter.id)}
+  }
+ }
+ else state.roster.forEach(p=>{p.starter=!!state.depthChart[p.pos]?.slots?.[0]&&state.depthChart[p.pos].slots[0].playerId===p.id});
+ state.postPortalDepthAutoYear=Number(state.year||1);
+ return true
+}
+
+function save(reason){try{window.SDF_RELEASE_TEST?.saveNow?.(reason,false,true)}catch{}}
+function openBattles(){
+ if(state?.phase!=='PORTAL'||!state.offseasonFlow217?.portalClosed||state.offseasonFlow217.postPortalBattleComplete)return false;
+ const f=state.offseasonFlow217;
+ if(!f.postPortalDepthSet){autoSetBestDepth();f.postPortalDepthSet=true;f.stage='POST_PORTAL_BATTLES';save('Best eligible depth set after transfer portal')}
+ flow?.renderGuide?.();
+ const button=document.querySelector('[data-offseason-action="battles"]');
+ if(!button){window.toast?.('The transfer portal is closed. Open Position Battles from the offseason hub to review starters.');return false}
+ button.click();
+ return true
+}
+
+const oldFinishOffseason=window.finishOffseason;
+window.finishOffseason=function(...args){
+ if(state?.phase==='PORTAL'&&Number(state.portalWeek||0)>=4&&!state.offseasonFlow217?.postPortalBattleComplete){
+  const f=state.offseasonFlow217??={year:Number(state.year||1),stage:'PORTAL',presented:{},autoHandled:{}};
+  f.portalClosed=true;f.stage='POST_PORTAL_BATTLES';state.offseasonTasks??={};state.offseasonTasks.battles=false;
+  openBattles();flow?.renderGuide?.();
+  return false
+ }
+ return oldFinishOffseason?.apply(this,args)
+};
+
+const oldFinishBattles=window.finishBattles;
+window.finishBattles=function(...args){
+ const isPostPortal=!!state?.offseasonFlow217?.portalClosed&&!state.offseasonFlow217.postPortalBattleComplete;
+ const result=oldFinishBattles?.apply(this,args);
+ if(isPostPortal&&state.offseasonTasks?.battles){
+  const f=state.offseasonFlow217;f.postPortalBattleComplete=true;f.stage='POST_PORTAL_DONE';save('Post-portal position battles confirmed');flow?.renderGuide?.();
+  window.finishOffseason?.()
+ }
+ return result
+};
+
+window.SDF_POST_PORTAL_V269={VERSION,BUILD,autoSetBestDepth,openBattles};
 })();
 
 (()=>{
@@ -6782,7 +7091,7 @@ function renderCommandCenter(){
  const opp=next?teamBrand(next.oppId):null;
  host.innerHTML=`<div class="ui-program-hero" style="--ui-team-primary:${brand.primary||'var(--team-primary)'};--ui-team-secondary:${brand.secondary||'var(--team-secondary)'}"><div class="ui-program-hero-team"><img src="${brand.logo||'icon-192.png'}" alt=""><div><span class="eyebrow">${rank?`#${rank} · `:''}${esc(window.SDF_CONFERENCES?.name(state.school,state)||state.school.conference||'COLLEGE FOOTBALL')}</span><h2>${esc(state.school.name)}</h2><p>${state.record?.w||0}-${state.record?.l||0} · Year ${state.year} · ${phase==='REGULAR'?`Week ${state.week}`:esc(phase)}</p></div></div><div class="ui-program-hero-ratings"><span><small>OVR</small><b>${t.overall??'—'}</b></span><span><small>OFF</small><b>${t.offense??'—'}</b></span><span><small>DEF</small><b>${t.defense??'—'}</b></span></div></div>
  <div class="ui-next-game-stage ${next?'':'complete'}">${next?.bye?window.SDF_CALENDAR243.byeHtml():next?`<div class="ui-stage-heading"><span>NEXT UP · WEEK ${next.week}</span><span>${next.home?'HOME':'AWAY'}${next.conference?' · CONFERENCE':''}</span></div><div class="ui-stage-side"><img src="${brand.logo||'icon-192.png'}" alt=""><b>${esc(state.school.name)}</b><span>${state.record?.w||0}–${state.record?.l||0} this season</span></div><div class="ui-stage-center"><strong>VS</strong><span>${esc(next.weather||'Clear')}</span></div><div class="ui-stage-side"><img src="${opp?.logo||'icon-192.png'}" alt=""><b>${esc(next.opponent)}</b><span>Opponent power ${next.oppPower}</span></div><div class="ui-stage-actions"><button class="btn primary" type="button" data-ui-tab="gameday">Go to Game Day <span aria-hidden="true">→</span></button><button class="btn neutral" type="button" data-ui-tab="gameplan">Prepare</button></div>`:`<div class="ui-stage-complete"><span aria-hidden="true">🏆</span><div><small>CURRENT PHASE</small><b>${esc(phase.replaceAll('_',' '))}</b><p>Review the results and prepare for what comes next.</p></div><button class="btn primary" data-ui-tab="postseason">Season Hub</button></div>`}</div>
- <div class="ui-command-grid">${commandTile({icon:'★',kicker:'RECRUITING',title:`${state.weeklyHours||0} hours available`,meta:`${board} on board · ${commits} commits`,tab:'recruiting',attention:Number(state.weeklyHours)>0})}${commandTile({icon:'☷',kicker:'ROSTER',title:`${t.overall??'—'} overall`,meta:injured?`${injured} injured · check depth`:`${state.roster?.length||0} players · healthy`,tab:'roster',attention:injured>0})}${commandTile({icon:'⌁',kicker:'GAME PLAN',title:state.offense||'Offense',meta:`${state.defense||'Defense'} defense · ${state.weeklyPractice||'Balanced'} practice`,tab:'gameplan',attention:!!next})}${commandTile({icon:'⌃',kicker:'COACH',title:`Level ${state.headCoach?.level||1}`,meta:skillPoints?`${skillPoints} skill point${skillPoints===1?'':'s'} available`:`${esc(state.coachCareer?.name||'Head Coach')}`,tab:'coach',attention:skillPoints>0})}${commandTile({icon:'🏟',kicker:'PROGRAM',title:`Prestige ${state.school.prestige??'—'}`,meta:`Facilities ${state.school.facilities??'—'} · ${fmtMoney(state.budget)} funds`,tab:'program'})}${commandTile({icon:'🏆',kicker:'NATIONAL',title:rank?`Ranked #${rank}`:'Unranked',meta:`${esc(window.SDF_CONFERENCES?.name(state.school,state)||state.school.conference||'')} · view rankings & playoff`,tab:'rankings'})}</div>`;
+ <div class="ui-command-grid">${commandTile({icon:'★',kicker:'RECRUITING',title:`${state.weeklyHours||0} hours available`,meta:`${board} on board · ${commits} commits`,tab:'recruiting',attention:Number(state.weeklyHours)>0})}${commandTile({icon:'☷',kicker:'ROSTER',title:`${t.overall??'—'} overall`,meta:injured?`${injured} injured · check depth`:`${state.roster?.length||0} players · healthy`,tab:'roster',attention:injured>0})}${commandTile({icon:'⌁',kicker:'GAME PLAN',title:state.offense||'Offense',meta:`${state.defense||'Defense'} defense · ${state.weeklyPractice||'Balanced'} practice`,tab:'gameplan',attention:!!next})}${commandTile({icon:'⌃',kicker:'COACH',title:`Level ${state.headCoach?.level||1}`,meta:skillPoints?`${skillPoints} skill point${skillPoints===1?'':'s'} available`:`${esc(state.coachCareer?.name||'Head Coach')}`,tab:'coach',attention:skillPoints>0})}${commandTile({icon:'🏟',kicker:'PROGRAM',title:`Prestige ${state.school.prestige??'—'}`,meta:`Facilities ${state.school.facilities??'—'} · ${fmtMoney(state.budget)} Athletics Budget`,tab:'program'})}${commandTile({icon:'🏆',kicker:'NATIONAL',title:rank?`Ranked #${rank}`:'Unranked',meta:`${esc(window.SDF_CONFERENCES?.name(state.school,state)||state.school.conference||'')} · view rankings & playoff`,tab:'rankings'})}</div>`;
  host.querySelectorAll('[data-ui-tab]').forEach(btn=>btn.addEventListener('click',()=>window.showTab?.(btn.dataset.uiTab)));
 }
 function setupDashboardPanels(){
@@ -6993,7 +7302,7 @@ let uiFrame=0,wasBuilding=document.body.classList.contains('app-building');
 function setStartupMode(){
  const startup=!state?.school&&!$('schoolScreen')?.classList.contains('hidden');
  document.body.classList.toggle('ui221-startup-mode',!!startup);
- if(startup){setupStartupMenu();setTimeout(()=>window.SDF_SCENARIOS?.menu(),600)}
+ if(startup)setupStartupMenu();
 }
 function setupStartupMenu(){
  const screen=$('schoolScreen'),panel=screen?.querySelector('.dynasty-start-panel');if(!screen||!panel)return;
@@ -7075,6 +7384,7 @@ function commandMarkup(){
    <p id="recruitCommandMetaV223">Set the board, win priority battles, and protect your weekly hours.</p>
   </div>
   <div id="recruitCommandStatsV223" class="recruit-command-stats-v223"></div>
+  <div id="recruitBalancesV252" class="recruit-balances-v252" aria-label="Recruiting resources"></div>
   <div id="recruitCommandActionsV223" class="recruit-command-actions-v223"></div>
  </section>`;
 }
@@ -7088,7 +7398,7 @@ function intelMarkup(){
 
 function boardToolsMarkup(){
  return`<div id="recruitBoardToolsV223" class="recruit-board-tools-v223">
-  <div class="recruit-board-title-v223"><div><span class="eyebrow">PROSPECT BOARD</span><h3>Find Your Targets</h3></div><button id="recruitFilterToggleV223" class="btn neutral" type="button" aria-expanded="false">Filters</button></div>
+  <div class="recruit-board-title-v223"><div><span class="eyebrow">PROSPECT BOARD</span><h3>Find Your Targets</h3></div><button id="recruitFilterToggleV223" class="btn neutral" type="button" aria-expanded="true">Hide Filters</button></div>
   <div class="recruit-quick-filters-v223" role="group" aria-label="Prospect shortcuts">
    <button type="button" data-recruit-status="BOARD">My Board</button>
    <button type="button" data-recruit-status="RECRUITABLE">Recruitable</button>
@@ -7099,8 +7409,9 @@ function boardToolsMarkup(){
 }
 
 function updateCommand(){
- const c=counts(),stats=$('recruitCommandStatsV223'),meta=$('recruitCommandMetaV223');
+ const c=counts(),stats=$('recruitCommandStatsV223'),meta=$('recruitCommandMetaV223'),balances=$('recruitBalancesV252'),cash=value=>'$'+Math.round(Number(value||0)/1000)+'k';
  if(stats)stats.innerHTML=`<div><small>HOURS</small><b>${Number(state?.weeklyHours||0)}</b></div><div><small>BOARD</small><b>${c.board}<em>/35</em></b></div><div><small>COMMITS</small><b>${c.commits}<em>/25</em></b></div><div><small>OPEN</small><b>${c.open}</b></div>`;
+ if(balances)balances.innerHTML=`<div><small>RECRUIT NIL POOL</small><b>${cash(state?.nilBudget)}</b><span>Player offers</span></div><div><small>ATHLETICS BUDGET</small><b>${cash(state?.budget)}</b><span>Facilities &amp; staff</span></div><button type="button" onclick="SDF_HELP?.openTab('resources')">What pays for what?</button>`;
  if(meta)meta.textContent=`Year ${state?.year||1} · Week ${state?.week||1} · ${state?.recruitingPhase||'National recruiting'} · ${Number(state?.scholarships||0)} scholarships left`;
  const current=$('statusFilter')?.value||'AVAILABLE';
  document.querySelectorAll('[data-recruit-status]').forEach(button=>button.classList.toggle('active',button.dataset.recruitStatus===current));
@@ -7110,7 +7421,7 @@ function setStatus(status){
  const select=$('statusFilter');if(!select)return;
  // Shortcut buttons are destinations. Clear stale filters so My Board cannot
  // appear empty just because an old position, star, region or search remains.
- for(const id of ['positionFilter','starFilter','recruitRegionFilter'])if($(id))$(id).value='ALL';
+ for(const id of ['positionFilter','starFilter','recruitRegionFilter','interestFilter','scoutFilter'])if($(id))$(id).value='ALL';
  if($('recruitSearch'))$('recruitSearch').value='';
  select.value=status;
  window.SDF_RECRUIT_UI??={page:1};window.SDF_RECRUIT_UI.page=1;
@@ -7147,7 +7458,20 @@ function ensureShell(){
  }
  if(!$('recruitFilterToggleV223'))return;
  const toggle=$('recruitFilterToggleV223');
- if(!toggle.dataset.bound){toggle.dataset.bound='1';toggle.addEventListener('click',()=>{const open=board.classList.toggle('recruit-filters-open-v223');toggle.setAttribute('aria-expanded',String(open));toggle.textContent=open?'Hide Filters':'Filters'})}
+ // Show the full filter set the first time the board is prepared. Remember
+ // the user's toggle choice on the board so normal recruiting rerenders do
+ // not reopen filters after they hide them.
+ if(board.dataset.recruitFiltersInitialized!=='1'){
+  board.classList.add('recruit-filters-open-v223');
+  board.dataset.recruitFiltersInitialized='1';
+ }
+ const syncFilterToggle=()=>{
+  const open=board.classList.contains('recruit-filters-open-v223');
+  toggle.setAttribute('aria-expanded',String(open));
+  toggle.textContent=open?'Hide Filters':'Show Filters';
+ };
+ syncFilterToggle();
+ if(!toggle.dataset.bound){toggle.dataset.bound='1';toggle.addEventListener('click',()=>{board.classList.toggle('recruit-filters-open-v223');syncFilterToggle()})}
  for(const button of document.querySelectorAll('[data-recruit-status]'))if(!button.dataset.bound){button.dataset.bound='1';button.addEventListener('click',()=>setStatus(button.dataset.recruitStatus))}
  updateCommand();decorateCards();
 }
@@ -7802,8 +8126,9 @@ window.SDF_UI_V232={version:VERSION,build:BUILD,refresh,scheduleRefresh,makeResp
 (()=>{
 'use strict';
 const KEY='SDF_USAGE_V236',URL='https://fwnvwkffxazwsmaiqayj.supabase.co/functions/v1/usage-reporting';
-const EVENTS=new Set(['reporting_started','session','dynasty_started','game_completed','season_completed','first_recruit','practice_chosen','first_game','second_season','guide_started','guide_dismissed','guide_completed','shop_opened','preview_opened','checkout_started','checkout_canceled','checkout_failed','checkout_pending','purchase_confirmed','reward_shown','reward_earned','reward_failed','interstitial_shown','scenario_started','scenario_completed','scenario_ended','first_season_finished','first_game_under_5m','first_game_under_15m','first_game_over_15m']);
-const PRODUCTS=new Set(['commissioner_mode','remove_ads','player_editor','team_editor']);
+const EVENTS=new Set(['reporting_started','session','dynasty_started','game_completed','season_completed','first_recruit','practice_chosen','first_game','second_season','guide_started','guide_dismissed','guide_completed','shop_opened','preview_opened','checkout_started','checkout_canceled','checkout_failed','checkout_pending','purchase_confirmed','reward_shown','reward_impression','reward_earned','reward_failed','interstitial_shown','interstitial_impression','scenario_started','scenario_completed','scenario_ended','first_season_finished','first_game_under_5m','first_game_under_15m','first_game_over_15m']);
+const BUILD=(()=>{const match=String(document.getElementById('releaseLabel')?.textContent||'').match(/\bBuild\s+(\d+)\b/i);const value=Number(match?.[1]);return Number.isSafeInteger(value)&&value>0?value:null})();
+const REWARDED_AD_EVENTS=new Set(['reward_shown','reward_impression','reward_earned','reward_failed']);const INTERSTITIAL_AD_EVENTS=new Set(['interstitial_shown','interstitial_impression']);const AD_IMPRESSION_EVENTS=new Set(['reward_impression','interstitial_impression']);const REWARDED_PLACEMENTS=new Set(['reward_hours','reward_nil','reward_budget']);const PRODUCTS=new Set(['all_access_pass','commissioner_mode','remove_ads','player_editor','team_editor','scenario_impossible_rebuilds','scenario_championship_pressure','scenario_recruiting_nightmares','recruiting_boost','program_rescue','season_booster','supporter_rookie','supporter_all_american','supporter_legend']);
 let data;try{data=JSON.parse(localStorage.getItem(KEY)||'null')}catch{}
 if(!data||!Array.isArray(data.queue))data={consent:null,queue:[]};
 // Preserve earlier refusals; new/unanswered installations default to basic totals.
@@ -7819,12 +8144,13 @@ const uuid=crypto.randomUUID.bind(crypto);
 const native=()=>!!(window.Capacitor?.isNativePlatform?.()||window.Capacitor?.getPlatform?.()==='android');
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(data))}catch{}};
 const coarse=at=>new Date(Math.floor(new Date(at).getTime()/60000)*60000).toISOString();
-function record(event,product){
- if(data.basic!==true||!EVENTS.has(event))return;
+function record(event,product,placement){
+ const validPlacement=REWARDED_AD_EVENTS.has(event)&&REWARDED_PLACEMENTS.has(placement)||INTERSTITIAL_AD_EVENTS.has(event)&&placement==='season_end';
+ if(data.basic!==true||!EVENTS.has(event)||(placement!=null&&!validPlacement)||(placement==null&&AD_IMPRESSION_EVENTS.has(event)))return;
  const item={id:uuid(),event,at:new Date().toISOString()};
  // Permission is captured now: later opt-in never links earlier activity.
  if(data.consent===true){data.id ||= uuid();item.trackingId=data.id}else item.at=coarse(item.at);
- if(PRODUCTS.has(product))item.product=product;
+ if(PRODUCTS.has(product))item.product=product;if(placement!=null)item.placement=placement;
  data.queue.push(item);data.queue=data.queue.slice(-500);save();schedule();
 }
 function schedule(ms=1500){if(timer||data.basic!==true||!data.queue.length)return;timer=setTimeout(()=>{timer=null;flush()},ms)}
@@ -7834,7 +8160,8 @@ async function flush(){
  for(const item of data.queue){if(batch.length===40||item.trackingId!==trackingId)break;batch.push(item)}
  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),10000);activeRequest=controller;
  try{
-  const payload={action:'events',platform:native()?'android':'browser',build:240,qa:!native()&&location.hostname!=='saturdaydynasty.ctoolis.workers.dev',events:batch.map(({trackingId,...e})=>e)};
+  const payload={action:'events',platform:native()?'android':'browser',qa:!native()&&location.hostname!=='saturdaydynasty.ctoolis.workers.dev',events:batch.map(({trackingId,...e})=>e)};
+  if(BUILD!==null)payload.build=BUILD;
   if(trackingId)payload.device=trackingId;
   const response=await fetch(URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),signal:controller.signal,credentials:'omit',referrerPolicy:'no-referrer'});
   if(!response.ok)throw new Error('Usage delivery unavailable');
@@ -7844,6 +8171,7 @@ async function flush(){
  }catch{retry=Math.min(retry*2,300000)}finally{clearTimeout(timeout);activeRequest=null;busy=false;schedule(retry)}
 }
 function session(){const now=Date.now();if(data.basic===true&&now-lastSession>=1800000){lastSession=now;record('session')}}
+function finishedFirstGame(){const s=typeof state!=='undefined'?state:null;return !!s?.school&&(s.schedule||[]).some(g=>!!g?.result)}
 function begin(){if(data.basic&&!data.started){data.started=true;record('reporting_started')}session();save();schedule()}
 function choose(value){
  data.consent=value===true&&data.basic===true;
@@ -7859,13 +8187,13 @@ function renderConsent(){
  const settings=document.querySelector('#appSettingsModal .modal-body')||document.querySelector('#appSettingsModal .release-settings');
  if(settings&&!document.getElementById('usageSettingsV236')){
   const card=document.createElement('section');card.id='usageSettingsV236';card.className='settings-section';
-  card.innerHTML='<h3>Usage &amp; privacy</h3><label><input type="checkbox" id="usageBasicV236"> Share basic game totals</label><p>On by default for new players. Reports games, seasons, dynasties, feature use, ad displays and purchase outcomes without a persistent reporting ID. Previous reporting opt-outs are respected.</p><label><input type="checkbox" id="usageEnabledV236"> Allow ID-based usage tracking</label><p>Optional. Adds a random installation ID to future activity so we can measure unique and returning players. Saves, player names, account emails and payment details are not included.</p><p>Both choices can be changed here. Ad privacy choices are separate. <a href="usage-privacy.html" target="_blank" rel="noopener">Usage privacy details</a></p>';
+  card.innerHTML='<h3>Usage &amp; privacy</h3><label><input type="checkbox" id="usageBasicV236"> Share basic game totals</label><p>On by default for new players. Reports games, seasons, dynasties, feature use, ad presentations and native impression callbacks separately, plus purchase outcomes, without a persistent reporting ID. Previous reporting opt-outs are respected.</p><label><input type="checkbox" id="usageEnabledV236"> Allow ID-based usage tracking</label><p>Optional. Adds a random installation ID to future activity so we can measure unique and returning players. Saves, player names, account emails and payment details are not included.</p><p>Both choices can be changed here. Ad privacy choices are separate. <a href="usage-privacy.html" target="_blank" rel="noopener">Usage privacy details</a></p>';
   settings.append(card);document.getElementById('usageEnabledV236').onchange=e=>choose(e.target.checked);document.getElementById('usageBasicV236').onchange=e=>chooseBasic(e.target.checked);
  }
  const checkbox=document.getElementById('usageEnabledV236');if(checkbox){checkbox.checked=data.consent===true;checkbox.disabled=!data.basic}
  const basic=document.getElementById('usageBasicV236');if(basic)basic.checked=data.basic===true;
  const host=document.getElementById('gameCommandCenterV219')||document.querySelector('#schoolScreen .dynasty-start-actions')?.parentElement;let card=document.getElementById('usageConsentV236');
- if(data.consent!==null||!data.basic){card?.remove();return}
+ if(data.consent!==null||!data.basic||!finishedFirstGame()){card?.remove();return}
  if(host&&!card){card=document.createElement('section');card.id='usageConsentV236';card.className='journey-card';card.innerHTML='<div class="journey-heading"><div><small>HELP SHAPE THE GAME</small><h3>Help measure returning players?</h3><p>Basic game totals are reported without a persistent ID. Optionally allow a random installation ID to measure unique and returning players. You can turn either kind of reporting off in Settings.</p></div></div><div class="journey-actions"><button type="button" class="btn neutral" data-usage-no>Keep basic only</button><button type="button" class="btn primary" data-usage-yes>Allow ID tracking</button><a href="usage-privacy.html" target="_blank" rel="noopener">Details</a></div>';host.append(card);card.querySelector('[data-usage-no]').onclick=()=>choose(false);card.querySelector('[data-usage-yes]').onclick=()=>choose(true)}
 }
 // Baseline historical saves on first observation. Reloads and old results are not new games.
@@ -7880,7 +8208,7 @@ function observe(s){
  if(s.seasonDone&&!mark.seasonDone){mark.seasonDone=true;record('season_completed');changed=true}
  if(changed)window.SDF_RELEASE_TEST?.scheduleSave?.('Usage progress checkpoint',200,false);
 }
-window.SDF_USAGE={record,observe,choose,chooseBasic,flush,render:renderConsent,session,status:()=>({basic:data.basic,consent:data.consent,queued:data.queue.length})};
+window.SDF_USAGE={record,observe,choose,chooseBasic,flush,render:renderConsent,session,shouldPromptForIdentity:()=>data.consent===null&&data.basic===true&&finishedFirstGame(),status:()=>({basic:data.basic,consent:data.consent,queued:data.queue.length})};
 function init(){renderConsent();begin();window.addEventListener('online',()=>flush());document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){session();flush()}})}
 document.readyState==='loading'?document.addEventListener('DOMContentLoaded',init,{once:true}):init();
 })();
@@ -7891,21 +8219,22 @@ const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const current=()=>typeof state!=='undefined'&&state?.school?state:null;
 const KEY='SDF_DEVICE_DIAGNOSTICS_V236';
+const BUILD=(()=>{const match=String($('releaseLabel')?.textContent||'').match(/\bBuild\s+(\d+)\b/i);const value=Number(match?.[1]);return Number.isSafeInteger(value)&&value>0?value:null})();
 const EVENTS=new Set(['session','dynasty_started','first_recruit','practice_chosen','first_game','second_season','guide_started','guide_dismissed','guide_completed','shop_opened','preview_opened','checkout_started','checkout_canceled','checkout_failed','checkout_pending','purchase_confirmed','reward_shown','reward_earned','reward_failed']);
-const PRODUCTS=new Set(['commissioner_mode','remove_ads','player_editor','team_editor']);
+const PRODUCTS=new Set(['all_access_pass','commissioner_mode','remove_ads','player_editor','team_editor','scenario_impossible_rebuilds','scenario_championship_pressure','scenario_recruiting_nightmares','recruiting_boost','program_rescue','season_booster','supporter_rookie','supporter_all_american','supporter_legend']);
 let diagnostics;try{diagnostics=JSON.parse(localStorage.getItem(KEY)||'null')}catch{}
 if(!diagnostics||!Array.isArray(diagnostics.events))diagnostics={version:1,enabled:true,events:[]};
 diagnostics.events=diagnostics.events.slice(-400);
 function persistDiagnostics(){try{localStorage.setItem(KEY,JSON.stringify(diagnostics))}catch{}}
-function record(event,product){
- if(event!=='session')window.SDF_USAGE?.record(event,product);
+function record(event,product,placement){
+ if(event!=='session')window.SDF_USAGE?.record(event,product,placement);
  if(!diagnostics.enabled||!EVENTS.has(event))return;
  const entry={event,at:new Date().toISOString()};if(PRODUCTS.has(product))entry.product=product;
  diagnostics.events.push(entry);diagnostics.events=diagnostics.events.slice(-400);persistDiagnostics();
 }
 let lastSession=0;
 function session(){const now=Date.now();if(now-lastSession>=1800000){record('session');lastSession=now}}
-function diagnosticReport(){return{build:240,scope:'This device only; no online reporting',enabled:diagnostics.enabled,counts:diagnostics.events.reduce((a,e)=>(a[e.event]=(a[e.event]||0)+1,a),{}),events:diagnostics.events.map(e=>({...e}))}}
+function diagnosticReport(){return{build:BUILD??'unknown',scope:'This device only; no online reporting',enabled:diagnostics.enabled,counts:diagnostics.events.reduce((a,e)=>(a[e.event]=(a[e.event]||0)+1,a),{}),events:diagnostics.events.map(e=>({...e}))}}
 function downloadReport(){const url=URL.createObjectURL(new Blob([JSON.stringify(diagnosticReport(),null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='Saturday-Dynasty-Device-Diagnostics.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
 function ensureJourney(s){
  if(!s.coachJourneyV236)s.coachJourneyV236={eligible:Number(s.year)===1&&Number(s.week)===1&&!(s.schedule||[]).some(g=>g.result),active:false,dismissed:false,done:{},observed:{}};
@@ -8061,8 +8390,8 @@ const n=v=>Number(v)||0,current=()=>typeof state!=='undefined'?state:null;
 const definitions={
  worst:{title:'Worst to First',years:8,target:1,unit:'national titles',difficulty:'Extreme',weak:true,lowest:true,setup:'Only the lowest-prestige starting program qualifies (recent success breaks ties). Starting roster capped at 55 OVR.',intro:'Start at the very bottom. Finish on top of the nation.',goal:'Win the national championship within eight seasons.'},
  basement:{title:'From the Basement',years:2,target:1,unit:'bowl berths',difficulty:'Hard',weak:true,setup:'Weak roster: every starting player is 65 OVR or lower.',intro:'Inherit a struggling program and make it matter again.',goal:'Earn a bowl berth within two seasons. A playoff berth also qualifies.'},
- hotseat:{title:'The Hot Seat',years:1,target:2,unit:'objectives',difficulty:'Hard',weak:true,setup:'A weak program, a roster capped at 65 OVR and job security of 30.',intro:'One season to prove you belong.',goal:'Win at least seven games AND beat your primary rival in Year 1.'},
- portal:{title:'Portal Rescue',years:1,target:2,unit:'objectives',difficulty:'Hard',weak:true,setup:'Five thin positions and a preseason portal window before Year 1. No automatic transfer signings.',intro:'Patch a depleted roster before opening day.',goal:'Sign five distinct transfers during the opening portal window AND win eight games in Year 1.'},
+ hotseat:{title:'The Hot Seat',years:2,target:2,unit:'objectives',difficulty:'Hard',weak:true,setup:'A weak program, a roster capped at 65 OVR and job security of 30.',intro:'Two seasons to prove you belong and shape the roster.',goal:'Win at least seven games in a season AND beat your primary rival within two seasons.'},
+ portal:{title:'Portal Rescue',years:2,target:2,unit:'objectives',difficulty:'Hard',weak:true,setup:'Five thin positions and a preseason portal window before Year 1. No automatic transfer signings.',intro:'Patch a depleted roster, recruit your class and build a winner.',goal:'Sign five distinct transfers during the opening portal window AND win eight games in a season within two years.'},
  youth:{title:'Youth Movement',years:4,target:1,unit:'conference titles',difficulty:'Hard',weak:true,setup:'Every player begins as a freshman or sophomore, at 65 OVR or lower.',intro:'Build around a young team and grow together.',goal:'Win a conference championship within four seasons.'},
  smallschool:{title:'Small School, Big Stage',years:5,target:1,unit:'playoff berths',difficulty:'Very hard',weak:true,setup:'Only programs with prestige 55 or lower. Starting roster capped at 65 OVR.',intro:'Turn an overlooked program into a national threat.',goal:'Reach the national playoff within five seasons.'},
  finish:{title:'Finish the Job',years:2,target:1,unit:'national titles',difficulty:'Hard',elite:true,setup:'Prestige 80+ programs only. A senior-heavy roster starts at 80–88 OVR.',intro:'A talented contender. A championship window about to close.',goal:'Win the national championship within two seasons.'},
@@ -8136,7 +8465,7 @@ function menu(){
  const screen=document.getElementById('schoolScreen');if(current()?.school||!screen||screen.classList.contains('hidden')||screen.classList.contains('ui221-team-picker-open')||introOpen)return;
  try{if(localStorage.getItem(introKey()))return}catch{return}
  if(document.querySelector('dialog[open],.modal:not(.hidden)'))return;
- introOpen=true;const dialog=document.createElement('dialog');dialog.className='journey-preview scenario-intro240';dialog.setAttribute('aria-labelledby','scenarioWelcome240');dialog.innerHTML='<small>NEW · 14 FREE WAYS TO PLAY</small><h2 id="scenarioWelcome240">Dynasty Scenarios</h2><p>Save a struggling program. Rescue a roster through the portal. Build a champion using only one-star recruits.</p><p>Choose your starting situation, follow its rules, and earn a trophy. Your existing dynasties stay safe.</p><div class="journey-actions"><button class="btn primary" data-explore>Explore Scenarios</button><button class="btn neutral" data-later>Maybe Later</button></div>';
+ introOpen=true;const dialog=document.createElement('dialog');dialog.className='journey-preview scenario-intro240';dialog.setAttribute('aria-labelledby','scenarioWelcome240');dialog.innerHTML='<small>32 WAYS TO PLAY · 14 FREE</small><h2 id="scenarioWelcome240">Dynasty Scenarios</h2><p>Save a struggling program. Rescue a roster through the portal. Build a champion using only one-star recruits.</p><p>Start with 14 free scenarios, then explore three optional six-scenario packs. Every run has clear rules and a trophy to earn.</p><div class="journey-actions"><button class="btn primary" data-explore>Explore Scenarios</button><button class="btn neutral" data-later>Maybe Later</button></div>';
  document.body.append(dialog);const done=()=>{try{localStorage.setItem(introKey(),'seen')}catch{}dialog.close();dialog.remove()};dialog.querySelector('[data-explore]').onclick=()=>{done();window.SDF_DYNASTY_STORY?.open('challenge')};dialog.querySelector('[data-later]').onclick=done;dialog.addEventListener('cancel',()=>{try{localStorage.setItem(introKey(),'seen')}catch{}});dialog.showModal();
 }
 function renderBanner(){
@@ -8204,7 +8533,7 @@ function captureSeason(s=current()){
 const CHALLENGES={
  ...window.SDF_SCENARIOS?.definitions,
  rebuild:{title:'Rebuild in Three',years:3,target:8,unit:'wins',intro:'Take a program with 55 prestige or lower to an eight-win season within three years.',goal:'Eight total wins in any one season; postseason wins count.'},
- homegrown:{title:'Homegrown Class',years:1,target:5,unit:'in-state commits',intro:'Build a recruiting class around home-state talent. Sign five local recruits in your first season.',goal:'Five recruits from your school’s state in the same signing class, confirmed on Signing Day. Transfers do not count.'},
+ homegrown:{title:'Homegrown Class',years:2,target:5,unit:'in-state commits',intro:'Build a recruiting class around home-state talent with two full recruiting cycles.',goal:'Five recruits from your school’s state in the same signing class within two seasons, confirmed on Signing Day. Transfers do not count.'},
  rivalry:{title:'Rivalry Run',years:3,target:3,unit:'rivalry wins',intro:'Make your program the one your rivals dread. Win three rivalry games across your first three seasons.',goal:'Three wins in matchups marked as rivalry games on the schedule.'}
 };
 let pendingChallenge='';
@@ -8313,7 +8642,7 @@ function recapHtml(r){return`<div class="story237-highlight"><small>${r.complete
 function challengeHtml(s){
  const c=s?.challengeV237,p=c&&challengeProgress(s),def=c&&CHALLENGES[c.type];
  if(c)return`<div class="story237-highlight"><small>FREE COACHING CHALLENGE</small>${c.status==='complete'?`<span class="challenge-trophy238">${trophyIcon}<b>Completed · Achievement unlocked</b></span>`:''}<h3>${esc(def.title)}</h3><p>${esc(def.intro)}</p><p>${esc(def.goal)}</p>${def.setup?`<p class="scenario-setup240">${esc(def.setup)}</p>`:''}</div><h4>${c.status==='complete'?'CHALLENGE COMPLETE':c.status==='ended'?'RUN FINISHED':`SEASON ${p.season} OF ${def.years}`}</h4><p>${esc(c.school)} · <b>${p.best} / ${p.target} ${esc(p.unit)}</b></p><progress max="${p.target}" value="${Math.min(p.target,p.best)}" aria-label="${esc(def.title)} progress"></progress><p>${esc(c.reason||`${Math.max(0,p.target-p.best)} more ${p.unit} to reach your goal.`)}</p>${c.status==='active'?'<button class="btn neutral" type="button" data-story-stop>End scenario</button>':'<p>Your dynasty continues normally. Start a fresh dynasty to play another challenge.</p>'}<p class="story237-note">One scenario per dynasty. School changes are locked until you complete or end the run. Any Team Editor, Player Editor or Commissioner edit ends the scenario and converts this save to a normal dynasty. A confirmation appears before applying an edit; team and progress are kept, but this run cannot earn its scenario trophy. Recruitment caps apply while the run is active; players may develop normally. No leaderboard or gameplay bonus.</p>`;
- return`<div class="story237-highlight"><small>14 FREE SCENARIOS</small><h3>Choose your scenario</h3><p>Each starts with a fresh Year 1, Week 1 dynasty before any games. Choose a scenario, pick an eligible team, then create your coach. Your existing saves stay untouched until you confirm a new career.</p></div><div class="story237-grid story237-challenges">${Object.entries(CHALLENGES).map(([key,d])=>{const reason=eligibility(s,key);return`<article><small>${d.years===1?'ONE SEASON':d.years+' SEASONS'} · FREE</small><h3>${esc(d.title)}</h3>${completedBadge(key)}<p>${esc(d.intro)}</p><p><b>${esc(d.difficulty||'Standard')}</b> · ${esc(d.goal)}</p>${d.setup?`<p class="scenario-setup240">${esc(d.setup)}</p>`:''}${!s?.school?`<button class="btn primary" type="button" data-story-choose="${key}">Start ${esc(d.title)}</button>`:reason?`<span>${esc(reason)}</span>`:`<button class="btn primary" type="button" data-story-start="${key}">Start ${esc(d.title)}</button>`}</article>`}).join('')}</div><p class="story237-note">One scenario per dynasty. Your school is locked until the run ends, and you cannot be dismissed during an active scenario. No purchase required. Starting conditions and recruitment caps are enforced. Any Team Editor, Player Editor or Commissioner edit ends the scenario and converts this save to a normal dynasty. A confirmation appears before applying an edit; team and progress are kept, but this run cannot earn its scenario trophy. Players may develop normally.</p>`;
+ return`<div class="story237-highlight"><small>32 SCENARIOS · 14 FREE</small><h3>Choose your scenario</h3><p>Each starts with a fresh Year 1, Week 1 dynasty before any games. Choose a scenario, pick an eligible team, then create your coach. Your existing saves stay untouched until you confirm a new career.</p></div><div class="story237-grid story237-challenges">${Object.entries(CHALLENGES).map(([key,d])=>{const reason=eligibility(s,key);return`<article><small>${d.years===1?'ONE SEASON':d.years+' SEASONS'} · ${d.pack?'PREMIUM PACK':'FREE'}</small><h3>${esc(d.title)}</h3>${completedBadge(key)}<p>${esc(d.intro)}</p><p><b>${esc(d.difficulty||'Standard')}</b> · ${esc(d.goal)}</p>${d.setup?`<p class="scenario-setup240">${esc(d.setup)}</p>`:''}${!s?.school?`<button class="btn primary" type="button" data-story-choose="${key}">Start ${esc(d.title)}</button>`:reason?`<span>${esc(reason)}</span>`:`<button class="btn primary" type="button" data-story-start="${key}">Start ${esc(d.title)}</button>`}</article>`}).join('')}</div><p class="story237-note">One scenario per dynasty. Your school is locked until the run ends, and you cannot be dismissed during an active scenario. The 14 core scenarios require no purchase; optional packs add 18 more. Starting conditions and recruitment caps are enforced. Any Team Editor, Player Editor or Commissioner edit ends the scenario and converts this save to a normal dynasty. A confirmation appears before applying an edit; team and progress are kept, but this run cannot earn its scenario trophy. Players may develop normally.</p>`;
 }
 function drawDialog(){
  const dialog=$('dynastyStory237');if(!dialog)return;const s=current();
@@ -8500,7 +8829,7 @@ window.SDF_CALENDAR243={withByes,isBye,label,advance,advanceBye,render,byeHtml};
 (()=>{
 'use strict';
 const URL='https://fwnvwkffxazwsmaiqayj.supabase.co/rest/v1/system_messages?select=id,title,body,platform,min_build,published_at,expires_at&order=published_at.desc&limit=100';
-const KEY='SDF_MESSAGES_ACK_243',API_KEY='sb_publishable_MeNnZ-PoF0cKlhfcvcL6Rg_xIJajlhW',BUILD=Number(document.getElementById('releaseLabel')?.textContent.match(/Build\s+(\d+)/)?.[1]||243);
+const KEY='SDF_MESSAGES_ACK_243',API_KEY='sb_publishable_MeNnZ-PoF0cKlhfcvcL6Rg_xIJajlhW',BUILD=(()=>{const match=String(document.getElementById('releaseLabel')?.textContent||'').match(/\bBuild\s+(\d+)\b/i);const value=Number(match?.[1]);return Number.isSafeInteger(value)&&value>0?value:0})();
 const welcome={"id": "3f81a6ab-7d6a-4e57-95ca-e82264000243", "title": "Thank You for Playing Saturday Dynasty Football ❤️", "body": "I just wanted to take a moment to personally thank every single person who has downloaded and played **Saturday Dynasty Football**.\n\nThis game is being built by **one developer**, and what started as an idea for the kind of college football dynasty and recruiting game I wanted to play has grown into something much bigger than I ever expected.\n\nThere have been countless hours of designing, coding, testing, rebuilding systems, fixing bugs, adding features, and trying to make every part of the game better. And there is still a LOT more I want to do.\n\nIf you're playing right now, you're not just playing the finished product — **you're part of building it.**\n\nYour feedback, bug reports, suggestions, crazy feature ideas, and even the things you don't like genuinely help decide where the game goes next. Some of the best improvements already made to Saturday Dynasty Football have come directly from players telling me what they wanted to see changed or added.\n\nI hope you'll stick with the game as it continues to grow. There will be bugs. There will be things that need balancing. There will probably be features I completely rebuild because I realize they can be better.\n\nBut I'm committed to continuing to improve it.\n\nMy goal is to build a deep college football dynasty experience with recruiting, coaching, roster management, player development, stats, records, game planning, facilities, the transfer portal, championships, and all the little decisions that make building a program feel like **your dynasty**.\n\nAnd we're nowhere near done.\n\nSo please keep sending feedback. Tell me what you love, what annoys you, what's broken, and what you'd love to see added someday. I read it, and I want the community to have a real voice in how this game develops.\n\nWhether you've played one season or built a dynasty that's been running for decades, **thank you for giving my game a chance.**\n\nEvery download, every dynasty started, every review, and every piece of feedback means more to a solo developer than you probably realize.\n\nWe're building this thing together.\n\n**Thank you for being here from the beginning. 🏈**\n\n— Corey\nSolo Developer, Saturday Dynasty Football\n\n[Follow us on Facebook](https://www.facebook.com/profile.php?id=61593100940559)", "platform": "all", "min_build": 243};
 let queue=[],active=null,fetching=false,lastFetch=0,shown=new Set();
 function scope(){try{return JSON.parse(localStorage.getItem('SDF_SUPABASE_SESSION')||'null')?.user?.id||'device'}catch{return'device'}}
@@ -8508,7 +8837,7 @@ function seen(){try{return new Set(JSON.parse(localStorage.getItem(KEY+':'+scope
 function eligible(m,now=Date.now()){const platform=window.Capacitor?.isNativePlatform?.()?'android':'browser';return m&&typeof m.id==='string'&&typeof m.title==='string'&&typeof m.body==='string'&&m.title.length<=160&&m.body.length<=12000&&Number(m.min_build||0)<=BUILD&&(!m.platform||m.platform==='all'||m.platform===platform)&&(!m.published_at||Date.parse(m.published_at)<=now)&&(!m.expires_at||Date.parse(m.expires_at)>now)}
 function acknowledge(id){const ids=seen();ids.add(id);shown.add(scope()+':'+id);try{localStorage.setItem(KEY+':'+scope(),JSON.stringify([...ids]))}catch{} }
 function occupied(){return [...document.querySelectorAll('dialog[open],.modal:not(.hidden)')].some(e=>e.id!=='systemMessage243'&&e.getClientRects().length)||!!document.getElementById('weekTransition243')}
-function present(){if(active||document.hidden||occupied())return;const ids=seen();queue=queue.filter(m=>eligible(m)&&!ids.has(m.id)&&!shown.has(scope()+':'+m.id));const message=queue.shift();if(!message)return;const dialog=document.createElement('dialog');dialog.id='systemMessage243';dialog.setAttribute('aria-labelledby','systemMessageTitle243');dialog.style.cssText='color:#edf4fc;background:#0b1b29;border:1px solid #687ea0;border-radius:20px;padding:28px;max-width:520px;width:calc(100% - 40px);max-height:85vh;overflow:auto;';const heading=document.createElement('h2');heading.id='systemMessageTitle243';heading.textContent=message.title;const body=document.createElement('p');body.style.cssText='white-space:pre-wrap;line-height:1.65';message.body.split(/(\*\*.*?\*\*|\[[^\]]+\]\(https:\/\/[^\s)]+\))/gs).forEach(part=>{if(part.startsWith('**')&&part.endsWith('**')){const strong=document.createElement('strong');strong.textContent=part.slice(2,-2);body.append(strong)}else if(/^\[[^\]]+\]\(https:\/\/[^\s)]+\)$/.test(part)){const match=part.match(/^\[([^\]]+)\]\((https:\/\/[^\s)]+)\)$/),link=document.createElement('a');link.textContent=match[1];link.href=match[2];link.target='_blank';link.rel='noopener noreferrer';link.style.color='#9bcaff';body.append(link)}else body.append(document.createTextNode(part))});const button=document.createElement('button');button.className='btn primary full';button.textContent='Got it — thank you!';const close=()=>{acknowledge(message.id);dialog.close();dialog.remove();active=null;setTimeout(present,300)};button.onclick=close;dialog.addEventListener('cancel',event=>{event.preventDefault();close()});dialog.append(heading,body,button);document.body.append(dialog);active=message;dialog.showModal();dialog.scrollTop=0;button.focus({preventScroll:true})}
+function present(){if(active||document.hidden||occupied())return;const ids=seen();queue=queue.filter(m=>eligible(m)&&!ids.has(m.id)&&!shown.has(scope()+':'+m.id));const message=queue.shift();if(!message)return;const isWelcome=String(message.id)===String(welcome.id);const dialog=document.createElement('dialog');dialog.id='systemMessage243';dialog.setAttribute('aria-labelledby','systemMessageTitle243');dialog.style.cssText='color:#edf4fc;background:#0b1b29;border:1px solid #687ea0;border-radius:20px;padding:24px;max-width:520px;width:calc(100% - 40px);max-height:82vh;overflow:auto;';const heading=document.createElement('h2');heading.id='systemMessageTitle243';heading.textContent=message.title;const body=document.createElement('p');body.style.cssText=isWelcome?'white-space:pre-wrap;line-height:1.5;max-height:46vh;overflow-y:auto;padding-right:6px':'white-space:pre-wrap;line-height:1.65';message.body.split(/(\*\*.*?\*\*|\[[^\]]+\]\(https:\/\/[^\s)]+\))/gs).forEach(part=>{if(part.startsWith('**')&&part.endsWith('**')){const strong=document.createElement('strong');strong.textContent=part.slice(2,-2);body.append(strong)}else if(/^\[[^\]]+\]\(https:\/\/[^\s)]+\)$/.test(part)){const match=part.match(/^\[([^\]]+)\]\((https:\/\/[^\s)]+)\)$/),link=document.createElement('a');link.textContent=match[1];link.href=match[2];link.target='_blank';link.rel='noopener noreferrer';link.style.color='#9bcaff';body.append(link)}else body.append(document.createTextNode(part))});const button=document.createElement('button');button.className='btn primary full';button.textContent=isWelcome?'Thanks — let’s play':'Got it — thank you!';const close=()=>{acknowledge(message.id);dialog.close();dialog.remove();active=null;setTimeout(present,300)};button.onclick=close;dialog.addEventListener('cancel',event=>{event.preventDefault();close()});dialog.append(heading,body,button);document.body.append(dialog);active=message;dialog.showModal();dialog.scrollTop=0;button.focus({preventScroll:true})}
 async function refresh(){if(fetching||Date.now()-lastFetch<3600000)return;fetching=true;lastFetch=Date.now();const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),5000);try{const response=await fetch(URL,{headers:{apikey:API_KEY},signal:controller.signal});if(!response.ok)throw Error('Messages unavailable');const rows=await response.json();queue=Array.isArray(rows)?rows.filter(m=>eligible(m)):[]}catch{queue=[welcome]}finally{clearTimeout(timeout);fetching=false;present()}}
 window.SDF_MESSAGES243={refresh,present,eligible,acknowledge};
 setTimeout(refresh,1800);
@@ -8555,6 +8884,144 @@ const oldRender=window.renderAll;window.renderAll=function(...args){ensure(state
 window.SDF_CONFERENCES={version:250,definitions:DEFINITIONS,id,name,abbr,entry,ensure,setIdentity,resetIdentity};
 window.SDF_CUSTOM_SCHEDULES={open,validate,summary:scheduleSummary,editableGame,bookedElsewhere,refreshOptions,draft,save};
 document.readyState==='loading'?document.addEventListener('DOMContentLoaded',wire):wire();
+})();
+
+(()=>{
+'use strict';
+const $=id=>document.getElementById(id),num=(v,d=0)=>Number.isFinite(Number(v))?Number(v):d,clip=(v,a,b)=>Math.max(a,Math.min(b,num(v)));
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const current=()=>typeof state!=='undefined'&&state?.school?state:null;
+const PACKS={
+ impossible:'scenario_impossible_rebuilds',
+ pressure:'scenario_championship_pressure',
+ recruiting:'scenario_recruiting_nightmares'
+};
+const SCENARIOS={
+ ashestoempire:{pack:PACKS.impossible,title:'Ashes to Empire',years:6,target:1,unit:'playoff berths',difficulty:'Extreme',weak:true,setup:'Prestige 55 or lower. Starting roster capped at 58 OVR.',intro:'Rebuild a program with almost nothing left.',goal:'Reach the playoff within six seasons.',goalType:'playoff',maxOvr:58},
+ winlessrevival:{pack:PACKS.impossible,title:'Winless Revival',years:3,target:8,unit:'wins',difficulty:'Very hard',weak:true,setup:'A depleted roster capped at 62 OVR.',intro:'Turn a broken season into a winning program.',goal:'Win eight games in a season by Year 3.',goalType:'seasonWins',maxOvr:62},
+ roadonly:{pack:PACKS.impossible,title:'Road Warriors',years:2,target:9,unit:'wins',difficulty:'Extreme',weak:true,setup:'Every editable nonconference game begins on the road.',intro:'Build belief without home-field comfort.',goal:'Win nine games in a season within two years.',goalType:'seasonWins',maxOvr:64,roadNonConference:true},
+ giantkiller:{pack:PACKS.impossible,title:'Giant Killer',years:4,target:3,unit:'ranked road wins',difficulty:'Very hard',weak:true,setup:'Weak roster capped at 65 OVR.',intro:'Make the national powers fear your schedule.',goal:'Earn three ranked road wins within four seasons.',goalType:'rankedWins',maxOvr:65},
+ emptycupboard:{pack:PACKS.impossible,title:'Empty Cupboard',years:5,target:1,unit:'conference titles',difficulty:'Extreme',weak:true,starCap:2,setup:'Roster capped at 60 OVR. Incoming players limited to two stars.',intro:'Build a champion from overlooked players.',goal:'Win a conference championship within five seasons.',goalType:'conference',maxOvr:60},
+ lastchance:{pack:PACKS.impossible,title:'The Last Chance',years:2,target:6,unit:'wins',difficulty:'Hard',weak:true,setup:'Job security begins at 15 with a 63 OVR roster ceiling.',intro:'Save the program and your career while building your first class.',goal:'Win six games in a season within two years.',goalType:'seasonWins',maxOvr:63,jobSecurity:15},
+ perfectseason:{pack:PACKS.pressure,title:'Perfect Season',years:2,target:1,unit:'undefeated seasons',difficulty:'Extreme',elite:true,setup:'Elite program with championship expectations.',intro:'Anything short of perfection will be remembered.',goal:'Finish an undefeated season within two years.',goalType:'undefeated'},
+ titleornothing:{pack:PACKS.pressure,title:'Title or Nothing',years:2,target:1,unit:'national titles',difficulty:'Hard',elite:true,setup:'Senior-heavy contender with a short championship window.',intro:'You have two shots before the window closes.',goal:'Win the national championship within two seasons.',goalType:'national'},
+ repeat:{pack:PACKS.pressure,title:'Run It Back',years:3,target:2,unit:'national titles',difficulty:'Extreme',elite:true,setup:'An elite roster facing maximum expectations.',intro:'One championship is not a dynasty.',goal:'Win two national championships within three seasons.',goalType:'nationalCount'},
+ conferencegauntlet:{pack:PACKS.pressure,title:'Conference Gauntlet',years:2,target:2,unit:'conference titles',difficulty:'Very hard',setup:'Choose any program. No grace period.',intro:'Own your league before the window closes.',goal:'Win consecutive conference titles within two seasons.',goalType:'conferenceCount'},
+ playoffregular:{pack:PACKS.pressure,title:'Permanent Contender',years:4,target:3,unit:'playoff berths',difficulty:'Hard',setup:'Choose any program with a four-year window.',intro:'Build consistency under constant pressure.',goal:'Reach the playoff three times in four seasons.',goalType:'playoffCount'},
+ rivalrevenge:{pack:PACKS.pressure,title:'Rival Revenge Tour',years:3,target:3,unit:'rivalry wins',difficulty:'Hard',setup:'Your rivalry becomes the measuring stick.',intro:'Take control of the game that matters most.',goal:'Beat your primary rival three times within three seasons.',goalType:'rivalWins'},
+ nostars:{pack:PACKS.recruiting,title:'No Stars Needed',years:8,target:1,unit:'playoff berths',difficulty:'Extreme',weak:true,starCap:2,setup:'Two-star recruiting maximum and a 62 OVR roster ceiling.',intro:'Develop players the rankings ignored.',goal:'Reach the playoff within eight seasons.',goalType:'playoff',maxOvr:62},
+ classclimb:{pack:PACKS.recruiting,title:'Class Climb',years:3,target:20,unit:'class ranking',difficulty:'Hard',weak:true,setup:'Prestige 55 or lower with normal recruiting restrictions.',intro:'Win recruiting battles before winning championships.',goal:'Sign a Top 20 recruiting class within three seasons.',goalType:'classRank'},
+ homegrownheroes:{pack:PACKS.recruiting,title:'Homegrown Heroes',years:5,target:1,unit:'conference titles',difficulty:'Very hard',weak:true,setup:'Three-star maximum with one starting pipeline.',intro:'Build the program around regional talent.',goal:'Win a conference title within five seasons.',goalType:'conference',starCap:3,maxOvr:68},
+ portalban:{pack:PACKS.recruiting,title:'No Portal, No Problem',years:5,target:10,unit:'wins',difficulty:'Very hard',weak:true,setup:'Transfer additions are disabled while the scenario is active.',intro:'Recruit and develop your own roster.',goal:'Win ten games in a season within five years.',goalType:'seasonWins',noPortal:true},
+ developmentlab:{pack:PACKS.recruiting,title:'Development Lab',years:4,target:8,unit:'players developed',difficulty:'Hard',weak:true,setup:'Starting roster capped at 67 OVR.',intro:'Turn raw players into stars.',goal:'Develop eight players by at least 10 OVR within four seasons.',goalType:'developed',maxOvr:67},
+ draftfactory:{pack:PACKS.recruiting,title:'Draft Factory',years:6,target:10,unit:'draft picks',difficulty:'Hard',setup:'Choose any program and build through development.',intro:'Create the next generation of professional talent.',goal:'Produce ten draft picks within six seasons.',goalType:'drafted'}
+};
+
+function owned(product){return window.SDF_ANDROID_COMMERCE?.owns?.(product)===true}
+function installScenarios(){
+ const rules=window.SDF_SCENARIOS,story=window.SDF_DYNASTY_STORY;if(!rules||!story)return false;
+ Object.assign(rules.definitions,SCENARIOS);Object.assign(story.CHALLENGES,SCENARIOS);
+ if(!rules.__premium251){
+  const baseSetup=rules.setup,baseProgress=rules.progress;
+  rules.setup=function(s,type){baseSetup(s,type);const d=SCENARIOS[type];if(!d)return;const c=s.challengeV237;if(d.maxOvr)for(const p of s.roster||[]){const old=Math.max(1,num(p.ovr,40));p.ovr=Math.min(d.maxOvr,old);p.pot=Math.max(p.ovr,num(p.pot,p.ovr));if(p.attrs)for(const key of Object.keys(p.attrs))p.attrs[key]=clip(Math.round(num(p.attrs[key],p.ovr)*p.ovr/old),35,99)}if(d.jobSecurity)s.jobSecurity=d.jobSecurity;if(d.roadNonConference)for(const g of s.schedule||[])if(!g.bye&&!g.conference&&!g.rivalry)g.home=false;if(d.noPortal)c.noPortal=true;c.startDrafted=num(s.achievementStats?.totalDrafted);c.startRankedWins=num(s.achievementStats?.roadRankedWins);c.startPlayerOvr=Object.fromEntries((s.roster||[]).map(p=>[String(p.id),num(p.ovr)]));};
+  rules.progress=function(s,c){const d=SCENARIOS[c?.type];if(!d)return baseProgress(s,c);const start=num(c.startYear,1),end=num(c.endYear,start),inside=num(s.year)>=start&&num(s.year)<=end,h=(s.history||[]).filter(x=>num(x.year)>=start&&num(x.year)<=end),t=(s.trophies||[]).filter(x=>num(x.year)>=start&&num(x.year)<=end),pd=s.postseasonData||{},ours=x=>Number(x?.id)===Number(c.schoolId);let value=0;if(d.goalType==='seasonWins')value=Math.max(num(s.record?.w),...h.map(x=>num(x.wins)),0);if(d.goalType==='playoff')value=Number(t.some(x=>x.type==='Playoff Appearance')||(inside&&(pd.playoffField||[]).some(ours)));if(d.goalType==='playoffCount')value=new Set(t.filter(x=>x.type==='Playoff Appearance').map(x=>x.year)).size;if(d.goalType==='conference')value=Number((s.conferenceChampions||[]).some(x=>num(x.year)>=start&&num(x.year)<=end));if(d.goalType==='conferenceCount')value=new Set((s.conferenceChampions||[]).filter(x=>num(x.year)>=start&&num(x.year)<=end).map(x=>x.year)).size;if(d.goalType==='national')value=Number(t.some(x=>x.type==='National Championship'));if(d.goalType==='nationalCount')value=t.filter(x=>x.type==='National Championship').length;if(d.goalType==='undefeated')value=Number(h.some(x=>num(x.losses)===0&&num(x.wins)>=12)||(inside&&num(s.record?.l)===0&&num(s.record?.w)>=12));if(d.goalType==='rivalWins'){const wins=new Set((s.scheduleHistory251||[]).filter(x=>num(x.year)>=start&&num(x.year)<=end&&x.rivalry&&x.result==='W').map(x=>`${num(x.year)}:${num(x.week)}`));if(inside)for(const x of s.schedule||[])if(x.rivalry&&x.result==='W')wins.add(`${num(s.year)}:${num(x.week)}`);value=wins.size}if(d.goalType==='rankedWins')value=Math.max(0,num(s.achievementStats?.roadRankedWins)-num(c.startRankedWins));if(d.goalType==='classRank'){const rank=num((s.classRankings||[]).find(x=>Number(x.id)===Number(s.school.id))?.rank,999);value=rank<=d.target?d.target:0}if(d.goalType==='developed'){const developed=new Set(c.developedPlayerIds||[]);for(const p of s.roster||[])if(num(p.ovr)-num(c.startPlayerOvr?.[String(p.id)],num(p.ovr))>=10)developed.add(String(p.id));c.developedPlayerIds=[...developed];value=developed.size}if(d.goalType==='drafted')value=Math.max(0,num(s.achievementStats?.totalDrafted)-num(c.startDrafted));return Math.max(num(c.best),value)};
+  rules.__premium251=true;
+ }
+ return true;
+}
+
+function decorateScenarioShop(){
+ const root=document.querySelector('#sdfPlayShop');if(!root)return;
+ for(const card of root.querySelectorAll('.sdf-product')){const type=card.dataset.productType,product=card.dataset.product;if(type==='consumable')card.classList.add('sdf-consumable251');if(product?.startsWith('scenario_'))card.classList.add('sdf-scenario-product251');if(product?.startsWith('supporter_'))card.classList.add('sdf-supporter-product251')}
+}
+function decorateScenarioDialog(){
+ const defs=window.SDF_DYNASTY_STORY?.CHALLENGES;if(!defs)return;
+ document.querySelectorAll('[data-story-start],[data-story-choose]').forEach(button=>{const type=button.dataset.storyStart||button.dataset.storyChoose,d=defs[type];if(!d?.pack)return;const has=owned(d.pack);button.dataset.premiumPack=d.pack;button.classList.toggle('locked',!has);if(!has&&button.textContent!=='Unlock Scenario Pack')button.textContent='Unlock Scenario Pack';const card=button.closest('article');if(card&&!card.querySelector('.premium-pack251'))card.querySelector('small')?.insertAdjacentHTML('afterend',`<span class="premium-pack251">${has?'OWNED':'PREMIUM PACK'}</span>`)})
+}
+document.addEventListener('click',event=>{const button=event.target.closest?.('[data-premium-pack]');if(!button||owned(button.dataset.premiumPack))return;event.preventDefault();event.stopImmediatePropagation();const pack=button.dataset.premiumPack,dialog=button.closest('dialog');if(dialog?.open)dialog.close();setTimeout(()=>window.SDF_ANDROID_COMMERCE?.openShop?.(pack),0)},true);
+const originalTakePortal=window.takePortal;if(typeof originalTakePortal==='function')window.takePortal=function(...args){if(state.challengeV237?.status==='active'&&SCENARIOS[state.challengeV237.type]?.noPortal){window.toast?.('This scenario does not allow transfer additions.','error');return false}return originalTakePortal.apply(this,args)};
+
+function ensureRules(s=current()){
+ if(!s)return null;s.commissionerRules251??={playoffSize:12,autoBids:5,bowlWins:6,forceOutcome:'NONE'};return s.commissionerRules251;
+}
+function openRules(forcePreview=false){
+ if(!forcePreview&&!window.SDF_COMMISSIONER?.hasCommissioner?.()){window.SDF_ANDROID_COMMERCE?.openShop?.('commissioner_mode');return}
+ const live=forcePreview?null:current(),preview=forcePreview||!live,s=live||{school:{id:1,name:'Saturday State'},commissionerRules251:{playoffSize:12,autoBids:5,bowlWins:6,forceOutcome:'NONE'},realismSettings:{},conferenceEcosystem:{autoRealignment:true}};const r=ensureRules(s),m=$('modal'),body=$('modalBody');if(!m||!body)return;
+ const sliders=[['upsetVariance','Upset variance',.65,1.5,.05],['scoring','Scoring level',.75,1.3,.05],['injuries','Injury frequency',0,1.75,.05],['progression','Player progression',.6,1.5,.05],['transfers','Transfer activity',0,1.75,.05],['jobSecurity','Job pressure',0,1.6,.05],['recruiting','Recruiting difficulty',.65,1.5,.05],['realignment','Realignment activity',0,1.5,.05]];
+ s.realismSettings??={};body.innerHTML=`<section class="rules-center251"><span class="eyebrow">COMMISSIONER MODE${preview?' · READ-ONLY PREVIEW':''}</span><h2>League Rules Center</h2><p class="muted">Change how this dynasty plays. Rules are stored in this save and begin with future games, recruiting updates and offseasons.</p><div class="rules-grid251"><label>PLAYOFF SIZE<select id="rcPlayoff251">${[4,8,12,16].map(x=>`<option value="${x}" ${num(r.playoffSize,12)===x?'selected':''}>${x} teams</option>`).join('')}</select></label><label>AUTOMATIC CONFERENCE BIDS<select id="rcBids251">${[0,4,5,6].map(x=>`<option value="${x}" ${num(r.autoBids,5)===x?'selected':''}>${x}</option>`).join('')}</select></label><label>BOWL ELIGIBILITY<select id="rcBowl251">${[5,6,7,8].map(x=>`<option value="${x}" ${num(r.bowlWins,6)===x?'selected':''}>${x} wins</option>`).join('')}</select><small>Applies when the next postseason field is created.</small></label><label><input id="rcRealign251" type="checkbox" ${s.conferenceEcosystem?.autoRealignment===false?'':'checked'}> AUTOMATIC PROMOTION &amp; RELEGATION</label>${sliders.map(([key,label,min,max,step])=>`<label>${label}<input data-rule-slider="${key}" type="range" min="${min}" max="${max}" step="${step}" value="${num(s.realismSettings[key],1)}"><output>${num(s.realismSettings[key],1).toFixed(2)}×</output></label>`).join('')}</div><div class="actions"><button id="rcCancel251" class="btn neutral">${preview?'Back to Shop':'Cancel'}</button><button id="rcSave251" class="btn success">${preview?'Close Preview':'Save League Rules'}</button></div></section>`;
+ m.classList.remove('hidden');body.querySelectorAll('[data-rule-slider]').forEach(x=>x.oninput=()=>x.nextElementSibling.textContent=Number(x.value).toFixed(2)+'×');$('rcCancel251').onclick=()=>m.classList.add('hidden');if(preview){body.querySelectorAll('select,input').forEach(x=>x.disabled=true);$('rcSave251').onclick=()=>m.classList.add('hidden');return}$('rcSave251').onclick=()=>{r.playoffSize=num($('rcPlayoff251').value,12);r.autoBids=Math.min(r.playoffSize,num($('rcBids251').value,5));r.bowlWins=num($('rcBowl251').value,6);s.conferenceEcosystem??={};s.conferenceEcosystem.autoRealignment=$('rcRealign251').checked;body.querySelectorAll('[data-rule-slider]').forEach(x=>s.realismSettings[x.dataset.ruleSlider]=num(x.value,1));window.SDF_SCENARIOS?.invalidate?.(s,'A Commissioner Rules change ended this scenario. This save continues as a normal dynasty.');window.SDF_RELEASE_TEST?.saveNow?.('Commissioner league rules',true,true);m.classList.add('hidden');window.toast?.('Commissioner rules saved.','success')}
+}
+
+function applyBoost(product){const s=current();if(!s)return false;const grants={recruiting_boost:{hours:250,nil:100000,budget:0,recover:false},program_rescue:{hours:600,nil:300000,budget:1500000,recover:true},season_booster:{hours:1250,nil:750000,budget:3000000,recover:true}},g=grants[product];if(!g)return false;s.weeklyHours=num(s.weeklyHours)+g.hours;s.recruitingHoursCapacity=Math.max(num(s.recruitingHoursCapacity),num(s.weeklyHours));s.nilBudget=num(s.nilBudget)+g.nil;s.budget=num(s.budget)+g.budget;if(g.recover)for(const p of s.roster||[]){p.injury=null;p.morale=Math.max(85,num(p.morale))}s.news??=[];s.news.push(`${product==='recruiting_boost'?'Recruiting Boost':product==='program_rescue'?'Program Rescue':'Season Booster'} applied: +${g.hours.toLocaleString()} recruiting hours, +$${g.nil.toLocaleString()} Recruit NIL${g.budget?`, +$${g.budget.toLocaleString()} Athletics Budget and roster recovery`:''}. Recruit NIL signs players; Athletics Budget pays for facilities, coaches and program operations.`);window.renderAll?.();window.SDF_RELEASE_TEST?.saveNow?.(`Applied ${product}`,false,true);window.toast?.(`Applied: +${g.hours.toLocaleString()} hours · +$${g.nil.toLocaleString()} Recruit NIL${g.budget?` · +$${g.budget.toLocaleString()} Athletics Budget`:''}`,'success');return true}
+function claimPending(){const native=window.SDFBillingNative,s=current();if(!native||!s||typeof native.getState!=='function'||typeof native.claim!=='function')return false;let data;try{data=JSON.parse(native.getState()||'{}')}catch{return false}let any=false;for(const product of ['recruiting_boost','program_rescue','season_booster']){let count=Math.min(20,num(data.consumables?.[product]));while(count-->0){if(!native.claim(product))break;if(applyBoost(product)){window.SDF_JOURNEY?.record?.('purchase_confirmed',product);any=true}}}return any}
+
+function supporterTier(){const commerce=window.SDF_ANDROID_COMMERCE;return commerce?.owns?.('supporter_legend')?'LEGEND':commerce?.owns?.('supporter_all_american')?'ALL-AMERICAN':commerce?.owns?.('supporter_rookie')?'ROOKIE':''}
+function renderSupporter(){const tier=supporterTier(),value=tier.toLowerCase().replace(/[^a-z]+/g,'-');if(document.documentElement.dataset.sdfSupporter!==value)document.documentElement.dataset.sdfSupporter=value;let badge=$('supporterBadge251');const host=document.querySelector('.topbar-brand,.brand-lockup,.mobile-dynasty-identity');if(!tier||!host){badge?.remove();return}if(!badge){badge=document.createElement('span');badge.id='supporterBadge251';badge.className='supporter-badge251';host.append(badge)}const label=`${tier} SUPPORTER`;if(badge.textContent!==label)badge.textContent=label}
+
+function injectButtons(){const shop=$('sdfPlayShop');if(shop&&!$('commissionerRulesShop251')){const b=document.createElement('button');b.id='commissionerRulesShop251';b.className='journey-preview-entry';b.textContent='Preview Commissioner League Rules';b.onclick=()=>openRules(true);shop.querySelector('#sdfCommissionerPreview')?.after(b)}const team=$('sdfAndroidEditor');if(team?.classList.contains('open')&&$('sdfEditorTitle')?.textContent==='Conference Manager'&&!$('commissionerRulesEditor251')){const b=document.createElement('button');b.id='commissionerRulesEditor251';b.className='sdf-editor-filter';b.textContent='League Rules Center';b.onclick=openRules;$('sdfEditorContent')?.prepend(b)}}
+
+function reshapePlayoffField(){const s=current(),r=ensureRules(s);if(!s?.postseasonData||num(r.playoffSize,12)===12)return;const size=num(r.playoffSize,12),cfp=s.cfpRankings||s.rankings||[],champs=(s.postseasonData.champions||[]).map(c=>cfp.find(x=>Number(x.id)===Number(c.id))||c).sort((a,b)=>num(a.cfpRank,a.rank||999)-num(b.cfpRank,b.rank||999)),auto=champs.slice(0,Math.min(size,num(r.autoBids,5))),field=auto.concat(cfp.filter(x=>!auto.some(a=>Number(a.id)===Number(x.id))).slice(0,size-auto.length)).slice(0,size);s.postseasonData.playoffField=field.map((x,i)=>({...x,seed:i+1,autoBid:auto.some(a=>Number(a.id)===Number(x.id))}));s.playoff=[...s.postseasonData.playoffField];const ids=new Set(field.map(x=>Number(x.id))),wins=num(r.bowlWins,6);s.postseasonData.bowls=(cfp.filter(x=>!ids.has(Number(x.id))&&num(x.record?.w)>=wins).slice(0,20).reduce((out,x,i,a)=>{if(i%2===0&&a[i+1])out.push({name:['Lakes Bowl','Liberty Bowl','Sun Coast Bowl','Frontier Bowl','Heritage Bowl','Citrus Classic','Desert Bowl','Motor City Bowl'][Math.floor(i/2)%8],a:x,b:a[i+1]});return out},[]))}
+const originalPrepare=window.prepareBowlsAndPlayoff;if(typeof originalPrepare==='function')window.prepareBowlsAndPlayoff=function(...args){const out=originalPrepare.apply(this,args);reshapePlayoffField();window.renderPostseasonBrackets?.();return out};
+
+function customPlayoff(){const s=current();return !!s&&num(ensureRules(s)?.playoffSize,12)!==12}
+function seed(team){return num(team?.seed,(state.postseasonData?.playoffField||[]).findIndex(x=>Number(x.id)===Number(team?.id))+1||99)}
+function roundName(count){return count===2?'National Championship':count===4?'CFP Semifinal':count===8?'CFP Quarterfinal':'CFP First Round'}
+function pairRound(teams){const list=[...teams].filter(Boolean);return Array.from({length:Math.floor(list.length/2)},(_,i)=>[list[i],list[list.length-1-i]])}
+function simResult(pair,label){return window.simulateNeutralGame(pair[0],pair[1],label)}
+function liveResult(pair,label,game){const first=Number(pair[0].id)===Number(state.school.id),aScore=first?num(game.score.us):num(game.score.them),bScore=first?num(game.score.them):num(game.score.us),winner=aScore>bScore?pair[0]:pair[1];return{label,a:pair[0],b:pair[1],aScore,bScore,winner,loser:Number(winner.id)===Number(pair[0].id)?pair[1]:pair[0]}}
+function setCustomLive(type,label,pair,meta={}){const opp=pair.find(t=>Number(t.id)!==Number(state.school.id)),home=type==='PLAYOFF'&&seed(state.school)<seed(opp);state.liveGameContext={type,label,meta:{...meta,pair,neutral:type!=='PLAYOFF',home},game:{opponent:opp.name,oppId:opp.id,oppPower:opp.rosterPower||Math.round((num(opp.prestige,70)+num(opp.recent,70))/2),home,neutral:type!=='PLAYOFF',conference:false,rivalry:false,weather:'Clear',result:null,score:null}};window.showTab?.('gameday');setTimeout(()=>window.openLiveGameCenter?.(),30)}
+function recordCustomRound(flow){state.postseasonData.playoffRounds??=[];state.postseasonData.playoffRounds[flow.stage]={name:flow.label,games:flow.results.filter(Boolean)};window.renderPostseasonBrackets?.()}
+function customNotice(title,body,action='window.SDF_PREMIUM251.continueCustomPlayoff()'){const modal=$('modal'),host=$('modalBody');if(!modal||!host)return;host.innerHTML=`<span class="eyebrow">CUSTOM PLAYOFF</span><h2>${esc(title)}</h2><p class="muted">${esc(body)}</p><button class="btn success full" onclick="document.getElementById('modal').classList.add('hidden');${action}">Continue</button>`;modal.classList.remove('hidden')}
+function customRunRound(teams,stage=0){const pairs=pairRound(teams),label=roundName(teams.length),results=new Array(pairs.length),userIndex=pairs.findIndex(pair=>pair.some(t=>Number(t.id)===Number(state.school.id)));for(let i=0;i<pairs.length;i++)if(i!==userIndex)results[i]=simResult(pairs[i],label);state.postseasonFlow={mode:'PLAYOFF',custom251:true,stage,label,pairs,results,userIndex,stageComplete:userIndex<0,pendingAdvance:userIndex<0};if(userIndex>=0){setCustomLive('PLAYOFF',label,pairs[userIndex],{stage,userIndex,custom251:true});return}recordCustomRound(state.postseasonFlow);continueCustomPlayoff()}
+function simulateCustomFrom(teams,stage=0){let round=[...teams],i=stage;while(round.length>1){const label=roundName(round.length),results=pairRound(round).map(pair=>simResult(pair,label));state.postseasonData.playoffRounds??=[];state.postseasonData.playoffRounds[i++]={name:label,games:results};round=results.map(x=>x.winner)}state.postseasonData.nationalChampion=round[0]||null;window.renderPostseasonBrackets?.();return round[0]}
+function continueCustomPlayoff(){const flow=state.postseasonFlow;if(!flow?.custom251)return window.SDF_V16_BASE251?.continuePostseasonFlow?.();if(flow.mode==='PLAYOFF_COMPLETE'){state.postseasonFlow=null;window.finishSeason?.();return}if(flow.mode==='BOWL_COMPLETE'){state.postseasonFlow=null;window.finishSeason?.();return}if(flow.mode!=='PLAYOFF'||!flow.stageComplete)return;const winners=flow.results.map(x=>x?.winner).filter(Boolean),alive=winners.some(x=>Number(x.id)===Number(state.school.id));if(winners.length===1){state.postseasonData.nationalChampion=winners[0];if(alive){state.achievementStats.nationalTitles=num(state.achievementStats.nationalTitles)+1;state.trophies.push({year:state.year,type:'National Championship'})}state.postseasonFlow={mode:'PLAYOFF_COMPLETE',custom251:true,pendingAdvance:true};customNotice('Playoff Complete',`${winners[0].name} won the national championship.`);return}if(!alive){simulateCustomFrom(winners,flow.stage+1);state.postseasonFlow={mode:'PLAYOFF_COMPLETE',custom251:true,pendingAdvance:true};customNotice('Playoff Complete',`${state.postseasonData.nationalChampion?.name||'The champion'} won the national championship.`);return}customRunRound(winners,flow.stage+1)}
+function completeCustom(ctx,game){const flow=state.postseasonFlow;if(ctx.type==='PLAYOFF'&&flow?.custom251){const key=[state.year,'PLAYOFF',flow.stage,...flow.pairs[flow.userIndex].map(x=>x.id).sort()].join(':');state.postseasonApplied242??={};if(state.postseasonApplied242[key])return;state.postseasonApplied242[key]=true;const result=liveResult(flow.pairs[flow.userIndex],flow.label,game);flow.results[flow.userIndex]=result;if(Number(result.winner.id)===Number(state.school.id))state.achievementStats.playoffWins=num(state.achievementStats.playoffWins)+1;flow.stageComplete=true;flow.pendingAdvance=true;recordCustomRound(flow);return}if(ctx.type==='BOWL'&&ctx.meta?.custom251){const result=liveResult(ctx.meta.pair,ctx.label,game);state.postseasonData.bowlResults??=[];state.postseasonData.bowlResults.push(result);if(Number(result.winner.id)===Number(state.school.id)){state.achievementStats.bowlWins=num(state.achievementStats.bowlWins)+1;state.trophies.push({year:state.year,type:ctx.label})}simulateCustomFrom(state.postseasonData.playoffField||[]);state.postseasonFlow={mode:'BOWL_COMPLETE',custom251:true,pendingAdvance:true,result};return}return window.SDF_V16_BASE251?.completePostseasonGame?.(ctx,game)}
+function startCustomPostseason(){if(!customPlayoff())return window.SDF_V16_BASE251?.startBowlOrPlayoff?.();if(state.phase!=='BOWLS')return;if(state.liveGameContext){window.showTab?.('gameday');window.openLiveGameCenter?.();return}const flow=state.postseasonFlow;if(flow?.custom251){if(flow.pendingAdvance||flow.stageComplete)return continueCustomPlayoff();if(flow.mode==='PLAYOFF'&&flow.pairs?.[flow.userIndex])return setCustomLive('PLAYOFF',flow.label,flow.pairs[flow.userIndex],{stage:flow.stage,userIndex:flow.userIndex,custom251:true})}const d=state.postseasonData,f=d.playoffField||[];d.bowlResults=(d.bowls||[]).filter(b=>![b.a.id,b.b.id].includes(state.school.id)).map(b=>simResult([b.a,b.b],b.name));if(f.some(t=>Number(t.id)===Number(state.school.id))){if(window.schoolTier?.(state.school)?.key==='REBUILD')state.achievementStats.rebuildPlayoffs=num(state.achievementStats.rebuildPlayoffs)+1;return customRunRound(f,0)}const bowl=(d.bowls||[]).find(b=>[b.a.id,b.b.id].includes(state.school.id));if(bowl)return setCustomLive('BOWL',bowl.name,[bowl.a,bowl.b],{bowlName:bowl.name,custom251:true});simulateCustomFrom(f);window.finishSeason?.()}
+function renderCustomBracket(){if(!customPlayoff()||!state.postseasonData)return;const host=$('fullPlayoffBracket'),f=state.postseasonData.playoffField||[];if(!host)return;host.innerHTML=`<div class="playoff-round"><h3>${f.length}-Team CFP Field</h3><div class="playoff-matchups">${f.map(t=>`<div class="bracket-card"><b>#${seed(t)} ${esc(t.name)}</b><span class="sub">${num(t.record?.w)}-${num(t.record?.l)}${t.autoBid?' · Automatic bid':''}</span></div>`).join('')}</div></div>${(state.postseasonData.playoffRounds||[]).filter(Boolean).map(r=>`<div class="playoff-round"><h3>${esc(r.name)}</h3><div class="playoff-matchups">${r.games.map(g=>`<div class="bracket-card ${Number(g.winner?.id)===Number(state.school.id)?'champion-card':''}"><b>${esc(g.a.name)} ${g.aScore}</b><br><b>${esc(g.b.name)} ${g.bScore}</b><span class="sub">Winner: ${esc(g.winner.name)}</span></div>`).join('')}</div></div>`).join('')}`}
+if(window.SDF_V16){window.SDF_V16_BASE251={completePostseasonGame:window.SDF_V16.completePostseasonGame,startBowlOrPlayoff:window.SDF_V16.startBowlOrPlayoff,continuePostseasonFlow:window.SDF_V16.continuePostseasonFlow};window.SDF_V16.completePostseasonGame=completeCustom;window.SDF_V16.startBowlOrPlayoff=startCustomPostseason;window.SDF_V16.continuePostseasonFlow=continueCustomPlayoff}
+window.playPostseason=startCustomPostseason;const playButton=$('playPostseasonBtn');if(playButton)playButton.onclick=startCustomPostseason;const priorAdvance=window.advanceWeek;if(typeof priorAdvance==='function')window.advanceWeek=function(...args){if(state.phase==='BOWLS'&&customPlayoff())return startCustomPostseason();return priorAdvance.apply(this,args)};const priorBracket=window.renderPostseasonBrackets;if(typeof priorBracket==='function')window.renderPostseasonBrackets=function(...args){const out=priorBracket.apply(this,args);renderCustomBracket();return out};
+
+function recordScheduleHistory(){const s=current();if(!s||s.scheduleHistory251?.some(x=>num(x.year)===num(s.year)))return;s.scheduleHistory251??=[];s.scheduleHistory251.push(...(s.schedule||[]).filter(g=>g.result).map(g=>({year:s.year,week:g.week,result:g.result,rivalry:!!g.rivalry,oppId:g.oppId})));s.scheduleHistory251=s.scheduleHistory251.slice(-100)}
+const originalFinish=window.finishSeason;if(typeof originalFinish==='function')window.finishSeason=function(...args){recordScheduleHistory();return originalFinish.apply(this,args)};
+
+const style=document.createElement('style');style.textContent=`.rules-grid251{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.rules-grid251 label{display:grid;gap:6px;border:1px solid #214154;border-radius:10px;background:#0a1d29;padding:11px;color:#a9bec9;font-size:.72rem;font-weight:800}.rules-grid251 select{min-height:42px;border:1px solid #315268;border-radius:7px;background:#06131c;color:#eef8ff;padding:8px}.rules-grid251 output{color:#f3d36d}.premium-pack251,.supporter-badge251{display:inline-flex;margin:5px 0;border-radius:999px;background:#7b5c16;color:#ffe792;padding:3px 7px;font-size:.56rem;font-weight:900;letter-spacing:.08em}.sdf-consumable251{border-color:#1d806f}.sdf-scenario-product251{border-color:#754c91}.sdf-supporter-product251{border-color:#977726}html[data-sdf-supporter="rookie"] .mobile-bottom-nav,html[data-sdf-supporter="all-american"] .mobile-bottom-nav,html[data-sdf-supporter="legend"] .mobile-bottom-nav{box-shadow:inset 0 2px #d4ad45}.supporter-badge251{margin-left:8px}@media(max-width:700px){.rules-grid251{grid-template-columns:1fr}}`;document.head.append(style);
+
+const observe=new MutationObserver(()=>{installScenarios();decorateScenarioDialog();decorateScenarioShop();injectButtons();renderSupporter()});observe.observe(document.documentElement,{childList:true,subtree:true});
+window.addEventListener('sdf:play-entitlements',()=>{claimPending();decorateScenarioDialog();renderSupporter()});
+window.SDF_PREMIUM251={SCENARIOS,PACKS,installScenarios,owned,openRules,ensureRules,applyBoost,claimPending,canReceiveBoost:()=>!!current(),reshapePlayoffField,supporterTier,continueCustomPlayoff,startCustomPostseason,completeCustom,renderCustomBracket};
+installScenarios();setTimeout(()=>{claimPending();injectButtons();renderSupporter();decorateScenarioDialog()},300);
+})();
+
+(()=>{
+'use strict';
+const URL='https://fwnvwkffxazwsmaiqayj.supabase.co/rest/v1/supporter_credits';
+const SUBMIT_URL='https://fwnvwkffxazwsmaiqayj.supabase.co/rest/v1/rpc/submit_supporter_credit';
+const NOTIFY_URL='https://fwnvwkffxazwsmaiqayj.supabase.co/functions/v1/send-feedback';
+const API_KEY='sb_publishable_MeNnZ-PoF0cKlhfcvcL6Rg_xIJajlhW';
+const DEVICE_KEY='SDF_SUPPORTER_CREDITS_DEVICE_261',PENDING_KEY='SDF_SUPPORTER_CREDITS_PENDING_261',PROMPTED_KEY='SDF_SUPPORTER_CREDITS_PROMPTED_261';
+let promptTimer=null,entryPromptOpen=false;
+const byId=id=>document.getElementById(id);
+const esc=value=>String(value??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+function tier(){const c=window.SDF_ANDROID_COMMERCE;return c?.owns?.('supporter_legend')?'legend':c?.owns?.('supporter_all_american')?'all_american':c?.owns?.('supporter_rookie')?'rookie':''}
+function tierLabel(value=tier()){return value==='legend'?'Legend Supporter':value==='all_american'?'All-American Supporter':value==='rookie'?'Rookie Supporter':''}
+function deviceId(){try{let id=localStorage.getItem(DEVICE_KEY);if(id)return id;id=crypto?.randomUUID?.()||'sdf-'+Date.now()+'-'+Math.random().toString(36).slice(2);localStorage.setItem(DEVICE_KEY,id);return id}catch{return 'sdf-'+Date.now()+'-'+Math.random().toString(36).slice(2)}}
+function validName(value){const name=String(value||'').trim().replace(/\s+/g,' ');return name.length>=2&&name.length<=28&&/^[\p{L}\p{N} .,'_-]+$/u.test(name)?name:''}
+function pending(){try{return JSON.parse(localStorage.getItem(PENDING_KEY)||'null')}catch{return null}}
+function setPending(value){try{if(value)localStorage.setItem(PENDING_KEY,JSON.stringify(value));else localStorage.removeItem(PENDING_KEY)}catch{}}
+function wasPrompted(){try{return localStorage.getItem(PROMPTED_KEY)==='1'}catch{return false}}
+function markPrompted(){try{localStorage.setItem(PROMPTED_KEY,'1')}catch{}}
+function status(text,type=''){const el=byId('supporterCreditsStatus261');if(!el)return;el.textContent=text;el.className='supporter-credits-status '+type}
+function close(){entryPromptOpen=false;const dialog=byId('supporterCredits261');if(dialog?.open)dialog.close()}
+function listHtml(rows){if(!rows.length)return '<p class="muted">The first Supporter Credits names will appear here soon.</p>';const groups={legend:[],all_american:[],rookie:[]};rows.forEach(row=>{if(groups[row.tier])groups[row.tier].push(row.display_name)});return Object.entries(groups).filter(([,names])=>names.length).map(([key,names])=>'<section class="supporter-credit-tier"><small>'+esc(tierLabel(key).toUpperCase())+'</small><p>'+names.map(esc).join(' · ')+'</p></section>').join('')}
+async function load(){const host=byId('supporterCreditList261');if(!host)return;host.innerHTML='<p class="muted">Loading Supporter Credits…</p>';try{const r=await fetch(URL+'?select=display_name,tier,created_at&approved=eq.true&order=created_at.asc&limit=250',{headers:{apikey:API_KEY,Authorization:'Bearer '+API_KEY}});if(!r.ok)throw Error('Credits unavailable');host.innerHTML=listHtml(await r.json())}catch{host.innerHTML='<p class="muted">Credits are unavailable right now. Please check again later.</p>'}}
+async function notifyOwner(body){const form=new FormData();form.append('Type','Purchase / account issue');form.append('Description',`NEW SUPPORTER CREDITS NAME — REVIEW NEEDED\n\nPublic name: ${body.display_name}\nSupporter tier: ${tierLabel(body.tier)}\nSubmitted: ${new Date().toISOString()}\n\nThe name is waiting for approval in public.supporter_credits. To review pending submissions, run:\nSELECT id, display_name, tier, created_at FROM public.supporter_credits WHERE approved = false ORDER BY created_at DESC LIMIT 25;\n\nTo activate this entry, set approved = true for its id.`);form.append('Page','Saturday Dynasty Football · Supporter Credits');form.append('Browser',`Android/browser supporter credits submission · build 264`);form.append('SubmittedAt',new Date().toISOString());const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);let r;try{r=await fetch(NOTIFY_URL,{method:'POST',headers:{apikey:API_KEY,Accept:'application/json'},body:form,signal:controller.signal})}finally{clearTimeout(timer)}let data=null;try{data=await r.json()}catch{}if(!r.ok||data?.ok!==true)throw Error('Notification email failed')}
+async function submit(){const current=tier(),input=byId('supporterCreditsName261');if(!current){status('A Supporter tier is required before submitting a name.','bad');return}const name=validName(input?.value);if(!name){status('Use 2–28 letters, numbers, spaces, or . , apostrophe, _ and -','bad');return}const body={device_id:deviceId(),display_name:name,tier:current};setPending(body);status('Submitting your name…');try{const r=await fetch(SUBMIT_URL,{method:'POST',headers:{apikey:API_KEY,Authorization:'Bearer '+API_KEY,'Content-Type':'application/json'},body:JSON.stringify({p_device_id:body.device_id,p_display_name:body.display_name,p_tier:body.tier})});if(!r.ok)throw Error('Credits service unavailable');setPending(null);try{await notifyOwner(body);status('Name submitted for review. An email alert was sent. It will appear in Credits after approval.','good')}catch{status('Name submitted for review, but the email alert could not be sent. The submission is still saved for approval.','bad')}}catch{status('Could not submit right now. Your name is saved here; try again later.','bad')}}
+function render(){let dialog=byId('supporterCredits261');if(!dialog){dialog=document.createElement('dialog');dialog.id='supporterCredits261';dialog.className='supporter-credits-dialog';dialog.innerHTML='<button class="modal-close" type="button" aria-label="Close Supporter Credits">×</button><span class="eyebrow">COMMUNITY</span><h2>Supporter Credits</h2><p class="muted">Saturday Dynasty Football is built by one developer. Thank you to the players helping keep it growing.</p><section id="supporterCreditSubmit261" class="supporter-credit-submit"></section><section><h3>Supporters</h3><div id="supporterCreditList261"></div></section>';document.body.append(dialog);dialog.querySelector('.modal-close').onclick=close;dialog.addEventListener('cancel',event=>{event.preventDefault();close()})}const current=tier(),saved=byId('supporterCreditsName261')?.value??pending()?.display_name??'',host=byId('supporterCreditSubmit261');host.innerHTML=current&&entryPromptOpen?'<h3>Your '+esc(tierLabel(current))+' credit</h3><p>Choose an optional public display name. Names are reviewed before appearing here; no Google account name or email is shared.</p><label>DISPLAY NAME<input id="supporterCreditsName261" maxlength="28" autocomplete="nickname" value="'+esc(saved)+'" placeholder="How should we credit you?"></label><button id="supporterCreditsSubmit261" class="btn primary" type="button">Save My Public Name</button><p id="supporterCreditsStatus261" class="supporter-credits-status" aria-live="polite"></p>':current?'<h3>Thank you for supporting the game</h3><p>Your Supporter badge and credits recognition are active. To request or change a public name later, use Feedback in the app or email dynastysportsstudios@gmail.com.</p>':'<h3>Want to appear here?</h3><p>Supporter tiers include a permanent badge, a gold menu accent, and optional credits recognition.</p><button id="supporterCreditsShop261" class="btn neutral" type="button">View Supporter Tiers</button>';if(current&&entryPromptOpen)byId('supporterCreditsSubmit261').onclick=submit;else if(!current)byId('supporterCreditsShop261').onclick=()=>{close();window.SDF_ANDROID_COMMERCE?.openShop?.('supporter_rookie')};return dialog}
+function open(afterPurchase=false){entryPromptOpen=afterPurchase===true&&!!tier();const dialog=render();dialog.querySelector('h2').textContent=afterPurchase===true?'Thank You for Supporting Us!':'Supporter Credits';if(tier())markPrompted();if(!dialog.open)dialog.showModal();dialog.scrollTop=0;load()}
+function promptForOwnedTier(billing){if(!billing?.ready||!tier()||wasPrompted()||promptTimer!==null)return;promptTimer=setTimeout(()=>{promptTimer=null;if(!tier()||wasPrompted())return;window.SDF_ANDROID_COMMERCE?.closeShop?.();markPrompted();open(true)},500)}
+function inject(){const settings=document.querySelector('.release-settings');if(settings&&!byId('supporterCreditsSettings261')){const row=document.createElement('section');row.id='supporterCreditsSettings261';row.className='settings-section supporter-credits-entry';row.innerHTML='<div class="settings-section-head"><div><small>COMMUNITY</small><h3>Supporter Credits</h3><p class="muted">Thank the players supporting Saturday Dynasty Football.</p></div><button class="btn neutral" type="button">View Credits</button></div>';row.querySelector('button').onclick=open;settings.append(row)}const more=byId('mobileMoreMenu');if(more&&!byId('supporterCreditsMobile261')){const button=document.createElement('button');button.id='supporterCreditsMobile261';button.type='button';button.textContent='Supporter Credits';button.onclick=()=>{more.classList.add('hidden');open()};more.insertBefore(button,byId('mobileMoreClose'))}}
+const style=document.createElement('style');style.textContent='.supporter-credits-dialog{color:#eef6ff;background:#0a1a27;border:1px solid #5d7595;border-radius:18px;padding:24px;max-width:520px;width:calc(100% - 34px);max-height:85vh;overflow:auto}.supporter-credits-dialog h2{margin:5px 0}.supporter-credits-dialog h3{margin:16px 0 7px}.supporter-credit-submit{border:1px solid #7b5c16;border-radius:12px;background:#171b20;padding:13px}.supporter-credit-submit label{display:grid;gap:6px;color:#c5d3df;font-size:.73rem;font-weight:800}.supporter-credit-submit input{min-height:42px;border:1px solid #476077;border-radius:7px;background:#06131c;color:#f4f8ff;padding:9px;margin-bottom:9px}.supporter-credit-tier{border-left:3px solid #b4943f;padding:7px 10px;margin:8px 0;background:#ffffff08}.supporter-credit-tier small{color:#f5d576;font-weight:900;letter-spacing:.08em}.supporter-credit-tier p{margin:5px 0;color:#dfeaf2}.supporter-credits-status{min-height:1.3em;margin:8px 0 0;color:#b5c5d1}.supporter-credits-status.good{color:#6ce0af}.supporter-credits-status.bad{color:#ff9caa}.supporter-credits-entry .settings-section-head{align-items:center}.supporter-credits-entry .settings-section-head button{flex:0 0 auto}';document.head.append(style);
+document.addEventListener('DOMContentLoaded',inject);window.addEventListener('sdf:play-entitlements',event=>{inject();if(byId('supporterCredits261')?.open)render();promptForOwnedTier(event.detail)});window.SDF_SUPPORTER_CREDITS261={open,close,load,submit,tier,tierLabel,validName,deviceId};
 })();
 
 (()=>{
