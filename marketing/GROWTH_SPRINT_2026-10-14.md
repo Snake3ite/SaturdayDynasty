@@ -3,8 +3,8 @@
 **Status:** READY TO POST — none of these messages have been published.  
 **Owner:** Dynasty Sports Studios / Saturday Dynasty Football.
 
-## Current signal (internal reports, *not* Google Play installs)
-The Oct 13 reporting-day email shows **Android**: 44 first basic reporting launches, 437 sessions, 583 completed games, and 49 newly created dynasties during the day. Android all-time since Sep 17: 1,662 first-reporting launches and 23,966 games completed. **Browser** all-time: 75 first-reporting launches, 100 sessions, **1** dynasty created, **0** games completed. Browser telemetry may be incomplete and has not yet been validated. Android community link taps all-time: **4**. Day-1 retention (ID opt-in cohorts): 26/93 = 28%; day-7: 9/76 = 11.8%. These are not all-users conversion rates.
+## Current priority
+Before buying browser traffic, confirm that new visitors can create a dynasty, complete a game and generate accurate browser engagement events. Use private analytics to establish and monitor the baseline; do not publish internal game telemetry into this public repository.
 
 **Marketing implication:** Focus on getting the first real browser game successfully played; then send more traffic. Facebook and Discord should drive players to share *their own dynasty stories*, not just generate announcement impressions.
 
