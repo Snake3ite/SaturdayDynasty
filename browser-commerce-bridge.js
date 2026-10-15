@@ -11,7 +11,7 @@
   const style=document.createElement('style');
   style.id='sdf-browser-commerce-bridge-style';
   style.textContent=`
-    #sdfPlayShop,#sdfAndroidEditor,#sdfAndroidPlayerEditorBtn,#sdfAndroidTeamEditorBtn{display:none!important}
+    #sdfPlayShop{display:none!important}
   `;
   document.head.appendChild(style);
 
@@ -46,8 +46,7 @@
   // hidden fields first. On web the Android editor is never authoritative, so
   // remove its DOM whenever it exists and let the browser editor own those IDs.
   function removeAndroidEditor(){
-    const androidEditor=$('#sdfAndroidEditor');
-    if(androidEditor)androidEditor.remove();
+    // Current shared editors are intentionally retained on the browser.
   }
 
   function wrapPlayerProfileTracker(){

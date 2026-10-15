@@ -2,7 +2,9 @@
   "name": "saturday-dynasty-web",
   "private": true,
   "scripts": {
-    "test": "node tests/browser-saves.cjs"
+    "test": "node tests/browser-saves.cjs && node --test tests/cloud-sync294.cjs tests/commissioner-browser294.cjs tests/usage-edge.cjs tests/growth-analytics.cjs tests/growth-ingest.cjs tests/browser-bootstrap.cjs tests/browser-announcements.cjs tests/game-center-scroll.cjs tests/browser-offline.cjs && node tests/growth-page.cjs && node tests/browser-growth.cjs",
+    "build": "python build_web.py",
+    "test:growth": "node --test tests/growth-analytics.cjs tests/growth-ingest.cjs tests/browser-bootstrap.cjs"
   },
   "devDependencies": {
     "fake-indexeddb": "6.2.4"

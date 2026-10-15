@@ -1,18 +1,18 @@
 {
-  "version": "27.4.69",
-  "release": "Android V27.4.69 · Build 270 · Recruiting Filters",
-  "versionCode": 270,
-  "fileCount": 173,
+  "version": "27.4.97",
+  "release": "Android V27.4.97 · Build 298 · Layout & Community Update",
+  "versionCode": 298,
+  "fileCount": 175,
   "files": [
     {
       "path": "ad-config.js",
-      "sha256": "55372b2cc91b1290abab9cca7ce0793ce5aedeb7c69ec3c96ca7cc98691b2535",
-      "bytes": 732
+      "sha256": "b3fe88e276b3f5e1ca0762d479f7647cfd6c1e13e42931837c4ea86d2850f43b",
+      "bytes": 1047
     },
     {
       "path": "app-bundle.js",
-      "sha256": "96c106ff3f0f271d61a665984fc2d910ebb46b779737cc8eb33c73360334e9bf",
-      "bytes": 1458785
+      "sha256": "d79da0cf241624b285e8d44df0c37bb8671dc57bc6a24113115cae5b758f562b",
+      "bytes": 1691202
     },
     {
       "path": "app-shell.css",
@@ -716,28 +716,38 @@
     },
     {
       "path": "index.html",
-      "sha256": "4bb9031d7df9e2ab9fe99f85ece5fb77abc72559ac5f5c158a6a706615c1cf9c",
-      "bytes": 46595
+      "sha256": "749f6e1aa371e78985e082525b100b46e636dc09a801b6291a3a35e7a18ca62f",
+      "bytes": 47701
     },
     {
       "path": "live-game.css",
-      "sha256": "7f9d156cd826bdb4377657f837a2479950d93e361c8424610564184706d807e1",
-      "bytes": 19606
+      "sha256": "64d87130c87dd0185dc57aff9484fa3d2a1fc3f4e6b452f14c34f4db16404909",
+      "bytes": 33219
     },
     {
       "path": "manifest.json",
-      "sha256": "56449cf91f0f3bb8d32ae003b99f21214af5bbec68675ee59cf65d26e98b8cec",
+      "sha256": "2bd04ef0da65ef07882b91a30fcd9bf70cb14ab5dd05160798fc18a13d40c42d",
       "bytes": 720
     },
     {
+      "path": "mobile-usability296.css",
+      "sha256": "50d33c7fbe7bfaa351dbbf593914134c9f27bb30927248a827b4430a6b3e92d0",
+      "bytes": 18840
+    },
+    {
       "path": "navigation.css",
-      "sha256": "7cbbc3bd625f41a4bb597b34c5935ab54e260727192782a7b71b6c4a4ba34e3f",
-      "bytes": 8958
+      "sha256": "60a8b883570cacbf241acc46f3ef565306d4d7707c969410935bb7144c87ce54",
+      "bytes": 8667
+    },
+    {
+      "path": "profile-viewport277.css",
+      "sha256": "d1f81d3f4e8d1c121fa68a14142cfca0b60121b11c21504f6e78477beb1b474e",
+      "bytes": 3190
     },
     {
       "path": "release.css",
-      "sha256": "231a02bf66b643c03c961fba16ee4a20b08aa0c93f0a05d98edcc8e5c9e31e9a",
-      "bytes": 16535
+      "sha256": "35d4f72dedda03e6f09405c20de157547ffd832840d8204e6805265a195ab6b6",
+      "bytes": 16766
     },
     {
       "path": "styles.css",
@@ -746,8 +756,8 @@
     },
     {
       "path": "usage-privacy.html",
-      "sha256": "cdb66c9a226fe54d860733e0ee27dc463461d8fc48cd3bbc1ed8a3d13fb51d64",
-      "bytes": 3796
+      "sha256": "d199b5b16f3a99eac85582dede3ee88a94e627fd3782c1792657273eb43d1548",
+      "bytes": 4091
     },
     {
       "path": "v103.css",

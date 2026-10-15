@@ -8,8 +8,8 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png" sizes="192x192">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="styles.css?v=270">
-<link rel="stylesheet" href="release.css?v=216">
+<link rel="stylesheet" href="styles.css?v=280">
+<link rel="stylesheet" href="release.css?v=271">
 <link rel="stylesheet" href="v103.css?v=266">
 <link rel="stylesheet" href="v105.css?v=215">
 <link rel="stylesheet" href="v11.css?v=270"><link rel="stylesheet" href="v111.css?v=215"><link rel="stylesheet" href="v113.css?v=215">
@@ -34,13 +34,15 @@
 <link rel="stylesheet" href="v232.css?v=270">
 <link rel="stylesheet" href="app-shell.css?v=266">
 <link rel="stylesheet" href="live-game.css?v=266">
-<link rel="stylesheet" href="navigation.css?v=266">
+<link rel="stylesheet" href="navigation.css?v=296">
 <link rel="stylesheet" href="coach-journey.css?v=266">
 <link rel="stylesheet" href="dynasty-story.css?v=258">
+<link rel="stylesheet" href="profile-viewport277.css?v=277">
+<link rel="stylesheet" href="mobile-usability296.css?v=296">
 </head>
 <body class="ui221-startup-mode">
 <header class="topbar">
-  <div class="brand"><img id="appTeamLogo" class="logo-img" src="icon-192.png" alt="Saturday Dynasty Football"><div><h1>Saturday Dynasty Football</h1><p id="releaseLabel">Android V27.4.69 · Build 270 · Recruiting Filters</p></div></div>
+  <div class="brand"><img id="appTeamLogo" class="logo-img" src="icon-192.png" alt="Saturday Dynasty Football"><div><h1>Saturday Dynasty Football</h1><p id="releaseLabel">Android V27.4.97 · Build 298 · Layout & Community Update</p></div></div>
   <div class="broadcast-context"><small id="activeSectionKicker">DYNASTY FOOTBALL</small><strong id="activeSectionTitle">Select a Program</strong></div>
   <div class="top-status">
     <span>YEAR <b id="yearLabel">1</b></span>
@@ -221,17 +223,18 @@
         <select id="recruitRegionFilter"><option value="ALL">All regions</option></select>
         <select id="interestFilter" aria-label="Minimum prospect interest"><option value="ALL">Any interest</option><option value="HIGH">High interest · 70+</option><option value="WARM">Warm interest · 45+</option><option value="LOW">Low interest · under 45</option></select>
         <select id="scoutFilter" aria-label="Scouting status"><option value="ALL">Any scouting status</option><option value="SCOUTED">Scouted ratings</option><option value="UNSCOUTED">Needs scouting</option></select>
-        <select id="statusFilter"><option value="AVAILABLE">All uncommitted</option><option value="RECRUITABLE">Recruitable now</option><option value="UNCONTACTED">Uncontacted prospects</option><option value="LATE">Late opportunities</option><option value="BOARD">My board</option><option value="OFFERED">Scholarship offered</option><option value="COMMITTED">Committed</option></select>
+        <select id="statusFilter"><option value="AVAILABLE">Available prospects</option><option value="RECRUITABLE">Recruitable now</option><option value="UNCONTACTED">Uncontacted prospects</option><option value="LATE">Late opportunities</option><option value="BOARD">My board</option><option value="OFFERED">Scholarship offered</option><option value="SOFT">Other schools’ soft commits</option><option value="COMMITTED">Committed</option></select>
         <select id="sortFilter"><option value="RANK">National rank</option><option value="INTEREST">My interest</option><option value="NEED">Team need</option><option value="DISTANCE">Distance</option><option value="FIT">Program fit</option><option value="OVR">Scouted overall</option><option value="POTENTIAL">Scouted potential</option></select>
         <button id="autoBoardBtn" class="btn neutral">Auto-fill Board</button>
       </div>
 
       <div id="recruitPager" class="pager"></div><div id="recruitCardList" class="mobile-card-list"></div><div class="table-wrap desktop-data-table">
         <table>
-          <thead><tr><th>#</th><th>Prospect</th><th>Pos</th><th>Stars</th><th>Location</th><th>Stage</th><th>OVR</th><th>UPSIDE</th><th>Scout</th><th>Need</th><th>Dealbreaker</th><th>Recruiting Race</th><th>Weekly Plan</th><th>Actions</th></tr></thead>
+          <thead><tr><th>#</th><th>Prospect</th><th>Pos</th><th>Stars</th><th>Location</th><th>Stage</th><th>OVR</th><th>UPSIDE</th><th>Scout</th><th>Need</th><th>Dealbreaker</th><th>Recruiting Race</th><th>Actions</th></tr></thead>
           <tbody id="recruitTable"></tbody>
         </table>
       </div>
+      <div id="recruitPagerBottom" class="pager pager-bottom" aria-label="Recruiting list pages"></div>
     </section>
 
     <section id="highSchoolCommitSection" class="surface">
@@ -594,14 +597,14 @@
     </div>
       </section>
       <section id="sponsorCenter" class="surface sponsor-center">
-        <div class="section-head"><div><span class="eyebrow">OPTIONAL REWARDS</span><h2>Sponsor Center</h2><p class="muted">Watch an optional video to receive a dynasty bonus. Watch as many as you want; videos are never required to play.</p></div><span id="adEditionBadge" class="sponsor-badge">TEST ADS</span></div>
+        <div class="section-head"><div><span class="eyebrow">OPTIONAL REWARDS</span><h2>Sponsor Center</h2><p class="muted">Watch an optional video to receive a dynasty bonus. Resource videos are unlimited; coaching clinics and halftime bonuses have their own limits. Videos are never required to play.</p></div><span id="adEditionBadge" class="sponsor-badge">TEST ADS</span></div>
         <div id="adStatusPanel" class="ad-status-panel" aria-live="polite"></div>
         <div class="sponsor-reward-grid">
           <article class="sponsor-reward-card"><span class="sponsor-icon">⏱</span><div><small>STAFF SPONSOR</small><h3>+25 Recruiting Hours</h3><p>Unlimited optional rewards.</p></div><button id="rewardHoursAdBtn" class="btn primary">Watch Sponsor Video</button></article>
           <article class="sponsor-reward-card"><span class="sponsor-icon">$</span><div><small>BOOSTER SPOTLIGHT</small><h3>+$10,000 Recruit NIL</h3><p>Unlimited optional rewards.</p></div><button id="rewardNilAdBtn" class="btn primary">Watch Sponsor Video</button></article>
           <article class="sponsor-reward-card"><span class="sponsor-icon">🏫</span><div><small>DEPARTMENT SPONSOR</small><h3>+$50,000 Athletics Budget</h3><p>For facilities, staff and program costs. Does not add Recruit NIL.</p></div><button class="btn primary" data-budget-reward>Watch Sponsor Video</button></article>
         </div>
-        <div class="sponsor-policy-row"><span>One interstitial may appear after the completed season recap. No banners or ads during live games.</span><button id="adPrivacyOptionsBtn" class="btn neutral">Privacy Options</button></div>
+        <div class="sponsor-policy-row"><span>One interstitial may appear after the completed season recap. No banners or automatic ads during live games. Halftime sponsor videos are optional.</span><button id="adPrivacyOptionsBtn" class="btn neutral">Privacy Options</button></div>
       </section>
       <section class="surface">
         <div class="section-head"><div><span class="eyebrow">RIVALRIES</span><h2>Rivalry History</h2></div></div>
@@ -707,6 +710,7 @@
   </div>
 </div>
 <script src="ad-config.js?v=216"></script>
-<script src="app-bundle.js?v=270"></script>
+<script src="app-bundle.js?v=298"></script>
 </body>
 </html>
+

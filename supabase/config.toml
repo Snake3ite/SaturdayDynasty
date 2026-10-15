@@ -9,3 +9,7 @@ verify_jwt = false
 
 [functions.usage-reporting]
 verify_jwt = false
+
+# Public, opt-in, bounded event ingestion; database access stays server-only.
+[functions.browser-growth-ingest]
+verify_jwt = false

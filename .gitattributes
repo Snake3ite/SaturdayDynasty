@@ -1,0 +1,3 @@
+# Shared release manifests hash exact bytes. Never normalize these snapshots
+# during checkout on Linux CI or Windows development machines.
+shared-app/** -text

@@ -21,8 +21,8 @@
 #homeDetailsCard #dashboardSectionNavV219{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;position:static!important;gap:4px!important;padding:5px!important;margin:0 0 14px!important;background:#08151f!important;border:1px solid #273d4c!important;border-radius:14px!important}
 #homeDetailsCard #dashboardSectionNavV219 .ui-section-chip{display:block!important;min-height:44px!important;padding:8px 2px!important;text-align:center!important;border:1px solid transparent!important;border-radius:9px!important;background:transparent!important;color:#9cb2c0!important;font-size:.76rem!important;font-weight:700;line-height:1.2!important;white-space:normal!important;box-shadow:none!important}
 #homeDetailsCard #dashboardSectionNavV219 .ui-section-chip::before{display:none!important}
-#homeDetailsCard #dashboardSectionNavV219 .ui-section-chip.active{color:#fff!important;background:color-mix(in srgb,var(--team-primary,#424275) 35%,#182c3d)!important;border-color:color-mix(in srgb,var(--team-secondary,#9bbcec) 60%,#233846)!important;box-shadow:inset 0 -2px 0 var(--team-secondary,#a9ceeb)!important}
-#homeDetailsCard button:focus-visible,#homeDetailsCard summary:focus-visible{outline:2px solid var(--team-secondary,#b6dfea);outline-offset:2px}
+#homeDetailsCard #dashboardSectionNavV219 .ui-section-chip.active{color:#fff!important;background:#162b38!important;border-color:#8e743a!important;box-shadow:inset 0 -2px 0 #e3b95a!important}
+#homeDetailsCard button:focus-visible,#homeDetailsCard summary:focus-visible{outline:2px solid #e3b95a;outline-offset:2px}
 #homeDetailsCard #gameCommandCenterV219{gap:12px;margin:0}
 #homeDetailsCard .ui-program-hero{padding:14px;border:1px solid #304450;border-radius:15px}
 #homeDetailsCard .ui-program-hero-team h2{font-size:1.13rem;line-height:1.25}
@@ -50,7 +50,7 @@
  display:block!important;min-width:0!important;min-height:44px!important;padding:8px 4px!important;text-align:center!important;border:1px solid transparent!important;border-radius:9px!important;background:transparent!important;color:#9cb2c0!important;font-size:.76rem!important;font-weight:700!important;line-height:1.25!important;white-space:normal!important;overflow:visible!important;text-overflow:clip!important;box-shadow:none!important;
 }
 :is(.ui-section-nav-v219.phone-section-menu-v232,.recruit-profile-tabs-v226,.player-profile-tabs-v225,.roster-command-nav-v224,.coach-branch-tabs,.gc-tabs)>button:is(.active,[aria-selected="true"]){
- color:#fff!important;background:color-mix(in srgb,var(--team-primary,#424275) 35%,#182c3d)!important;border-color:color-mix(in srgb,var(--team-secondary,#9bbcec) 60%,#233846)!important;box-shadow:inset 0 -2px 0 var(--team-secondary,#a9ceeb)!important;
+ color:#fff!important;background:#162b38!important;border-color:#8e743a!important;box-shadow:inset 0 -2px 0 #e3b95a!important;
 }
 .ui-section-nav-v219.phone-section-menu-v232 .ui-section-chip::before{display:none!important;content:none!important}
 .coach-branch-tab>span,.coach-branch-tab>small{display:none!important}
@@ -61,7 +61,7 @@
 #coachTab .coach-branch-tabs{grid-template-columns:repeat(3,minmax(0,1fr))!important}
 #rosterTab .roster-command-nav-v224{grid-template-columns:repeat(2,minmax(0,1fr))!important}
 :is(.recruit-profile-tabs-v226,.player-profile-tabs-v225){position:sticky!important;top:0!important;z-index:8}
-:is(.ui-section-nav-v219,.recruit-profile-tabs-v226,.player-profile-tabs-v225,.roster-command-nav-v224,.coach-branch-tabs,.gc-tabs)>button:focus-visible{outline:2px solid var(--team-secondary,#b6dfea)!important;outline-offset:2px!important}
+:is(.ui-section-nav-v219,.recruit-profile-tabs-v226,.player-profile-tabs-v225,.roster-command-nav-v224,.coach-branch-tabs,.gc-tabs)>button:focus-visible{outline:2px solid #e3b95a!important;outline-offset:2px!important}
 @media(min-width:761px){#coachTab .coach-branch-tabs{grid-template-columns:repeat(5,minmax(0,1fr))!important}#rosterTab .roster-command-nav-v224{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
 @media(max-width:390px){#modal :is(.recruit-profile-tabs-v226,.player-profile-tabs-v225){grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 @media(max-width:390px){#gameScreen .ui-section-nav-v219.phone-section-menu-v232:is([data-item-count="7"],[data-item-count="8"]){grid-template-columns:repeat(3,minmax(0,1fr))!important}}

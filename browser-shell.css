@@ -6,3 +6,8 @@
 
 
 @media(max-width:760px){.web-cloud-bar{padding:0 10px;justify-content:stretch}.web-cloud-pill{width:100%;justify-content:space-between;border-radius:12px}#sdfFeedbackBtn{bottom:calc(84px + env(safe-area-inset-bottom))}}
+/* Keep phone gameplay unobstructed; menu entries still open feedback and shop. */
+@media (max-width: 760px), (max-height: 520px) {
+  #sdfFeedbackBtn,
+  #sdfShopBtn { display: none !important; }
+}

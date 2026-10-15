@@ -144,3 +144,131 @@ html:has(#gameSimModal:not(.hidden)),body:has(#gameSimModal:not(.hidden)){overfl
 @media(max-width:430px){.gc-control-dock>.gc-finish{width:100%;min-height:44px!important}.gc-playback{flex-basis:100%}.gc-scoreboard{padding-top:17px}.gc-score{font-size:46px}.gc-team-name{font-size:12px}.gc-team-identity img{width:42px;height:42px}}
 @media(max-width:350px){#gameSimBody .gc-center,#gameSimBody .gc-final{padding-left:10px;padding-right:10px}.gc-match-meta{font-size:9px}.gc-situation b{font-size:14px}.gc-situation small{font-size:7px}.gc-header h2{font-size:21px!important}.gc-scoreboard{grid-template-columns:minmax(0,1fr) 67px minmax(0,1fr);gap:6px}.gc-team-name{font-size:11px}.gc-field{height:143px}.gc-latest p{font-size:15px}}
 @media(prefers-reduced-motion:reduce){#gameSimBody .gc-center *,#gameSimBody .gc-final *{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+.gc-halftime{margin:16px 0;padding:20px;border:1px solid #3c6c68;border-radius:18px;background:#0d232b;scroll-margin-top:12px}.gc-halftime[hidden]{display:none}.gc-halftime h3{font-size:22px;margin:8px 0}.gc-halftime p{color:#bcd0d7;line-height:1.5;font-size:13px}.gc-half-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:16px 0}.gc-half-summary span{display:grid;gap:4px;padding:10px;background:#142f38;border-radius:10px;font-size:12px;color:#bcd0d7}.gc-half-summary b{color:#fff;font-size:18px}.gc-half-coordinators{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.gc-half-coordinators article{min-width:0;padding:16px;border:1px solid #35515a;border-radius:12px;background:#10212c}.gc-half-coordinators small{font-size:10px;letter-spacing:.08em;color:#70d4c3}.gc-half-coordinators h4{margin:8px 0;font-size:17px}.gc-half-coordinators blockquote{margin:12px 0 20px;color:#c7d8df;font-size:14px;line-height:1.55}.gc-half-coordinators label{display:block;margin:12px 0;color:#dce8ee;font-size:12px}.gc-half-coordinators select{width:100%;min-height:44px;white-space:normal;background:#183441;color:#fff;border:1px solid #476272;border-radius:8px;padding:8px;margin-top:7px;font:inherit}.gc-half-coordinators input{display:block;width:100%;min-height:36px;accent-color:#51d6b4}.gc-half-value{float:right;color:#70d4c3}.gameplan-side{grid-column:1/-1;min-width:0;border:1px solid #345065;border-radius:14px;padding:15px;margin:10px 0}.gameplan-side legend{padding:0 8px;font-weight:800;color:#d9f4ec}.gc-half-note{font-size:12px!important}#gcContinueHalf{width:100%;min-height:48px}
+@media(max-width:600px){.gc-half-coordinators{grid-template-columns:1fr}.gc-halftime{padding:14px}.gc-halftime h3{font-size:19px}.gc-half-coordinators article{padding:14px}}
+
+.gameplan-books{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.gameplan-book{padding:16px;border:1px solid #345065;border-radius:14px;background:#102231}.gameplan-book label{font-weight:800;display:block}.gameplan-book select{width:100%;display:block;min-height:44px;padding:8px;margin:10px 0;background:#183441;color:#fff;border:1px solid #476272;border-radius:8px;font:inherit}.gameplan-book p,.gameplan-book small{color:#bcd0d7;font-size:13px;line-height:1.55}@media(max-width:600px){.gameplan-books{grid-template-columns:1fr}}
+
+#discipline272{margin-top:24px}#discipline272 .event-card{display:block;margin:12px 0;padding:16px}#discipline272 p{line-height:1.55}.discipline-actions{display:flex;flex-wrap:wrap;gap:8px}.discipline-actions .btn{white-space:normal;min-height:44px}#discipline272 summary{padding:16px;cursor:pointer}
+
+#liveHalfBtn[hidden]{display:none!important}
+
+/* Compact live view keeps the matchup, recent plays and key statistics together. */
+.gc-game-overview{display:grid;grid-template-columns:1fr;gap:12px}
+.gc-game-overview .gc-scoreboard{padding:18px 4px}
+.gc-presentation{display:block;margin-top:12px}
+.gc-latest{padding:12px 16px;min-height:0}
+.gc-latest p{font-size:16px;margin:6px 0;line-height:1.4}
+.gc-latest>small{font-size:10px}
+.gc-tabs{grid-template-columns:repeat(4,minmax(0,1fr))}
+.gc-stat-short-name{display:none}
+#gameSimBody .gc-center[data-live-view="overview"] .gc-details{display:grid;grid-template-columns:1fr 1fr}
+#gameSimBody .gc-center[data-live-view="overview"] .gc-tabs{grid-column:1/-1}
+#gameSimBody .gc-center[data-live-view="overview"] #gcPanelPlays{border-right:1px solid var(--gc-line)}
+#gameSimBody .gc-center[data-live-view="overview"] .gc-feed{max-height:245px}
+#gameSimBody .gc-center[data-live-view="overview"] .gc-stat-detail{display:none}
+#gameSimBody .gc-center[data-live-view="overview"] .gc-stat-full-name{display:none}
+#gameSimBody .gc-center[data-live-view="overview"] .gc-stat-short-name{display:inline}
+#gameSimBody .gc-center[data-live-view="overview"] .gc-stats-table thead th{padding:8px;font-size:11px}
+#gameSimBody .gc-center[data-live-view="overview"] .gc-stats-table thead img{display:inline-block;vertical-align:middle;width:20px;height:20px;margin:0 5px 0 0}
+#gameSimBody .gc-center[data-live-view="overview"] .gc-stats-table tbody th,#gameSimBody .gc-center[data-live-view="overview"] .gc-stats-table tbody td{padding:7px 8px}
+@media(min-width:801px){.gc-game-overview{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);align-items:stretch}.gc-game-overview .gc-scoreboard{grid-template-columns:minmax(0,1fr) 80px minmax(0,1fr);gap:10px}.gc-game-overview .gc-score{font-size:46px}.gc-game-overview .gc-team{grid-template-columns:1fr;text-align:center;direction:ltr}.gc-game-overview .gc-team-identity,.gc-game-overview .gc-team-them .gc-team-identity{flex-direction:column;text-align:center;gap:8px}.gc-game-overview .gc-possession,.gc-game-overview .gc-team-them .gc-possession{justify-content:center}.gc-game-overview .gc-team-name{font-size:15px}.gc-game-overview .gc-team-identity img{width:46px;height:46px}.gc-game-overview .gc-field{height:135px}}
+@media(max-width:800px){
+ #gameSimBody .gc-center{padding:calc(8px + env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) calc(116px + env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left))}
+ #gameSimBody .gc-center .gc-header h2{font-size:19px;margin:0}
+ .gc-center .gc-eyebrow{font-size:8px;letter-spacing:.1em}
+ .gc-center .gc-match-meta{margin:6px 0 8px;padding-bottom:6px;font-size:9px}
+ .gc-game-overview{grid-template-columns:124px minmax(0,1fr);gap:8px;align-items:stretch}
+ .gc-game-overview .gc-scoreboard{display:flex;flex-direction:column;justify-content:space-between;gap:5px;padding:8px;border:1px solid var(--gc-line);border-radius:12px;background:#14222c}
+ .gc-game-overview .gc-clock{order:-1;margin:0;padding:0 0 5px;width:100%;border:0;border-bottom:1px solid var(--gc-line);display:flex;align-items:baseline;justify-content:space-between;gap:4px}
+ .gc-game-overview .gc-clock strong{font-size:19px;line-height:1.25}
+ .gc-game-overview .gc-clock>span{font-size:10px;letter-spacing:0}
+ .gc-game-overview .gc-clock small{display:none}
+ .gc-game-overview .gc-team{position:relative;display:grid;grid-template-columns:30px minmax(0,1fr);gap:2px 6px;align-items:center;width:100%;text-align:left;padding-left:3px;border-left:3px solid transparent}
+ .gc-game-overview .gc-team.has-ball{border-left-color:var(--gc-accent)}
+ .gc-game-overview .gc-team-identity,.gc-game-overview .gc-team-identity>div{display:contents}
+ .gc-game-overview .gc-team-identity img{grid-column:1;grid-row:1;width:30px;height:30px}
+ .gc-game-overview .gc-team-name{grid-column:1/-1;grid-row:2;font-size:11px;line-height:1.25;min-height:0;display:block;text-align:left;overflow-wrap:normal;letter-spacing:-.01em}
+ .gc-game-overview .gc-team-meta{display:none}
+ .gc-game-overview .gc-score{grid-column:2;grid-row:1;font-size:34px;margin:0;letter-spacing:-.05em;text-align:right}
+ .gc-game-overview .gc-possession{position:absolute;left:-4px;top:0;margin:0;width:1px;height:1px;clip:rect(0,0,0,0);overflow:hidden}
+ .gc-game-overview .gc-situation{grid-template-columns:1fr 1fr;gap:3px;padding:7px 8px}
+ .gc-game-overview .gc-situation>div+div{padding-left:6px}
+ .gc-game-overview .gc-situation b{font-size:13px;line-height:1.3}
+ .gc-game-overview .gc-situation small{font-size:7px;letter-spacing:.02em}
+ .gc-game-overview .gc-drive-direction{display:none}
+ .gc-game-overview .gc-field{height:110px}
+ .gc-game-overview .gc-midfield-logo{width:36px;height:36px}
+ .gc-game-overview .gc-yard-numbers{font-size:8px}
+ .gc-game-overview .gc-endzone{font-size:8px}
+ .gc-game-overview .gc-field-key{gap:9px;font-size:8px;padding:4px 5px}
+ .gc-center .gc-presentation{margin-top:8px}
+ .gc-center .gc-latest{padding:9px 11px;min-height:0}
+ .gc-center .gc-latest-kicker{font-size:8px}
+ .gc-center .gc-latest p{font-size:13px;line-height:1.35;margin:4px 0}
+ .gc-center .gc-latest>small{display:none}
+ .gc-center .gc-control-dock{position:fixed;bottom:0;left:0;right:0;z-index:40;display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:8px max(10px,env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));background:#111e27;border-top:1px solid #41515a;box-shadow:0 -6px 20px #0003}
+ .gc-center .gc-playback{position:static;grid-column:1/-1;padding:0;border:0;box-shadow:none;background:transparent;gap:8px}
+ #gameSimBody .gc-center .gc-control-dock>.gc-finish{width:100%;font-size:11px;min-height:44px;padding:6px}
+ .gc-center .gc-control-dock>#liveFinalBtn:last-child{grid-column:2}
+ .gc-center .gc-details{margin-top:8px}
+ #gameSimBody .gc-center[data-live-view="overview"] .gc-details{display:flex;flex-direction:column}
+ #gameSimBody .gc-center[data-live-view="overview"] #gcPanelPlays{border-right:0;border-bottom:1px solid var(--gc-line)}
+ #gameSimBody .gc-center .gc-tabs button{font-size:11px;min-height:44px!important;padding:8px 4px}
+ #gameSimBody .gc-center[data-live-view="overview"] .gc-panel-heading{min-height:0;padding:5px 10px;font-size:9px}
+ #gameSimBody .gc-center[data-live-view="overview"] .gc-panel-heading>small{font-size:8px}
+ #gameSimBody .gc-center[data-live-view="overview"] .gc-feed{max-height:72px}
+ #gameSimBody .gc-center[data-live-view="overview"] .gc-feed-row{grid-template-columns:31px minmax(0,1fr) 30px;gap:7px;padding:7px 10px}
+ #gameSimBody .gc-center[data-live-view="overview"] .gc-feed-row p{font-size:11px;line-height:1.35}
+ #gameSimBody .gc-center[data-live-view="overview"] .gc-feed-row small{font-size:8px;margin-bottom:1px}
+ #gameSimBody .gc-center[data-live-view="overview"] .gc-feed-time,#gameSimBody .gc-center[data-live-view="overview"] .gc-feed-score{font-size:9px}
+ #gameSimBody .gc-center[data-live-view="overview"] .gc-stats-table thead th{padding:7px 8px;font-size:10px}
+ #gameSimBody .gc-center[data-live-view="overview"] .gc-stats-table tbody th,#gameSimBody .gc-center[data-live-view="overview"] .gc-stats-table tbody td{padding:6px 8px;font-size:11px;line-height:1.25}
+ #gameSimBody .gc-center[data-live-view="overview"] .gc-stats-table tr.gc-stat-total td{font-size:16px}
+}
+@media(max-width:350px){.gc-game-overview{grid-template-columns:112px minmax(0,1fr);gap:6px}.gc-game-overview .gc-scoreboard{padding:6px}.gc-game-overview .gc-team-name{font-size:10px}.gc-game-overview .gc-score{font-size:32px}.gc-game-overview .gc-situation b{font-size:11px}}
+
+#gameSimBody .gc-header h2:focus{outline:none}
+#gameSimBody .gc-center #liveHalfBtn[hidden]+#liveFinalBtn{grid-column:1/-1}
+
+#gameSimBody .gc-center .gc-tabs{grid-template-columns:repeat(4,minmax(0,1fr))!important;margin:0!important;gap:2px!important;padding:3px!important}
+@media(max-width:800px) and (max-height:750px){
+ .gc-center .gc-eyebrow{display:none}
+ .gc-center .gc-match-meta{margin:3px 0 5px;padding-bottom:4px}
+ .gc-game-overview .gc-field{height:85px}
+ .gc-game-overview .gc-scoreboard{padding:6px;gap:3px}
+ .gc-center .gc-latest{padding:7px 10px}
+ #gameSimBody .gc-center[data-live-view="overview"] .gc-feed{max-height:44px}
+ #gameSimBody .gc-center[data-live-view="overview"] .gc-stats-table thead th{padding:4px 8px}
+ #gameSimBody .gc-center[data-live-view="overview"] .gc-stats-table tbody th,#gameSimBody .gc-center[data-live-view="overview"] .gc-stats-table tbody td{padding:4px 8px}
+ .gc-center .gc-control-dock{padding-top:6px;padding-bottom:calc(6px + env(safe-area-inset-bottom));gap:4px}
+}
+@media(max-width:800px) and (max-height:750px){
+ #gameSimBody .gc-center[data-live-view="overview"] .gc-feed{max-height:34px}
+ .gc-center .gc-latest{padding:5px 9px}
+ #gameSimBody .gc-center[data-live-view="overview"] .gc-panel-heading{padding:3px 10px}
+ #gameSimBody .gc-center[data-live-view="overview"] .gc-stats-table tbody th,#gameSimBody .gc-center[data-live-view="overview"] .gc-stats-table tbody td{padding:3px 8px}
+}
+/* A full-width field gives the play room while keeping the matchup prominent. */
+@media(max-width:800px){
+ .gc-game-overview{grid-template-columns:minmax(0,1fr);gap:7px}
+ .gc-game-overview .gc-scoreboard{display:grid;grid-template-columns:minmax(0,1fr) 66px minmax(0,1fr);align-items:center;padding:7px 9px;gap:6px}
+ .gc-game-overview .gc-clock{order:0;grid-column:2;grid-row:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border:0;border-inline:1px solid var(--gc-line);padding:0 4px;gap:2px}
+ .gc-game-overview .gc-clock strong{font-size:19px}
+ .gc-game-overview .gc-team-us{grid-column:1;grid-row:1}
+ .gc-game-overview .gc-team-them{grid-column:3;grid-row:1}
+ .gc-game-overview .gc-team{grid-template-columns:30px minmax(0,1fr);padding-left:4px;gap:2px 5px}
+ .gc-game-overview .gc-score{font-size:40px;line-height:1.05}
+ .gc-game-overview .gc-team-name{font-size:11px;line-height:1.2}
+ .gc-game-overview .gc-field{height:145px}
+ .gc-game-overview .gc-situation{padding:5px 9px}
+ .gc-game-overview .gc-yard-numbers{font-size:10px}
+ .gc-game-overview .gc-midfield-logo{width:44px;height:44px}
+}
+@media(max-width:800px) and (max-height:750px){.gc-game-overview .gc-field{height:125px}.gc-game-overview .gc-scoreboard{padding:5px 8px}.gc-game-overview .gc-score{font-size:36px}}
+
+.gc-latest-team{font-size:11px;font-weight:800;color:var(--gc-accent);margin-top:5px;line-height:1.3}
+
+#gameSimBody .gc-center .gc-tabs{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+#gameSimBody .gc-center .gc-feed{max-height:410px}

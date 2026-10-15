@@ -4,7 +4,7 @@ Browser/PWA edition of Saturday Dynasty Football for desktop and mobile browsers
 
 ## Cloudflare Pages
 
-The repository uses `build_web.py` to assemble the Build270 shared game assets in `shared-app/` with browser-specific integrations into `dist/`. The existing `wrangler.jsonc` serves that output through the Saturday Dynasty Cloudflare Worker.
+The repository uses `build_web.py` to assemble the current verified shared game assets in `shared-app/` with browser-specific integrations into `dist/`. The issue #39 local integration contains **Build 298 / 27.4.97**, preserving current development. See [ISSUE39_INTEGRATION.md](ISSUE39_INTEGRATION.md) for implementation, executed tests and deployment limits. The existing `wrangler.jsonc` serves that output through the Saturday Dynasty Cloudflare Worker. No deployment has been performed for this integration.
 
 Cloudflare settings:
 
