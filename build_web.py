@@ -7,7 +7,7 @@ if OUT.exists():
  if OUT.resolve().parent!=ROOT:raise SystemExit('Unsafe output directory')
  shutil.rmtree(OUT)
 shutil.copytree(SOURCE,OUT)
-BROWSER=['cloud-config.js','web-shell.js','browser-save-bridge.js','browser-editors.js','browser-commerce-bridge.js','browser-team-editor-v195.js','browser-feedback.js','browser-shell.css','browser-bootstrap.js','ad-config.js','_headers','icon.svg','manifest.webmanifest']
+BROWSER=['cloud-config.js','web-shell.js','browser-save-bridge.js','browser-editors.js','browser-commerce-bridge.js','browser-team-editor-v195.js','browser-feedback.js','browser-shell.css','browser-bootstrap.js','browser-community-config.js','browser-growth.js','ad-config.js','_headers','icon.svg','manifest.webmanifest']
 for f in BROWSER:shutil.copy2(ROOT/f,OUT/f)
 # A hydrated browser launch can occur after DOMContentLoaded; honor older shared hooks.
 shared=(SOURCE/'app-bundle.js').read_text(encoding='utf-8')
