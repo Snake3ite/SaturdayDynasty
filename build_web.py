@@ -23,7 +23,7 @@ account_scope, browser_config=config.split('// Browser-only UI.',1)
 (OUT/'cloud-account-scope.js').write_text(account_scope,encoding='utf-8',newline='')
 (OUT/'cloud-config.js').write_text('// Browser-only UI.'+browser_config,encoding='utf-8',newline='')
 html=(OUT/'index.html').read_text(encoding='utf-8')
-html=html.replace('Android V27.4.69','Web V27.4.69').replace('href="manifest.json"','href="manifest.webmanifest"')
+html=html.replace('Android V27.4.69','Web V27.4.69').replace('href="manifest.json"','href="manifest.webmanifest"')\nhtml=html.replace('<title>Saturday Dynasty Football — Broadcast Edition</title>','<title>Saturday Dynasty Football | Play College Football Dynasty Online</title>')
 html=re.sub(r'<script src="(?:ad-config|app-bundle)\.js[^\"]*"></script>','',html)
 # Static metadata belongs in the initial HTML so crawlers and social preview bots
 # can read it without running the game's JavaScript bootstrap.
@@ -43,8 +43,8 @@ SEO_TAGS = """
 <meta name="twitter:image" content="https://saturdaydynasty.ctoolis.workers.dev/icon-512.png">
 """.strip()
 if '<meta name="description"' not in html:
- html=html.replace('</head>',SEO_TAGS+'\\n</head>')
-html=html.replace('</head>','<link rel="stylesheet" href="browser-shell.css?v=270">\\n</head>')
+ html=html.replace('</head>',SEO_TAGS+'\n</head>')
+html=html.replace('</head>','<link rel="stylesheet" href="browser-shell.css?v=270">\n</head>')
 html=html.replace('</body>','<script src="browser-bootstrap.js?v=270"></script>\n</body>')
 (OUT/'index.html').write_text(html,encoding='utf-8',newline='')
 (OUT/'app-ads.txt').write_text('google.com, pub-9690546015672361, DIRECT, f08c47fec0942fa0\n',encoding='utf-8',newline='')
