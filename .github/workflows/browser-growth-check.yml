@@ -1,0 +1,53 @@
+name: Browser growth checks
+
+on:
+  pull_request:
+    paths:
+      - "browser-*.js"
+      - "build_web.py"
+      - "package.json"
+      - "package-lock.json"
+      - "tests/**"
+      - "shared-app/**"
+      - ".github/workflows/browser-growth-check.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Compile web build script
+        run: python3 -m py_compile build_web.py
+
+      - name: Assemble browser build
+        run: python3 build_web.py
+
+      - name: Install test dependencies
+        run: npm ci
+
+      - name: Browser save and growth regression tests
+        run: npm test
+
+      - name: Verify browser growth assets included in generated output
+        run: |
+          test -f dist/browser-growth.js
+          test -f dist/browser-community-config.js
+          grep -q "browser-growth.js" dist/browser-bootstrap.js
