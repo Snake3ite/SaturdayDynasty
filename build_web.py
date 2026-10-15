@@ -7,6 +7,8 @@ if OUT.exists():
  if OUT.resolve().parent!=ROOT:raise SystemExit('Unsafe output directory')
  shutil.rmtree(OUT)
 shutil.copytree(SOURCE,OUT)
+# Public acquisition page lives at /play/; keep the main game launch at /.
+shutil.copytree(ROOT/'play',OUT/'play')
 BROWSER=['cloud-config.js','web-shell.js','browser-save-bridge.js','browser-editors.js','browser-commerce-bridge.js','browser-team-editor-v195.js','browser-feedback.js','browser-shell.css','browser-bootstrap.js','ad-config.js','_headers','icon.svg','manifest.webmanifest']
 for f in BROWSER:shutil.copy2(ROOT/f,OUT/f)
 # A hydrated browser launch can occur after DOMContentLoaded; honor older shared hooks.
@@ -24,7 +26,27 @@ account_scope, browser_config=config.split('// Browser-only UI.',1)
 (OUT/'cloud-config.js').write_text('// Browser-only UI.'+browser_config,encoding='utf-8',newline='')
 html=(OUT/'index.html').read_text(encoding='utf-8')
 html=html.replace('Android V27.4.69','Web V27.4.69').replace('href="manifest.json"','href="manifest.webmanifest"')
+html=html.replace('<title>Saturday Dynasty Football — Broadcast Edition</title>','<title>Saturday Dynasty Football | Play College Football Dynasty Online</title>')
 html=re.sub(r'<script src="(?:ad-config|app-bundle)\.js[^\"]*"></script>','',html)
+# Static metadata belongs in the initial HTML so crawlers and social preview bots
+# can read it without running the game's JavaScript bootstrap.
+SEO_TAGS = """
+<meta name="description" content="Play Saturday Dynasty Football in your browser. Recruit prospects, manage NIL, develop players, and build a college football dynasty on PC or mobile.">
+<link rel="canonical" href="https://saturdaydynasty.ctoolis.workers.dev/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Saturday Dynasty Football">
+<meta property="og:title" content="Saturday Dynasty Football | Play in Your Browser">
+<meta property="og:description" content="Build a college football dynasty: recruit, manage NIL, develop players, and chase championships. Play in your browser.">
+<meta property="og:url" content="https://saturdaydynasty.ctoolis.workers.dev/">
+<meta property="og:image" content="https://saturdaydynasty.ctoolis.workers.dev/icon-512.png">
+<meta property="og:image:alt" content="Saturday Dynasty Football logo">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Saturday Dynasty Football | Play in Your Browser">
+<meta name="twitter:description" content="Recruit, develop, and build your college football dynasty in a browser.">
+<meta name="twitter:image" content="https://saturdaydynasty.ctoolis.workers.dev/icon-512.png">
+""".strip()
+if '<meta name="description"' not in html:
+ html=html.replace('</head>',SEO_TAGS+'\n</head>')
 html=html.replace('</head>','<link rel="stylesheet" href="browser-shell.css?v=270">\n</head>')
 html=html.replace('</body>','<script src="browser-bootstrap.js?v=270"></script>\n</body>')
 (OUT/'index.html').write_text(html,encoding='utf-8',newline='')
