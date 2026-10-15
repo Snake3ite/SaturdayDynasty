@@ -2,7 +2,8 @@
   "name": "saturday-dynasty-web",
   "private": true,
   "scripts": {
-    "test": "node tests/browser-saves.cjs"
+    "test": "node tests/browser-saves.cjs && npm run test:growth",
+    "test:growth": "node tests/growth-page.cjs"
   },
   "devDependencies": {
     "fake-indexeddb": "6.2.4"
