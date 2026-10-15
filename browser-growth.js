@@ -130,7 +130,10 @@
       });
     });
     const hide=document.createElement('button');hide.type='button';hide.className='sdf-growth-action';hide.textContent='Hide guide';hide.onclick=()=>{try{localStorage.setItem('SDF_BROWSER_GUIDE_DISMISSED','1')}catch{}guide.remove()};
-    guide.append(kicker,heading,info,find,communityRow(),hide);
+    const community=document.createElement('details');
+    const communityTitle=document.createElement('summary');communityTitle.className='sdf-growth-action';communityTitle.textContent='Community & sharing';
+    community.append(communityTitle,communityRow());
+    guide.append(kicker,heading,info,find,hide,community);
     const hero=screen.querySelector('.launch-brand');
     if(hero)hero.insertAdjacentElement('afterend',guide);
     else screen.prepend(guide);

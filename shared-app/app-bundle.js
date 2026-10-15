@@ -5718,7 +5718,7 @@ const POS=['QB','RB','WR','TE','OT','IOL','EDGE','DL','LB','CB','S','K','P'];
 const ARCH={QB:['Field General','Improviser','Scrambler'],RB:['Power Back','Elusive Back','Receiving Back'],WR:['Deep Threat','Route Runner','Physical'],TE:['Vertical Threat','Blocking','Possession'],OT:['Pass Protector','Power'],IOL:['Power','Agile'],EDGE:['Speed Rusher','Power Rusher','Run Stopper'],DL:['Run Stopper','Power Rusher'],LB:['Field General','Coverage','Run Stopper'],CB:['Man Cover','Zone Cover','Slot'],S:['Zone','Hybrid','Run Support'],K:['Accurate','Power'],P:['Directional','Power','Coffin Corner']};
 const DEV=['Normal','Impact','Star','Elite'];
 const PRODUCTS=[
- ['all_access_pass','All Access Pass','$19.99','Own every permanent upgrade, every current scenario pack and every future scenario pack.','BEST VALUE',['Commissioner Mode + Remove Ads','Player Editor + Team Editor','All current and future scenario packs','Legend Supporter badge and treatment','Permanent Google Play unlock'],'Save versus buying the permanent upgrades separately'],
+ ['all_access_pass','All Access Pass','$19.99','Permanent creative tools, ad removal and all current and future scenario packs. Repeatable resource boosts are sold separately.','BEST VALUE',['Commissioner Mode + Remove Ads','Player Editor + Team Editor','All current and future scenario packs','Legend Supporter badge and treatment','Permanent Google Play unlock'],'Save versus buying the permanent upgrades separately'],
  ['commissioner_mode','Commissioner Mode','$9.99','The complete creative-control upgrade.','BEST VALUE',['No forced ads','Player Editor + roster-wide tools','Team Editor for all 128 programs','Create a Team','Create recruiting prospects','Every future Commissioner tool'],'Save versus buying all three upgrades separately'],
  ['remove_ads','Remove Ads','$4.99','Removes forced/interstitial ads. Optional rewarded sponsor videos still work.','',['Permanent on your Google Play account']],
  ['player_editor','Player Editor','$4.99','Edit players on any program and create prospects for the national recruiting class.','',['Names, positions and archetypes','Overall, potential and development','Attributes, morale and injuries','Roster-wide health and morale tools','Create recruiting prospects']],
@@ -8910,12 +8910,26 @@ function renderGuide(s,host){
  if(!j.eligible||j.dismissed||j.completed){panel?.remove();return}
  if(!panel){panel=document.createElement('section');panel.id='coachFirstWeekV236';panel.className='journey-card';host.prepend(panel)}
  const done=Object.values(p).filter(Boolean).length;
- const steps=[['recruit','Choose a recruit','Add a prospect to your board.','recruiting'],['practice','Prepare your team','Choose a weekly practice focus.','gameplan'],['game','Play your first game','Watch or simulate a game to its final score.','gameday']];
- panel.innerHTML=`<div class="journey-heading"><div><small>COACH’S FIRST WEEK</small><h3>${j.active?'Learn by coaching':'Three decisions. Your first Saturday.'}</h3><p>${j.active?`${done} of 3 complete · Your progress saves with this dynasty.`:'An optional guide through recruiting, preparation and your first game.'}</p></div><button type="button" class="journey-text" data-journey-dismiss>${j.active?'Stop guide':'Not now'}</button></div>${j.active?`<ol class="journey-steps">${steps.map(([key,title,copy,tab],i)=>`<li class="${p[key]?'complete':''}"><span class="journey-number" aria-hidden="true">${p[key]?'✓':i+1}</span><div><b>${esc(title)}${p[key]?' · Done':''}</b><p>${esc(copy)}</p></div><button type="button" class="btn neutral" data-journey-tab="${tab}">${p[key]?'Review':'Open'}</button></li>`).join('')}</ol>`:'<button type="button" class="btn primary" data-journey-start>Guide my first week</button>'}`;
+ const steps=guideSteps(),next=steps.find(([key])=>!p[key]);
+ panel.innerHTML=`<div class="journey-heading"><div><small>COACH’S FIRST WEEK</small><h3>${j.active?'Learn by coaching':'Three decisions. Your first Saturday.'}</h3><p>${j.active?`${done} of 3 complete · Your progress saves with this dynasty.`:'An optional guide through recruiting, preparation and your first game.'}</p></div><button type="button" class="journey-text" data-journey-dismiss>${j.active?'Stop guide':'Not now'}</button></div>${j.active?`<progress class="journey-progress298" max="3" value="${done}" aria-label="First-week tasks completed">${done} of 3</progress>${next?`<div class="journey-next298"><small>YOUR NEXT MOVE</small><h4>${esc(next[1])}</h4><p>${esc(next[2])}</p><button type="button" class="btn primary" data-journey-tab="${next[3]}">${esc(next[4])}</button><p class="journey-optional298">Play at your pace. These steps are suggestions, not requirements.</p></div>`:''}<details class="journey-checklist298"><summary>All first-week steps · ${done}/3 complete</summary><ol class="journey-steps">${steps.map(([key,title,copy,tab],i)=>`<li class="${p[key]?'complete':''}"><span class="journey-number" aria-hidden="true">${p[key]?'✓':i+1}</span><div><b>${esc(title)}${p[key]?' · Done':''}</b><p>${esc(copy)}</p></div><button type="button" class="btn neutral" data-journey-tab="${tab}">${p[key]?'Review':'Open'}</button></li>`).join('')}</ol></details>`:'<button type="button" class="btn primary" data-journey-start>Guide my first week</button>'}`;
  panel.querySelector('[data-journey-dismiss]').onclick=()=>setGuide(false);panel.querySelector('[data-journey-start]')?.addEventListener('click',()=>setGuide(true));
  panel.querySelectorAll('[data-journey-tab]').forEach(b=>b.onclick=()=>navigate(b.dataset.journeyTab));
 }
-function navigate(tab){window.SDF_HELP?.close?.();window.showTab?.(tab);if(tab==='gameplan')setTimeout(()=>{const button=[...document.querySelectorAll('#gameplanTab .ui-section-chip')].find(b=>b.textContent.trim()==='Practice');button?.click()},50)}
+function guideSteps(){return [
+ ['recruit','Find your first target','Open Recruiting and add a prospect who fits your team needs to your board.','recruiting','Find a recruit'],
+ ['practice','Prepare for Saturday','Choose a practice focus for this week. Balanced is a valid choice too.','gameplan','Choose practice'],
+ ['game','See your decisions play out','Watch or simulate your first game through the final score. You can save and resume.','gameday','Open Game Day']
+]}
+function nextGuideStep(s){const p=progress(s);return guideSteps().find(([key])=>!p[key])||null}
+function navigate(tab){
+ window.SDF_HELP?.close?.();window.showTab?.(tab);
+ if(tab==='gameplan')setTimeout(()=>{
+  const select=document.querySelector('#gameplanTab .section-view-select296');
+  const option=select&&[...select.options].find(o=>o.textContent.trim()==='Practice');
+  if(option){select.value=option.value;select.dispatchEvent(new Event('change',{bubbles:true}));return}
+  const button=[...document.querySelectorAll('#gameplanTab .ui-section-chip')].find(b=>b.textContent.trim()==='Practice');button?.click();
+ },50);
+}
 function render(){
  const s=current();if(!s)return;observe(s);window.SDF_USAGE?.observe(s);
  const host=$('gameCommandCenterV219');if(!host){const postseason=$('postseasonTab');if(postseason)renderSeason(s,postseason);return;}
@@ -8957,7 +8971,7 @@ const originalPractice=window.choosePracticeFocus;if(typeof originalPractice==='
 const originalShow=window.showTab;if(typeof originalShow==='function')window.showTab=function(...args){const result=originalShow.apply(this,args);refreshAfterAction();return result};
 // Automatic startup offers an action-based guide; the full reference tour remains in Help.
 window.startTutorial=()=>{const s=current();if(s){ensureJourney(s);render()}return false};
-window.SDF_JOURNEY={render,newDynasty,isGuided:()=>!!current()?.coachJourneyV236?.active,record,diagnosticReport,openPreview,previewModel,briefing,progress,weeklyMoments,seasonWrap,reminderAllowed,reminderPrefs,saveReminder,commissionerOwnership};
+window.SDF_JOURNEY={render,newDynasty,isGuided:()=>!!current()?.coachJourneyV236?.active,record,diagnosticReport,openPreview,previewModel,briefing,progress,nextGuideStep,weeklyMoments,seasonWrap,reminderAllowed,reminderPrefs,saveReminder,commissionerOwnership};
 function init(){const seasonHost=$('postseasonTab');if(seasonHost&&typeof MutationObserver!=='undefined')new MutationObserver(()=>{const s=current(),host=$('gameCommandCenterV219')||seasonHost;if(s&&host)renderSeason(s,host)}).observe(seasonHost,{childList:true});window.addEventListener('sdf:play-entitlements',refreshAfterAction);window.addEventListener('sdf:entitlements',refreshAfterAction);session();installSettings();render();document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')session()})}
 document.readyState==='loading'?document.addEventListener('DOMContentLoaded',init,{once:true}):init();
 })();

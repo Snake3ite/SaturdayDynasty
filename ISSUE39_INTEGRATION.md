@@ -49,3 +49,14 @@ The local branch `codex/issue39-current-browser` reconciles both drafts with the
 Review this local branch plus the original drafts [#35](https://github.com/Snake3ite/SaturdayDynasty/pull/35) and [#38](https://github.com/Snake3ite/SaturdayDynasty/pull/38). The browser assembly is ready for review, not represented as deployed. Obtain owner approval before pushing (preview deployment), merging, applying the migration or deploying. After approval, validate the new backend first, publish the browser build, verify live manifest/routes/saves/events, then use the community campaign links. Native Build 298 remains the existing pending development release; this work did not upload a build.
 
 Private telemetry, AdMob evidence, screenshots and test logs are outside this repository in the workspace `outputs/issue39/` folder.
+
+## Competitor-informed follow-up, October 15
+
+- Shared native/browser first-week guide now highlights one next action with a progress bar and an expandable full checklist. Recruiting, deliberate practice selection (including Balanced), and first-game completion remain the existing milestones; no new save structure or resource changes.
+- Practice navigation explicitly supports both the mobile Navigation select and the section buttons.
+- Browser first-start community links now sit in an expandable section, keeping team creation prominent.
+- Native All Access copy explicitly excludes repeatable resource boosts, matching existing entitlement behavior. No prices or purchase grants changed.
+- Actual local browser test at 390×844: created fictional Akron career, added a recruit, selected Balanced, reloaded with 2/3 progress intact, opened Game Day, simulated to final, returned to dynasty, and confirmed the completed guide was removed. Portrait and 844×390 landscape document width did not overflow.
+- Screenshots: `outputs/issue39/next-move-phone298.png` and `next-move-game298.png` in the outer workspace. This is browser viewport testing, not a physical Android ad test.
+- Full Build 298 verifier and browser suite passed. After the final shop-copy edit, focused journey/purchase tests passed (16 tests), shared assets were regenerated, and the browser build verified 196 assets. New native regression file: `tests/journey-next298.test.cjs`.
+- Existing weekly briefings, season highlights, editor previews and reward tracking were retained. Marketing experiments, new analytics backend rollout and live campaign changes remain separate approval-gated work; they are not represented as completed here.
