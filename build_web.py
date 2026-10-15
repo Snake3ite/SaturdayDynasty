@@ -25,7 +25,26 @@ account_scope, browser_config=config.split('// Browser-only UI.',1)
 html=(OUT/'index.html').read_text(encoding='utf-8')
 html=html.replace('Android V27.4.69','Web V27.4.69').replace('href="manifest.json"','href="manifest.webmanifest"')
 html=re.sub(r'<script src="(?:ad-config|app-bundle)\.js[^\"]*"></script>','',html)
-html=html.replace('</head>','<link rel="stylesheet" href="browser-shell.css?v=270">\n</head>')
+# Static metadata belongs in the initial HTML so crawlers and social preview bots
+# can read it without running the game's JavaScript bootstrap.
+SEO_TAGS = """
+<meta name="description" content="Play Saturday Dynasty Football in your browser. Recruit prospects, manage NIL, develop players, and build a college football dynasty on PC or mobile.">
+<link rel="canonical" href="https://saturdaydynasty.ctoolis.workers.dev/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Saturday Dynasty Football">
+<meta property="og:title" content="Saturday Dynasty Football | Play in Your Browser">
+<meta property="og:description" content="Build a college football dynasty: recruit, manage NIL, develop players, and chase championships. Play in your browser.">
+<meta property="og:url" content="https://saturdaydynasty.ctoolis.workers.dev/">
+<meta property="og:image" content="https://saturdaydynasty.ctoolis.workers.dev/icon-512.png">
+<meta property="og:image:alt" content="Saturday Dynasty Football logo">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Saturday Dynasty Football | Play in Your Browser">
+<meta name="twitter:description" content="Recruit, develop, and build your college football dynasty in a browser.">
+<meta name="twitter:image" content="https://saturdaydynasty.ctoolis.workers.dev/icon-512.png">
+""".strip()
+if '<meta name="description"' not in html:
+ html=html.replace('</head>',SEO_TAGS+'\\n</head>')
+html=html.replace('</head>','<link rel="stylesheet" href="browser-shell.css?v=270">\\n</head>')
 html=html.replace('</body>','<script src="browser-bootstrap.js?v=270"></script>\n</body>')
 (OUT/'index.html').write_text(html,encoding='utf-8',newline='')
 (OUT/'app-ads.txt').write_text('google.com, pub-9690546015672361, DIRECT, f08c47fec0942fa0\n',encoding='utf-8',newline='')
