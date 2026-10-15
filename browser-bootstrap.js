@@ -7,13 +7,34 @@
   if(src==='browser-feedback.js')script.dataset.sdfFeedback='1';
   script.onload=resolve;script.onerror=()=>reject(new Error('Could not load '+src));document.body.append(script);
  });
+ // Keep the game and all saves untouched if hydration is slow; do not race
+ // the IndexedDB bridge just to make the UI look responsive.
+ let slowNotice=null;
+ const slowTimer=setTimeout(()=>{
+  slowNotice=document.createElement('p');
+  slowNotice.setAttribute('role','status');
+  slowNotice.id='sdfBrowserSlowBoot';
+  slowNotice.textContent='Still preparing your saved dynasties. If this persists, check browser storage permissions or send a bug report. Please do not clear site data; that can remove local saves.';
+  slowNotice.style.cssText='margin:12px;padding:12px;border:1px solid #9b8b4d;border-radius:8px;background:#182b34;color:#ffe9a0;font:14px/1.5 system-ui;';
+  document.body.prepend(slowNotice);
+ },20000);
+ const phase=name=>window.dispatchEvent(new CustomEvent('sdf:boot-phase',{detail:{phase:name}}));
  try{
+  await load('browser-community-config.js');
+  await load('browser-growth.js');
+  phase('save_scope');
   await load('cloud-account-scope.js');
+  phase('save_bridge');
   await load('browser-save-bridge.js');
+  phase('save_hydrating');
   await window.SDF_BROWSER_SAVE_BRIDGE.ready;
+  phase('save_ready');
   window.SDF_ANDROID_FEEDBACK={open:()=>window.SDF_FEEDBACK?.open(),close:()=>window.SDF_FEEDBACK?.close()};
   await load('ad-config.js');
+  phase('core_loading');
   await load('app-bundle.js');
+  window.SDF_GROWTH_QA?.installJourneyProbe?.();
+  phase('core_loaded');
   // Register local assets before cloud-config's optional legacy CDN loaders run.
   await load('browser-editors.js');
   await load('browser-feedback.js');
@@ -23,10 +44,14 @@
   await load('browser-team-editor-v195.js');
   window.dispatchEvent(new Event('sdf:web-ready'));
  }catch(error){
+  phase('failed');
   console.error(error);
   const notice=document.createElement('p');notice.setAttribute('role','alert');
   notice.textContent='The game could not finish loading. Please reload this page. Your saved dynasties have not been deleted.';
   document.body.prepend(notice);
+ }finally{
+  clearTimeout(slowTimer);
+  slowNotice?.remove();
  }
 })();
 
