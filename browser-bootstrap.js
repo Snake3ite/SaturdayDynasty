@@ -20,8 +20,10 @@
  },20000);
  const phase=name=>window.dispatchEvent(new CustomEvent('sdf:boot-phase',{detail:{phase:name}}));
  try{
-  await load('browser-community-config.js');
-  await load('browser-growth.js');
+  // Marketing UI is optional: a missing community script must NEVER stop game startup.
+  for(const optional of ['browser-community-config.js','browser-growth.js']){
+   try{await load(optional)}catch(e){console.warn('Optional community module skipped:',optional,e)}
+  }
   phase('save_scope');
   await load('cloud-account-scope.js');
   phase('save_bridge');
