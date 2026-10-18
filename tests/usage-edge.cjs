@@ -1,5 +1,16 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs'),{stripTypeScriptTypes}=require('node:module');
 const code=stripTypeScriptTypes(fs.readFileSync(require('node:path').join(__dirname,'../supabase/functions/usage-reporting/index.ts'),'utf8'));
+
+test('Error details reach ingest with safe source coordinates and no raw exception payload',async()=>{
+ const h=setup();const e={id:crypto.randomUUID(),event:'runtime_error',build:298,at:new Date().toISOString(),error_code:'null_access',error_name:'TypeError',error_file:'app-bundle.js',error_line:533,error_column:25,error_operation:'showTab',context:'recruiting',message:'private@example.com',stack:'private token'};
+ const response=await h.handler(new Request('https://test.invalid',{method:'POST',body:JSON.stringify({action:'events',platform:'android',events:[e]})}));assert.equal(response.status,200);const accepted=JSON.parse(h.calls[0].opts.body).p_events[0];assert.equal(accepted.error_line,533);assert.equal(accepted.error_code,'null_access');assert.equal(accepted.message,undefined);assert.equal(accepted.stack,undefined);assert(!JSON.stringify(accepted).includes('private'));
+});
+test('Server strips unrecognized error strings and accepts old clients without new fields',async()=>{
+ const h=setup();const response=await h.handler(new Request('https://test.invalid',{method:'POST',body:JSON.stringify({action:'events',platform:'android',events:[{id:crypto.randomUUID(),event:'runtime_error',at:new Date().toISOString(),error_file:'https://private',error_operation:'private',error_line:-1,error_code:'private'},{id:crypto.randomUUID(),event:'runtime_error',at:new Date().toISOString()}]})}));assert.equal(response.status,200);const accepted=JSON.parse(h.calls[0].opts.body).p_events;assert.equal(accepted.length,2);assert.equal(accepted[0].error_file,undefined);assert.equal(accepted[0].error_line,undefined);assert.equal(accepted[0].error_code,undefined);
+});
+test('Grouped errors and delivery categories appear in mail without executable markup',()=>{
+ const h=setup();h.c.p={from:new Date(Date.now()-86400000).toISOString(),to:new Date().toISOString(),devices:[],active:[],last24:[],alltime:[],runtime_errors298:[{platform:'android',build:298,event:'runtime_error',error_code:'null_access',error_file:'app-bundle.js',error_line:533,error_operation:'global',context:'<img src=x onerror=bad>',reports:3}],reporting_transport298:[{platform:'android',build:298,transport_code:'http_5xx',recoveries:2,failed_attempts:4}]};const r=vm.runInNewContext('formatReport(p)',h.c);assert.match(r.text,/app-bundle.js:533:0/);assert.match(r.text,/http_5xx: 2 recoveries \/ 4 failed attempts/);assert(!r.html.includes('<img src=x'));assert(r.html.includes('&lt;img'));
+});
 function setup(){let handler;const calls=[];const c={Deno:{serve:f=>handler=f,env:{get:k=>({SUPABASE_URL:'https://test.invalid',SUPABASE_SERVICE_ROLE_KEY:'server-secret',RESEND_API_KEY:'email-secret'}[k])}},Request,Response,Set,Date,JSON,TextEncoder,Uint8Array,crypto:require('node:crypto').webcrypto,fetch:async(url,opts)=>{calls.push({url,opts});return Response.json({ok:true})}};vm.runInNewContext(code,c);return{handler,calls,c}}
 
 test('The complete current product catalog is accepted together with ad impressions',async()=>{

@@ -60,3 +60,22 @@ Private telemetry, AdMob evidence, screenshots and test logs are outside this re
 - Screenshots: `outputs/issue39/next-move-phone298.png` and `next-move-game298.png` in the outer workspace. This is browser viewport testing, not a physical Android ad test.
 - Full Build 298 verifier and browser suite passed. After the final shop-copy edit, focused journey/purchase tests passed (16 tests), shared assets were regenerated, and the browser build verified 196 assets. New native regression file: `tests/journey-next298.test.cjs`.
 - Existing weekly briefings, season highlights, editor previews and reward tracking were retained. Marketing experiments, new analytics backend rollout and live campaign changes remain separate approval-gated work; they are not represented as completed here.
+
+## Runtime-error investigation, October 18
+
+October 17's private report contained 456 Android runtime-error reports, including 393 on Build 297, and 117 reporting recoveries. Legacy error events contain no exception location, so these totals cannot be attributed retrospectively to one cause or interpreted as unique-player/crash counts.
+
+The retained mobile Game Center callback from the pre-298 layout throws when scrolling after its feed/button is removed. Build 297's preparation changed recruiting/release metadata rather than that callback. The pending 298 callback guard was reproduced against the retained implementation and tested through 100 post-removal invocations; it preserves a newer listener if the same scroll owner has been reused.
+
+Changes in pending native/shared Build 298:
+
+- Install safe global error capture before gameplay initialization; group up to 50 local issues by originating build, category, shipped filename, line/column, operation and screen. Keep repeat counts and first/last times. No raw exception messages, arguments, full stacks, URLs, credentials or saves are retained.
+- Settings → Device diagnostics has an expandable error list; its existing JSON export includes errors, and its Clear control removes them. Local diagnostics and online usage choices remain independent. Errors are stored separately from dynasty saves; repeated writes are coalesced, and a 100-fault stress test kept the log below 30KB.
+- Distinct online error signatures are sampled once per minute, with a combined 20-technical-events/minute ceiling. Old and new report counts are therefore not strictly comparable. Basic-reporting opt-outs clear queued events and stop uploads.
+- Reporting recoveries carry bounded actual elapsed recovery time, retry count and HTTP/network/timeout category. They remain separate from gameplay errors.
+- Prepared a private SQL migration and edge-function report section for grouped issues and reporting-recovery causes; preserved existing resources, deduplication, report snapshots and permissions. These backend changes are **not applied/deployed**.
+- Developer query: `supabase/runtime-errors-debug.sql`. Mapper: `tools/map-runtime-error.cjs`. Frozen module spans and exact Android/browser bundle hashes are in the outer workspace's `outputs/runtime298/source-map-build298.json`; use the matching archived build, not a later bundle, to interpret source lines.
+
+Validation: complete native release verifier passed; browser suite passed (52 node tests plus save/script checks); 22 focused client/diagnostics tests and 18 edge tests passed. Actual local PostgreSQL engine applied the legacy migrations plus the new extension twice, executed ingest/report, verified safe details and event deduplication, and denied anonymous reads. Phone UI at 390×844 exported a real JSON diagnostics file, completed two games, saved/exited at halftime, reloaded and resumed the same 0–14 / Q3 15:00 state, exercised profile exits and game-detail tabs, and showed zero grouped errors afterward. Physical Android WebView and installed native ads were not tested in this run.
+
+The known scroll error is fixed in the pending build. The legacy report cannot establish that it explains all 456 events; remaining production causes require the new diagnostics after an approved app/backend release. No merge, push, production database change, edge deployment or Play upload occurred.

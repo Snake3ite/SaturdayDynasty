@@ -11,8 +11,8 @@
     },
     {
       "path": "app-bundle.js",
-      "sha256": "9585de51659bd59ddc84bf07b6bb266ebc966d2f67203c0a43b7a7d0477046d6",
-      "bytes": 1692459
+      "sha256": "2ed6cc1bab38583d06af48d07950caf528b3412a677db30369bc1ce52e4b4284",
+      "bytes": 1701966
     },
     {
       "path": "app-shell.css",
@@ -691,8 +691,8 @@
     },
     {
       "path": "coach-journey.css",
-      "sha256": "7b3182d23d5dade3437734c7fa59adead9bb37f362a74cc54a7d77c83b791b4d",
-      "bytes": 7157
+      "sha256": "978f4748717c78f4d4ecaee884e3efa5998d5b35f32ae479a6e71ddf71c405b0",
+      "bytes": 7455
     },
     {
       "path": "dynasty-story.css",
@@ -756,8 +756,8 @@
     },
     {
       "path": "usage-privacy.html",
-      "sha256": "d199b5b16f3a99eac85582dede3ee88a94e627fd3782c1792657273eb43d1548",
-      "bytes": 4091
+      "sha256": "da6737240f48016da76f8ac9fb9f17d2de0cdbacce2bdc33be04a597896f17fd",
+      "bytes": 4423
     },
     {
       "path": "v103.css",

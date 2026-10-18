@@ -8,3 +8,5 @@
 
 /* A single next move keeps the optional guide compact on phones. */
 .journey-progress298{display:block;width:100%;height:8px;accent-color:#dba55d;margin:12px 0 18px}.journey-next298{padding:14px;border:1px solid #956e3d;border-radius:10px;background:#102533}.journey-next298 small{color:#edc483;font-weight:800;letter-spacing:.08em}.journey-next298 h4{margin:8px 0;font-size:1.1rem}.journey-next298 p{line-height:1.5;color:#c2d5df}.journey-next298 .btn{min-height:44px;max-width:100%;white-space:normal}.journey-next298 .journey-optional298{font-size:.75rem;margin-bottom:0}.journey-checklist298{margin-top:12px}.journey-checklist298 summary{min-height:44px;display:list-item;padding:12px 0;cursor:pointer;color:#c2d5df}.journey-checklist298 .journey-steps{margin-bottom:0}@media(max-width:620px){.journey-next298 .btn{width:100%}}
+
+.runtime-errors298{margin-top:16px}.runtime-errors298 summary{padding:12px 0;min-height:44px;cursor:pointer}.runtime-error298{padding:12px;margin:10px 0;border:1px solid #405363;border-radius:8px;background:#0b1c29;overflow-wrap:anywhere}.runtime-error298 p{white-space:pre-line;font-size:.78rem}
