@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#081521">
+<title>Saturday Dynasty Football</title>
+<meta name="description" content="Build your own college football dynasty. Free on Google Play.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Saturday Dynasty Football">
+<meta property="og:title" content="Saturday Dynasty Football">
+<meta property="og:description" content="Build your own college football dynasty. Free on Google Play.">
+<meta property="og:url" content="https://saturdaydynasty.ctoolis.workers.dev/s/">
+<meta property="og:image" content="https://saturdaydynasty.ctoolis.workers.dev/s/og-dynasty.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Saturday Dynasty Football">
+<meta name="twitter:description" content="Build your own college football dynasty. Free on Google Play.">
+<meta name="twitter:image" content="https://saturdaydynasty.ctoolis.workers.dev/s/og-dynasty.jpg">
+<link rel="icon" href="/icon-192.png" sizes="192x192">
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--gold:#f3d36d;--ink:#edf5fa;--muted:#a9bec9}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(circle at 85% 0,#1d4a63 0,transparent 45%),linear-gradient(170deg,#0d2a3c,#050c13 70%);color:var(--ink);display:flex;justify-content:center;padding:28px 16px 40px}
+main{width:100%;max-width:480px;display:grid;gap:18px}
+.brand{display:flex;align-items:center;gap:12px;font-weight:900;letter-spacing:.06em}
+.brand img{width:48px;height:48px;border-radius:12px}
+.brand small{display:block;color:var(--gold);letter-spacing:.14em;font-size:.72rem}
+.moment{position:relative;overflow:hidden;border-radius:22px;padding:26px 22px 24px;background:linear-gradient(160deg,#16405a,#081521 75%);border:1px solid #2b5670;box-shadow:0 18px 40px rgba(0,0,0,.45)}
+.moment::after{content:"";position:absolute;inset:auto -40px -60px auto;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(243,211,109,.18),transparent 70%)}
+.pill{display:inline-block;border-radius:999px;background:var(--gold);color:#081521;font-weight:900;font-size:.78rem;letter-spacing:.1em;padding:6px 14px}
+.big{font-size:clamp(3.2rem,16vw,5rem);font-weight:950;line-height:1;margin:18px 0 10px;letter-spacing:-.03em}
+h1{font-size:1.55rem;line-height:1.2;margin:0 0 8px}
+.line{color:var(--muted);margin:0}
+.code{display:grid;gap:8px;border:1px dashed var(--gold);border-radius:16px;padding:16px;background:rgba(3,8,14,.6)}
+.code b{color:var(--gold);font-size:.75rem;letter-spacing:.12em}
+.code span{font:800 1.05rem ui-monospace,Menlo,Consolas,monospace;word-break:break-all}
+.code p{margin:0;color:var(--muted);font-size:.85rem}
+.cta{display:flex;align-items:center;justify-content:center;gap:12px;min-height:64px;border-radius:16px;background:#000;border:2px solid #a6a6a6;color:#fff;text-decoration:none;font-weight:800;font-size:1.2rem}
+.cta svg{width:30px;height:30px}
+.cta small{display:block;font-size:.68rem;font-weight:700;letter-spacing:.08em}
+.btn{display:block;text-align:center;border-radius:14px;border:1px solid #446777;color:var(--ink);text-decoration:none;padding:13px;font-weight:800;background:transparent;font-size:1rem;width:100%;cursor:pointer}
+.pitch{color:var(--muted);text-align:center;margin:0}
+</style>
+</head>
+<body>
+<main>
+ <div class="brand"><img src="/icon-192.png" alt=""><div>SATURDAY DYNASTY<small>FOOTBALL</small></div></div>
+ <section class="moment" aria-live="polite">
+  <span class="pill" id="eyebrow">MY DYNASTY</span>
+  <div class="big" id="big" hidden></div>
+  <h1 id="title">Build your own college football dynasty</h1>
+  <p class="line" id="line">Recruit, develop players and chase national titles.</p>
+ </section>
+ <section class="code" id="codeBox" hidden>
+  <b>CAN YOU BEAT IT? SCENARIO CODE</b><span id="code"></span>
+  <p>In the app, open Dynasty story → Scenarios → “Have a friend’s code?”, paste it and press Load.</p>
+  <button class="btn" type="button" id="copy">Copy code</button>
+ </section>
+ <a class="cta" id="play" href="https://play.google.com/store/apps/details?id=com.coreytoolis.saturdaydynastyfootball"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#34a853" d="M3.6 2.2 13.5 12l-9.9 9.8c-.4-.2-.6-.6-.6-1.1V3.3c0-.5.2-.9.6-1.1Z"/><path fill="#fbbc04" d="m16.8 15.3-3.3-3.3 3.3-3.3 3.8 2.2c1 .6 1 1.6 0 2.2l-3.8 2.2Z"/><path fill="#ea4335" d="M16.8 15.3 13.5 12l-9.9 9.8c.4.2.9.2 1.5-.1l11.7-6.4Z"/><path fill="#4285f4" d="M16.8 8.7 5.1 2.3c-.6-.3-1.1-.3-1.5-.1l9.9 9.8 3.3-3.3Z"/></svg><span><small>GET IT ON</small>Google Play · Free</span></a>
+ <a class="btn" id="web" href="/play/">On iPhone? Play free in your browser</a>
+ <p class="pitch">Recruit 5-stars, win rivalry games, build a dynasty.</p>
+</main>
+<script>
+(()=>{
+ const q=new URLSearchParams(location.search),get=(k,n)=>(q.get(k)||'').slice(0,n),$=id=>document.getElementById(id);
+ const labels={score:'FINAL',upset:'RANKED WIN',rivalry:'RIVALRY WIN',title:'NATIONAL CHAMPIONS',conference:'CONFERENCE CHAMPIONS',perfect:'PERFECT SEASON',recruit:'5-STAR COMMIT',class:'TOP-10 CLASS',award:'NATIONAL AWARD',milestone:'COACHING MILESTONE',scenario:'SCENARIO COMPLETE',custom:'MY CUSTOM SCENARIO',dynasty:'MY DYNASTY'};
+ const kind=labels[q.get('k')]?q.get('k'):'',title=get('t',140),big=get('b',24),line=get('d',160),code=get('c',110);
+ if(kind)$('eyebrow').textContent=labels[kind];
+ if(title)$('title').textContent=title;
+ if(big){$('big').textContent=big;$('big').hidden=false}
+ if(line)$('line').textContent=line;
+ if(code){$('code').textContent=code;$('codeBox').hidden=false}
+ const ref=new URLSearchParams({utm_source:get('utm_source',40)||'share',utm_medium:get('utm_medium',40)||kind||'link',utm_campaign:'share_page'});
+ $('play').href+=`&referrer=${encodeURIComponent(ref.toString())}`;
+ $('web').href=`/play/?${ref.toString()}`;
+ $('copy').onclick=async()=>{try{await navigator.clipboard.writeText(code);$('copy').textContent='Copied'}catch{$('copy').textContent=code}};
+})();
+</script>
+</body>
+</html>
