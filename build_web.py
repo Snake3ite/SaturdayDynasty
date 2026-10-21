@@ -74,7 +74,7 @@ html=re.sub(r'<script src="(?:ad-config|app-bundle)\.js[^\"]*"></script>','',htm
 html=html.replace('</head>',f'<link rel="stylesheet" href="browser-shell.css?v={BUILD}">\n</head>')
 html=html.replace('</body>',f'<script src="browser-bootstrap.js?v={BUILD}"></script>\n</body>')
 (OUT/'index.html').write_text(html,encoding='utf-8',newline='')
-(OUT/'app-ads.txt').write_text('google.com, pub-9690546015672361, DIRECT, f08c47fec0942fa0\n',encoding='utf-8',newline='')
+(OUT/'app-ads.txt').write_text('google.com, pub-9690546015672361, DIRECT, f08c47fec0942fa0\nvungle.com, 6ad810575f9902f697752bfd, DIRECT, c107d686becd2d77\n',encoding='utf-8',newline='')
 manifest=json.loads((OUT/'manifest.webmanifest').read_text());manifest['icons']=[{'src':'icon-192.png','sizes':'192x192','type':'image/png'},{'src':'icon-512.png','sizes':'512x512','type':'image/png'}]
 (OUT/'manifest.webmanifest').write_text(json.dumps(manifest,indent=2),encoding='utf-8',newline='')
 core=['./','./index.html','./play/','./play/index.html','./play/gameplay-phone.jpg','./manifest.webmanifest']+['./'+p.name for p in OUT.iterdir() if p.suffix in {'.js','.css','.png','.svg'} and p.name!='sw.js']
