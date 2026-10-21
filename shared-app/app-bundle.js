@@ -1482,7 +1482,7 @@ window.SDF_BROWSER_SAVES={enabled,ready,get pending(){return pending},get settle
 
 (()=>{
 'use strict';
-const RELEASE='Android V27.4.98 · Build 299 · Season Stakes Update';
+const RELEASE='Android V27.4.99 · Build 300 · Season Stakes Update';
 const SAVE_PREFIX='SaturdayDynastyFootballAndroidV1';
 const LEGACY_PREFIXES=['SaturdayArchitectAndroidV1','SaturdayArchitectCompleteV9','SaturdayArchitectStatsV82','SaturdayArchitectDynastyV81','SaturdayArchitectRealignmentV74','SaturdayArchitectRecruitingV73','SaturdayArchitect128V72','SaturdayArchitectMobileV71'];
 const ui={activeTab:'dashboard',recruitPage:1,recruitPageSize:window.innerWidth<=760?30:75,rosterQuery:'',recruitQuery:''};
@@ -4196,6 +4196,15 @@ function audit(stage,attempt,detail=''){
 
  try{localStorage.setItem(auditKey,JSON.stringify(adAudit))}catch{}
 }
+// Build 300: AdMob bidding. Note which mediation source won and the SDK's paid value
+// (micros, currency, precision). Kept on device in the ad audit; never grants rewards.
+function adSourceLabel(info){return String(info?.adSourceName||info?.adapterClassName?.split('.').pop()||'unknown source').slice(0,60)}
+function recordPaid(attempt,value){
+ const micros=Number(value?.valueMicros||0),currency=String(value?.currencyCode||'').slice(0,8),precision=String(value?.precision||'UNKNOWN').slice(0,24);
+ if(attempt){attempt.paid??=[];if(attempt.paid.length>=3)return;attempt.paid.push({micros,currency,precision,source:adSourceLabel(value)})}
+ audit('paid',attempt,`${adSourceLabel(value)} · ${(micros/1e6).toFixed(6)} ${currency||'?'} · ${precision}`);
+ console.info('Ad paid event',{source:adSourceLabel(value),valueMicros:micros,currency,precision,responseId:value?.responseId||null,test:!!cfg().useTestAds});
+}
 function foreground(){return document.visibilityState!=='hidden'&&!window.SDF_MUSIC?.getState?.().suspended?.some(r=>['native-app-background','visibility','pagehide'].includes(r))}
 function drainSeason(){
  clearTimeout(seasonRetryTimer);seasonRetryTimer=null;
@@ -4332,8 +4341,8 @@ async function installRewardListeners(){
   if(handle)rewardListenerHandles.push(handle);
  };
  await add('onRewardedVideoAdLoaded',info=>{
-  const a=currentAttempt();if(a)a.loaded=true;
-  setRewardStatus('LOADED',info?.adUnitId||'rewarded ad ready');
+  const a=currentAttempt();if(a){a.loaded=true;a.adSource=adSourceLabel(info);audit('source',a,a.adSource)}
+  setRewardStatus('LOADED',info?.adSourceName?`${info.adSourceName} ad ready`:info?.adUnitId||'rewarded ad ready');
  });
  await add('onRewardedVideoAdShowed',()=>{
   const a=currentAttempt();if(a)audit('shown',a);if(a&&!a.shown&&!cfg().useTestAds)window.SDF_JOURNEY?.record('reward_shown',undefined,'reward_'+String(a.kind||'').toLowerCase());if(a)a.shown=true;
@@ -4343,6 +4352,7 @@ async function installRewardListeners(){
    const a=currentAttempt();if(!a||a.impression)return;a.impression=true;audit('impression',a);
    if(!cfg().useTestAds)window.SDF_JOURNEY?.record('reward_impression',undefined,'reward_'+String(a.kind||'').toLowerCase());
   });
+ await add('onRewardedVideoAdPaid',value=>recordPaid(currentAttempt()||{kind:'UNKNOWN'},value));
  await add('onRewardedVideoAdReward',reward=>{
   const a=currentAttempt();
   if(!a){console.warn('Reward callback received with no active sponsor attempt',reward);return}
@@ -4374,6 +4384,10 @@ async function installRewardListeners(){
     const a=activeInterstitialAttempt;if(!a||a.impression)return;a.impression=true;audit('impression',a);
     if(!cfg().useTestAds)window.SDF_USAGE?.record('interstitial_impression',undefined,'season_end');
    });
+  await add('interstitialAdLoaded',info=>{
+   const a=activeInterstitialAttempt;if(a){a.adSource=adSourceLabel(info);audit('source',a,a.adSource)}
+  });
+  await add('interstitialAdPaid',value=>recordPaid(activeInterstitialAttempt,value));
   await add('interstitialAdDismissed',()=>{
    const a=activeInterstitialAttempt;if(a){audit('dismissed',a);a.resolve?.('dismissed')}
   });

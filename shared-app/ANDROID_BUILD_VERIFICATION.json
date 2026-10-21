@@ -1,7 +1,7 @@
 {
-  "version": "27.4.98",
-  "release": "Android V27.4.98 · Build 299 · Season Stakes Update",
-  "versionCode": 299,
+  "version": "27.4.99",
+  "release": "Android V27.4.99 · Build 300 · Season Stakes Update",
+  "versionCode": 300,
   "fileCount": 177,
   "files": [
     {
@@ -11,8 +11,8 @@
     },
     {
       "path": "app-bundle.js",
-      "sha256": "adb2ef46ea772861c0da804390686f3542941dd5b789aeacab294984a97aebaa",
-      "bytes": 1832060
+      "sha256": "9fc2602ad3853839ffb74a031f86f82286b7e601bb5f9144a7e7e8e5707a3a3f",
+      "bytes": 1833437
     },
     {
       "path": "app-shell.css",
@@ -716,7 +716,7 @@
     },
     {
       "path": "index.html",
-      "sha256": "4a7d0c75d2191f6f4f5f086865db4a98e4a2213bb68bc320ee2ee6526b1c9e9a",
+      "sha256": "6c3a13e08fcdb09d0a1abecaed5005a37280cec1ea6cef2f6a94c5e22d6a11e4",
       "bytes": 47821
     },
     {
