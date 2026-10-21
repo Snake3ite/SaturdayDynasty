@@ -17,6 +17,7 @@ if OUT.exists():
  shutil.rmtree(OUT)
 shutil.copytree(SOURCE,OUT)
 shutil.copytree(ROOT/'play',OUT/'play')
+shutil.copytree(ROOT/'s',OUT/'s')
 BROWSER=['cloud-config.js','web-shell.js','browser-save-bridge.js','browser-editors.js','browser-commerce-bridge.js','browser-team-editor-v195.js','browser-feedback.js','browser-shell.css','browser-bootstrap.js','browser-community-config.js','browser-growth.js','browser-growth-analytics.js','browser-landing.js','ad-config.js','_headers','icon.svg','manifest.webmanifest']
 for f in BROWSER:shutil.copy2(ROOT/f,OUT/f)
 shutil.copy2(ROOT/'browser-usage-privacy.html',OUT/'usage-privacy.html')
