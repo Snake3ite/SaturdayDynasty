@@ -1,8 +1,8 @@
 {
-  "version": "27.4.97",
-  "release": "Android V27.4.97 · Build 298 · Layout & Community Update",
-  "versionCode": 298,
-  "fileCount": 175,
+  "version": "27.4.98",
+  "release": "Android V27.4.98 · Build 299 · Season Stakes Update",
+  "versionCode": 299,
+  "fileCount": 177,
   "files": [
     {
       "path": "ad-config.js",
@@ -11,8 +11,8 @@
     },
     {
       "path": "app-bundle.js",
-      "sha256": "2ed6cc1bab38583d06af48d07950caf528b3412a677db30369bc1ce52e4b4284",
-      "bytes": 1701966
+      "sha256": "adb2ef46ea772861c0da804390686f3542941dd5b789aeacab294984a97aebaa",
+      "bytes": 1832060
     },
     {
       "path": "app-shell.css",
@@ -716,8 +716,8 @@
     },
     {
       "path": "index.html",
-      "sha256": "749f6e1aa371e78985e082525b100b46e636dc09a801b6291a3a35e7a18ca62f",
-      "bytes": 47701
+      "sha256": "4a7d0c75d2191f6f4f5f086865db4a98e4a2213bb68bc320ee2ee6526b1c9e9a",
+      "bytes": 47821
     },
     {
       "path": "live-game.css",
@@ -878,6 +878,16 @@
       "path": "v269.css",
       "sha256": "cf7b571aadb2ec7ea5d27f45f868e8119985eb00dfa1a2a2ce50ea12762170af",
       "bytes": 961
+    },
+    {
+      "path": "v299-fixes.css",
+      "sha256": "232770bfeea25d136d8d41d78674efd8b706068b87975bcb30be0f9027243a89",
+      "bytes": 2708
+    },
+    {
+      "path": "v299-layout.css",
+      "sha256": "83e75a9ecdf932e11d2b9a2f7bd7b96e9b34f6a83841f55f665b2baa9ca193a5",
+      "bytes": 19461
     }
   ]
 }

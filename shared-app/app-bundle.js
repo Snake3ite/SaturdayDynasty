@@ -590,9 +590,10 @@ function renderDepthManager(){
  $("depthChartManager").innerHTML=POSITIONS.map(pos=>{let players=state.roster.filter(p=>p.pos===pos&&!p.redshirt),slots=state.depthChart[pos]?.slots||[];return`<div class="depth-position"><div class="depth-position-head"><b>${pos}</b><span class="sub">${players.length} available</span></div><div class="depth-slots">${[0,1,2].map(i=>`<div class="depth-slot"><small>${i===0?"Starter":i===1?"Rotation":"Reserve"}</small><select onchange="setDepthPlayer('${pos}',${i},this.value)"><option value="">Unassigned</option>${players.map(p=>`<option value="${p.id}" ${slots[i]?.playerId===p.id?"selected":""}>${p.name} · ${p.ovr}</option>`).join("")}</select><input type="range" min="0" max="100" value="${slots[i]?.snapShare||0}" onchange="setSnapShare('${pos}',${i},this.value)"><span class="sub">${slots[i]?.snapShare||0}% snaps</span></div>`).join("")}</div></div>`}).join("")
 }
 function currentOpponent(){return state.schedule?.[state.week-1]||null}
+// Seeded by year/week/opponent so a redraw never re-rolls the scouting report for the week.
 function opponentProfile(g){
- if(!g)return null;let s=schools.find(x=>x.id===g.oppId),power=g.oppPower||70;
- return{school:s,offense:clamp(power+rand(-4,4),45,99),defense:clamp(power+rand(-4,4),45,99),tendency:choice(["Pass Heavy","Balanced","Run Heavy","Tempo","Ball Control"]),front:choice(["4-3","3-4","4-2-5","3-3-5"]),weakness:choice(["Pass protection","Run defense","Secondary depth","Turnover margin","Red-zone offense","Special teams"]),star:choice(["Quarterback","Running back","Edge rusher","Cornerback","Wide receiver"]),injuries:rand(0,3),form:choice(["Hot","Steady","Inconsistent","Slumping"])}
+ if(!g)return null;let s=schools.find(x=>x.id===g.oppId),power=g.oppPower||70,h=2166136261;for(const ch of `${state.year}-${g.week}-${g.oppId}`){h^=ch.charCodeAt(0);h=Math.imul(h,16777619)}h>>>=0;const pick=(a,n)=>a[(h>>>n)%a.length];
+ return{school:s,offense:clamp(power+(h%9)-4,45,99),defense:clamp(power+((h>>>4)%9)-4,45,99),tendency:pick(["Pass Heavy","Balanced","Run Heavy","Tempo","Ball Control"],2),front:pick(["4-3","3-4","4-2-5","3-3-5"],5),weakness:pick(["Pass protection","Run defense","Secondary depth","Turnover margin","Red-zone offense","Special teams"],8),star:pick(["Quarterback","Running back","Edge rusher","Cornerback","Wide receiver"],11),injuries:(h>>>17)%4,form:pick(["Hot","Steady","Inconsistent","Slumping"],14)}
 }
 function choosePracticeFocus(f){state.weeklyPractice=f;renderGamePlan()}
 window.choosePracticeFocus=choosePracticeFocus;
@@ -702,7 +703,7 @@ function createDecisionEvent(){
    ["Offer NIL support",()=>{let amount=Math.min(50000,Math.max(0,Number(state.nilBudget||0)));state.nilBudget=Math.max(0,Number(state.nilBudget||0)-amount);let p=state.roster.filter(x=>x.pos==="QB"&&!x.starter)[0];if(p)p.morale+=amount>=50000?9:amount>0?3:0;state.news.push(amount>=50000?"The NIL collective funded a full $50,000 player-support package.":amount>0?`The NIL collective funded a limited $${Math.round(amount/1000)}k player-support package.`:"The NIL collective could not fund the requested player-support package.")}],
    ["Encourage a transfer",()=>{let p=state.roster.filter(x=>x.pos==="QB"&&!x.starter)[0];if(p)state.roster=state.roster.filter(x=>x.id!==p.id)}]]},
   {title:"Discipline Decision",text:"A starting player violated team rules before a conference game.",choices:[
-   ["Suspend one game",()=>{let p=choice(state.roster.filter(x=>x.starter));if(p){p.injury={weeks:1,type:"Team suspension"};state.fanApproval+=4}}],
+   ["Suspend one game",()=>{let p=choice(state.roster.filter(x=>x.starter));if(p){if(!window.SDF_DISCIPLINE?.suspend?.(p,1,"Team rules violation"))p.injury={weeks:1,type:"Team suspension"};state.fanApproval+=4}}],
    ["Internal punishment",()=>{state.fanApproval-=2;state.boosterSupport+=2}],
    ["Allow him to play",()=>{state.fanApproval-=7;state.jobSecurity-=3}]]},
   {title:"Booster Pressure",text:"Boosters want you to prioritize a high-profile recruit over roster need.",choices:[
@@ -815,7 +816,7 @@ function simGame(w){if(state.schedule?.[Number(w)-1]?.bye)return;window.SDF_USAG
   if(us===them){(window.SDF_SEEDS?.random()??Math.random())>.5?us+=2:them+=2;drives.push("Overtime ended on a two-point conversion.")}
  }
  let win=us>them;g.result=win?"W":"L";g.score=`${us}-${them}`;window.SDF_USAGE?.completedGame?.(state,g);win?state.record.w++:state.record.l++;
- state.conferenceRecords[state.school.id]??={w:0,l:0};if(g.conference){win?state.conferenceRecords[state.school.id].w++:state.conferenceRecords[state.school.id].l++}let me=state.standings.find(x=>x.id===state.school.id);if(me){win?me.w++:me.l++}state.standings.filter(x=>x.id!==state.school.id).forEach(x=>(window.SDF_SEEDS?.random()??Math.random())>.5?x.w++:x.l++);
+ state.conferenceRecords[state.school.id]??={w:0,l:0};if(g.conference){win?state.conferenceRecords[state.school.id].w++:state.conferenceRecords[state.school.id].l++}let me=state.standings.find(x=>x.id===state.school.id);if(me){win?me.w++:me.l++}window.syncStandingsRecords?.();
  let qb=best("QB"),rb=best("RB"),def=best("EDGE")||best("LB");
  state.lastGameRecap={opponent:g.opponent,home:g.home,win,us,them,rivalry:g.rivalry,boxScore:{firstDowns:rand(14,29),rushYds:rand(70,220),passYds:rand(150,390),turnovers:rand(0,3),thirdDown:`${rand(3,9)}/${rand(10,17)}`,redZone:`${rand(2,5)}/${rand(3,6)}`,sacksAllowed:rand(0,5),timePossession:`${rand(25,35)}:${rand(0,59).toString().padStart(2,"0")}`},headline:win?choice(["Fourth-quarter surge seals the win","Defense dominates in statement victory","Balanced attack powers another win"]):choice(["Turnovers prove costly","Late rally falls short","Offense stalls in tough defeat"]),stars:[qb?`${qb.name}: ${rand(180,390)} pass yds, ${rand(1,4)} TD`:"",rb?`${rb.name}: ${rand(55,180)} rush yds`:"",def?`${def.name}: ${rand(5,13)} tackles, ${rand(0,3)} sacks`:""].filter(Boolean),drives};
  if(window.SDF_V191?.recordGameOutcome)window.SDF_V191.recordGameOutcome(g,win,us-them);else if(g.rivalry){state.fanApproval=clamp(state.fanApproval+(win?8:-8),0,100);state.boosterSupport=clamp(state.boosterSupport+(win?5:-5),0,100);let rh=state.rivalryHistory[state.rivalId];if(rh){win?rh.wins++:rh.losses++;rh.streak=win?Math.max(1,rh.streak+1):Math.min(-1,rh.streak-1);rh.bestMargin=Math.max(rh.bestMargin,win?us-them:0);rh.last={year:state.year,win,score:`${us}-${them}`};if(win)state.achievementStats.rivalWins++}}updateAttendance(win,g);state.coachCareer.careerWins+=win?1:0;state.coachCareer.careerLosses+=win?0:1;if(win&&us-them>=35)state.achievementStats.bigWin=true;state.achievementStats.weatherConditions??={};if(win&&["Snow","Rain","Heavy Wind","Extreme Heat"].includes(g.weather))state.achievementStats.weatherConditions[g.weather]=true;
@@ -823,7 +824,8 @@ function simGame(w){if(state.schedule?.[Number(w)-1]?.bye)return;window.SDF_USAG
 }
 function updateStats(win){let qb=best("QB"),rb=best("RB"),wr=best("WR"),lb=best("LB"),edge=best("EDGE"),cb=best("CB");if(qb){qb.stats.games++;qb.stats.yards+=rand(180,380);qb.stats.td+=rand(1,4)}if(rb){rb.stats.games++;rb.stats.yards+=rand(55,170);rb.stats.td+=rand(0,2)}if(wr){wr.stats.games++;wr.stats.yards+=rand(45,150);wr.stats.td+=rand(0,2)}if(lb){lb.stats.games++;lb.stats.tackles+=rand(5,13)}if(edge){edge.stats.games++;edge.stats.sacks+=rand(0,2)}if(cb){cb.stats.games++;cb.stats.int+=(window.SDF_SEEDS?.random()??Math.random())<.3?1:0}}
 function best(pos){return state.roster.filter(p=>p.pos===pos&&p.starter&&(!p.injury&&window.SDF_DISCIPLINE?.available?.(p)!==false)).sort((a,b)=>b.ovr-a.ovr)[0]}
-function finishSeason(){window.SDF_USAGE?.observe(state);state.seasonDone=true;window.SDF_USAGE?.observe(state);state.phase="AWARDS";let w=state.record.w,l=state.record.l,d=w-state.school.expectation,grade=d>=3?"A+":d===2?"A":d===1?"B+":d===0?"B":d===-1?"C+":d===-2?"C":d===-3?"D":"F",ca=Math.round(avg(state.commits.map(r=>r.trueOvr||r.ovr))||0),rank=window.SDF_ACHIEVEMENTS277?.classRank()??clamp(100-Math.round(state.commits.length*2.2+(ca-66)*1.5),1,100),post=w>=11?"Playoff":w>=6?"Bowl":"None";
+function seasonPostLabel(st=state){const d=st?.postseasonData||{},id=Number(st?.school?.id),ours=t=>Number(t?.id??t)===id;if((d.playoffField||[]).some(ours))return"Playoff";if((d.bowls||[]).some(b=>ours(b?.a)||ours(b?.b)))return"Bowl";return"None"}
+function finishSeason(){window.SDF_USAGE?.observe(state);state.seasonDone=true;window.SDF_USAGE?.observe(state);state.phase="AWARDS";let w=state.record.w,l=state.record.l,d=w-state.school.expectation,grade=d>=3?"A+":d===2?"A":d===1?"B+":d===0?"B":d===-1?"C+":d===-2?"C":d===-3?"D":"F",ca=Math.round(avg(state.commits.map(r=>r.trueOvr||r.ovr))||0),rank=window.SDF_ACHIEVEMENTS277?.classRank()??clamp(100-Math.round(state.commits.length*2.2+(ca-66)*1.5),1,100),post=seasonPostLabel();
  const parityContext=window.SDF_V197?.seasonContextForTeam?.(state.school.id)||{wonConference:state.postseasonData?.champions?.some(x=>Number(x?.id??x)===Number(state.school.id)),wonTitle:Number(state.postseasonData?.nationalChampion?.id??state.postseasonData?.nationalChampion)===Number(state.school.id),expectation:Number(state.school.expectation||6)},parityOutcome=window.SDF_V197?.programSeasonProgression?.({prestige:state.school.prestige,recent:state.school.recent,wins:w,losses:l,expectation:parityContext.expectation,wonConference:parityContext.wonConference,wonTitle:parityContext.wonTitle});
  let recentDelta,prestigeDelta;if(parityOutcome){recentDelta=parityOutcome.recentDelta;prestigeDelta=parityOutcome.prestigeDelta;state.school.recent=parityOutcome.recent;state.school.prestige=parityOutcome.prestige}else{const totalGames=Math.max(1,w+l),winPct=w/totalGames,currentRecent=Number(state.school.recent||50),wonConference=!!parityContext.wonConference,wonTitle=!!parityContext.wonTitle,recentTarget=clamp(Math.round(24+winPct*62+Math.max(0,w-6)*1.2+(w>=10?4:0)+(wonConference?4:0)+(wonTitle?8:0)),20,99);recentDelta=clamp(Math.round((recentTarget-currentRecent)*.42),-14,16);if(w>=11)recentDelta=Math.max(recentDelta,8);if(w<=3)recentDelta=Math.min(recentDelta,-7);state.school.recent=clamp(currentRecent+recentDelta,20,99);prestigeDelta=0;if(wonTitle)prestigeDelta=6;else if(w>=12)prestigeDelta=4;else if(w>=10)prestigeDelta=3;else if(w>=8)prestigeDelta=2;else if(w>=7)prestigeDelta=1;else if(w<=2)prestigeDelta=-4;else if(w<=4)prestigeDelta=-3;else if(w<=5)prestigeDelta=-2;else if(w<=6&&d<0)prestigeDelta=-1;if(d>=4&&!wonTitle)prestigeDelta++;if(d<=-4)prestigeDelta--;state.school.prestige=clamp(state.school.prestige+clamp(prestigeDelta,-5,6),25,99)}
  state.news.push(`Program ratings updated: Recent Success ${recentDelta>=0?'+':''}${recentDelta} to ${state.school.recent}; Prestige ${prestigeDelta>=0?'+':''}${prestigeDelta} to ${state.school.prestige}.`);
@@ -938,6 +940,8 @@ function renderRoster(){let n=needs();$("depthChart").innerHTML=POSITIONS.map(p=
 function renderTeam(){let t=teamRatings();$("teamRatings").innerHTML=metric("Overall",t.overall)+metric("Offense",t.offense)+metric("Defense",t.defense)+metric("Special Teams",t.special)+metric("Injuries",state.roster.filter(p=>p.injury).length)+metric("Avg Morale",Math.round(avg(state.roster.map(p=>p.morale))));const op=window.SDF_V113_TEST?.OFFENSE_PROFILES?.[state.offense],dp=window.SDF_V113_TEST?.DEFENSE_PROFILES?.[state.defense];$("offenseSummary").innerHTML=op?`<b>${op.identity}</b><br><span class="sub"><strong>Tempo:</strong> ${op.tempo} · <strong>Strength:</strong> ${op.best}<br><strong>Challenge:</strong> ${op.weak}</span>`:'Balanced offensive system.';$("defenseSummary").innerHTML=dp?`<b>${dp.identity}</b><br><span class="sub"><strong>Best against:</strong> ${dp.best}<br><strong>Vulnerable to:</strong> ${dp.weak}</span>`:'Multiple defensive structure.';let leaders=[["Passing",bestByPos("QB","yards"),"yards"],["Rushing",bestByPos("RB","yards"),"yards"],["Receiving",bestByPos("WR","yards"),"yards"],["Tackles",bestByAny("tackles"),"tackles"],["Sacks",bestByAny("sacks"),"sacks"],["Interceptions",bestByAny("int"),"int"]];$("leaderGrid").innerHTML=leaders.map(([l,p,k])=>`<div class="leader-card"><h4>${l}</h4><b>${p?.name||"-"}</b><span class="sub">${p?.stats[k]||0}</span></div>`).join("")}
 function bestByPos(pos,k){return state.roster.filter(p=>p.pos===pos).sort((a,b)=>(b.stats[k]||0)-(a.stats[k]||0))[0]}function bestByAny(k){return state.roster.slice().sort((a,b)=>(b.stats[k]||0)-(a.stats[k]||0))[0]}
 function renderSchedule(){$("schedule").innerHTML=state.schedule.map(g=>g.bye?`<div class="schedule-row"><b>Wk ${g.week}</b><span>BYE · Recovery & recruiting</span><b>${g.completed?"Complete":"Week off"}</b></div>`:`<div class="schedule-row"><b>Wk ${g.week}</b><span class="${g.rivalry?"rivalry":""}">${g.home?"vs":"at"} ${g.opponent} <span class="weather-badge">${g.weather||"TBD"}</span>${g.rivalry?(window.SDF_V191?.scheduleLabel?.(g)||' · RIVALRY'):g.conference?' <small class="sub">Conference</small>':""}</span><b class="${g.result==="W"?"win":g.result==="L"?"loss":""}">${g.result||"-"} ${g.score||""}</b><span class="extra muted">Power ${g.oppPower}</span></div>`).join("");if(state.lastGameRecap){let r=state.lastGameRecap;$("gameRecapPanel").classList.remove("hidden");$("gameRecapPanel").innerHTML=`<span class="eyebrow">LATEST GAME</span><h3>${r.headline}</h3><div class="recap-score"><span>${state.school.name}</span><strong>${r.us}-${r.them}</strong><span>${r.opponent}</span></div>${r.rivalry?'<p class="rivalry">Rivalry game</p>':""}<div class="commit-grid">${r.stars.map(s=>`<div class="commit-card">${s}</div>`).join("")}</div><div class="box-score-grid">${Object.entries(r.boxScore||{}).map(([k,v])=>`<div class="box-stat"><small>${k}</small><b>${v}</b></div>`).join("")}</div><div class="drive-list">${(r.drives||[]).slice(0,10).map(d=>`<div class="drive">${d}</div>`).join("")}</div>`}else $("gameRecapPanel").classList.add("hidden")}
+// Conference standings mirror the simulated world records instead of inventing results.
+window.syncStandingsRecords=function(){if(!state.school||!state.standings)return;const world=new Map((state.world||[]).map(t=>[Number(t.id),t]));for(const x of state.standings){if(Number(x.id)===Number(state.school.id)){x.w=state.record?.w||0;x.l=state.record?.l||0;continue}const rec=world.get(Number(x.id))?.record;x.w=rec?.w||0;x.l=rec?.l||0}};
 function renderStandings(){if($("conferenceStandingsTitle"))$("conferenceStandingsTitle").textContent=`${state.school.conference} Standings`;$("standings").innerHTML=state.standings.slice().sort((a,b)=>b.w-a.w).map((s,i)=>`<div class="standing-card"><h4>#${i+1} ${s.name}</h4><span class="sub">${s.w}-${s.l}</span></div>`).join("")}
 
 function facilityCost(key){const base=150000*state.facilities[key]+(state.facilities[key]-1)*80000,mult=Number(window.SDF_V193?.facilityCostMultiplier?.()||1);return Math.round(base*mult/10000)*10000}
@@ -1430,7 +1434,8 @@ if(location.protocol==="http:"||location.protocol==="https:"){
  const link=document.createElement("link");link.rel="manifest";link.href="manifest.json?v=27";document.head.appendChild(link);
  // Capacitor already bundles every asset offline. Clear old web caches so an APK update
  // can never silently keep an older recruiting engine or finance model alive.
- if("serviceWorker" in navigator){window.addEventListener("load",async()=>{try{for(const reg of await navigator.serviceWorker.getRegistrations())await reg.unregister();if(window.caches)for(const key of await caches.keys())await caches.delete(key)}catch{}})}
+ // Native app only: the browser build relies on its shell service worker for offline play.
+ if("serviceWorker" in navigator&&!!(window.Capacitor?.isNativePlatform?.()||window.Capacitor?.getPlatform?.()==="android")){window.addEventListener("load",async()=>{try{for(const reg of await navigator.serviceWorker.getRegistrations())await reg.unregister();if(window.caches)for(const key of await caches.keys())await caches.delete(key)}catch{}})}
 }
 
 (()=>{
@@ -1477,7 +1482,7 @@ window.SDF_BROWSER_SAVES={enabled,ready,get pending(){return pending},get settle
 
 (()=>{
 'use strict';
-const RELEASE='Android V27.4.97 · Build 298 · Layout & Community Update';
+const RELEASE='Android V27.4.98 · Build 299 · Season Stakes Update';
 const SAVE_PREFIX='SaturdayDynastyFootballAndroidV1';
 const LEGACY_PREFIXES=['SaturdayArchitectAndroidV1','SaturdayArchitectCompleteV9','SaturdayArchitectStatsV82','SaturdayArchitectDynastyV81','SaturdayArchitectRealignmentV74','SaturdayArchitectRecruitingV73','SaturdayArchitect128V72','SaturdayArchitectMobileV71'];
 const ui={activeTab:'dashboard',recruitPage:1,recruitPageSize:window.innerWidth<=760?30:75,rosterQuery:'',recruitQuery:''};
@@ -1837,7 +1842,7 @@ window.changeRecruitPage=function(delta){ui.recruitPage+=delta;window.renderRecr
 
 window.renderRoster=function(){let n=needs(),q=ui.rosterQuery.trim().toLowerCase(),players=state.roster.slice().sort((a,b)=>POSITIONS.indexOf(a.pos)-POSITIONS.indexOf(b.pos)||b.ovr-a.ovr).filter(p=>!q||`${p.name} ${p.pos} ${p.hometown}`.toLowerCase().includes(q));$('depthChart').innerHTML=POSITIONS.map(p=>{let a=state.roster.filter(x=>x.pos===p).sort((x,y)=>y.starter-x.starter||y.ovr-x.ovr).slice(0,Math.max(STARTERS[p]+3,4));return `<div class="depth-card"><strong>${p} · ${n[p].label}</strong>${a.map((x,i)=>`<div class="depth-line"><span>${i+1}</span><button class="link-button" onclick="openPlayerProfile('${x.id}')">${x.name}<small class="sub">${x.arch} · Year ${x.year}${x.starter?' · Starter':''}${x.redshirt?' · RS':''}${x.injury?` · ${x.injury.type}`:''}</small></button><b>${x.ovr}</b></div>`).join('')}</div>`}).join('');$('rosterSummary').innerHTML=metric('Players',state.roster.length)+metric('Average OVR',Math.round(avg(state.roster.map(p=>p.ovr))))+metric('Seniors',state.roster.filter(p=>p.year===4).length)+metric('Redshirts',state.roster.filter(p=>p.redshirt).length)+metric('Injured',state.roster.filter(p=>p.injury).length)+metric('Portal Risk',state.roster.filter(p=>!p.starter&&p.morale<62).length);$('rosterTable').innerHTML=players.map(p=>`<tr><td><button class="link-button" onclick="openPlayerProfile('${p.id}')">${p.name}</button><span class="sub">${playerStatLine(p)}</span></td><td>${p.pos}</td><td>${p.arch}</td><td>${p.hometown}</td><td>${p.year}</td><td>${p.ovr}</td><td>${p.pot}</td><td>${p.dev}</td><td>${p.morale}</td><td>${p.injury?p.injury.type:p.redshirt?'Redshirt':p.starter?'Starter':'Backup'}</td><td>${!p.starter&&p.morale<62?'High':!p.starter&&p.morale<72?'Medium':'Low'}</td></tr>`).join('');$('rosterCardList').innerHTML=players.map(p=>`<article class="mobile-data-card"><div class="mobile-data-head"><div><h3>${p.name}</h3><span class="sub">${p.pos} · ${p.arch} · Year ${p.year}</span></div><b>${p.ovr}</b></div><div class="mobile-data-grid"><div><small>POT</small><b>${p.pot}</b></div><div><small>MORALE</small><b>${p.morale}</b></div><div><small>STATUS</small><b>${p.starter?'Starter':p.redshirt?'RS':'Backup'}</b></div></div><span class="sub">${playerStatLine(p)}</span><button class="btn primary full" onclick="openPlayerProfile('${p.id}')">Player Profile</button></article>`).join('')};
 
-window.renderStandings=function(){if($('conferenceStandingsTitle'))$('conferenceStandingsTitle').textContent=`${window.SDF_CONFERENCES?.name(state.school,state)||state.school.conference} Standings`;let entries=state.standings.slice().sort((a,b)=>{let ac=state.conferenceRecords[a.id]||{w:a.w||0,l:a.l||0},bc=state.conferenceRecords[b.id]||{w:b.w||0,l:b.l||0};return bc.w-ac.w||ac.l-bc.l||(b.w||0)-(a.w||0)||(a.l||0)-(b.l||0)});$('standings').innerHTML=entries.map((t,i)=>`<div class="standing-card"><div class="team-mini">${logoHtml(t.id,'')}<div><h4>${i+1}. ${t.name}</h4><span class="sub">Conference ${(state.conferenceRecords[t.id]?.w||0)}-${(state.conferenceRecords[t.id]?.l||0)}</span></div></div><b>${t.w}-${t.l}</b></div>`).join('')};
+window.renderStandings=function(){window.syncStandingsRecords?.();if($('conferenceStandingsTitle'))$('conferenceStandingsTitle').textContent=`${window.SDF_CONFERENCES?.name(state.school,state)||state.school.conference} Standings`;let entries=state.standings.slice().sort((a,b)=>{let ac=state.conferenceRecords[a.id]||{w:a.w||0,l:a.l||0},bc=state.conferenceRecords[b.id]||{w:b.w||0,l:b.l||0};return bc.w-ac.w||ac.l-bc.l||(b.w||0)-(a.w||0)||(a.l||0)-(b.l||0)});$('standings').innerHTML=entries.map((t,i)=>`<div class="standing-card"><div class="team-mini">${logoHtml(t.id,'')}<div><h4>${i+1}. ${t.name}</h4><span class="sub">Conference ${(state.conferenceRecords[t.id]?.w||0)}-${(state.conferenceRecords[t.id]?.l||0)}</span></div></div><b>${t.w}-${t.l}</b></div>`).join('')};
 window.renderSchedule=function(){$('schedule').innerHTML=state.schedule.map(g=>g.bye?`<div class="schedule-row bye"><b>Wk ${g.week}</b><span class="team-mini"><div><b>BYE WEEK</b><small class="sub">Rest, recovery & recruiting</small></div></span><b>${g.completed?'Complete':'Week off'}</b><span class="extra muted">No game</span></div>`:`<div class="schedule-row"><b>Wk ${g.week}</b><span class="team-mini ${g.rivalry?'rivalry':''}">${logoHtml(g.oppId,'')}<div><b>${g.home?'vs':'at'} ${g.opponent}</b><small class="sub">${g.conference?'Conference · ':''}${g.weather||'TBD'}${g.rivalry?' · Rivalry':''}</small></div></span><b class="${g.result==='W'?'win':g.result==='L'?'loss':''}">${g.result||'—'} ${g.score||''}</b><span class="extra muted">Power ${g.oppPower}</span></div>`).join('');if(state.lastGameRecap){let r=state.lastGameRecap;$('gameRecapPanel').classList.remove('hidden');$('gameRecapPanel').innerHTML=`<span class="eyebrow">LATEST GAME</span><h3>${r.headline}</h3><div class="recap-score"><span>${state.school.name}</span><strong>${r.us}-${r.them}</strong><span>${r.opponent}</span></div>${r.rivalry?'<p class="rivalry">Rivalry game</p>':''}<div class="commit-grid">${r.stars.map(s=>`<div class="commit-card">${s}</div>`).join('')}</div><div class="box-score-grid">${Object.entries(r.boxScore||{}).map(([k,v])=>`<div class="box-stat"><small>${k.replace(/([A-Z])/g,' $1')}</small><b>${v}</b></div>`).join('')}</div><div class="drive-list">${(r.drives||[]).slice(0,10).map(d=>`<div class="drive">${d}</div>`).join('')}</div>`}else $('gameRecapPanel').classList.add('hidden')};
 window.renderRankings=function(){if(!$('rankingGrid'))return;updateRankings();const cn=t=>window.SDF_CONFERENCES?.name(t,state)||t.conference;$('rankingGrid').innerHTML=state.rankings.slice(0,25).map(t=>`<div class="ranking-card"><div class="rank">${t.rank}</div><div class="team-mini">${logoHtml(t.id,'')}<div><b>${t.name}</b><span class="sub">${cn(t)}</span></div></div><strong>${t.record.w}-${t.record.l}</strong></div>`).join('');$('playoffBracket').innerHTML=state.playoff.map((t,i)=>`<div class="playoff-card"><span class="eyebrow">SEED ${i+1}</span><div class="team-mini">${logoHtml(t.id,'')}<div><h3>${t.name}</h3><span class="sub">${t.record.w}-${t.record.l} · ${cn(t)}</span></div></div></div>`).join('')};
 
@@ -2630,7 +2635,7 @@ const oldOpenRecruit=window.openRecruit;window.openRecruit=function(id){oldOpenR
 function closeAnyModal(){$v('modal')?.classList.add('hidden');$v('gameResultModal')?.classList.add('hidden')}
 function seededQuarters(total,seed){let vals=[0,0,0,0],remain=Number(total)||0;for(let i=0;i<3;i++){let max=Math.max(0,Math.min(remain,14)),v=((seed>>>(i*4))%(max+1));v=Math.round(v/3)*3;if(v>remain)v=remain;vals[i]=v;remain-=v}vals[3]=remain;return vals}
 function hash(v){let h=2166136261;for(let c of String(v)){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
-function conferencePosition(){let sorted=(state.standings||[]).slice().sort((a,b)=>b.w-a.w||a.l-b.l),idx=sorted.findIndex(x=>x.id===state.school.id);return idx>=0?`#${idx+1}`:'—'}
+function conferencePosition(){window.syncStandingsRecords?.();const cr=t=>state.conferenceRecords?.[t.id]||{w:0,l:0};let sorted=(state.standings||[]).slice().sort((a,b)=>cr(b).w-cr(a).w||cr(a).l-cr(b).l||b.w-a.w||a.l-b.l),idx=sorted.findIndex(x=>x.id===state.school.id);return idx>=0?`#${idx+1}`:'—'}
 function showGameResultModal(recap,playedWeek){if(!recap)return;let modal=$v('gameResultModal'),body=$v('gameResultBody'),opp=schools.find(s=>s.name===recap.opponent),seed=hash(`${state.year}-${playedWeek}-${recap.opponent}-${recap.us}-${recap.them}`),uq=seededQuarters(recap.us,seed),oq=seededQuarters(recap.them,seed>>1),next=state.phase==='REGULAR'?state.schedule[state.week-1]:null,ranking=state.rankings?.find(x=>x.id===state.school.id)?.rank;
  body.innerHTML=`<span class="eyebrow">WEEK ${playedWeek} FINAL · ${recap.win?'VICTORY':'DEFEAT'}</span><h2 id="gameResultTitle">${escapeText(recap.headline)}</h2><div class="game-final-head"><div class="game-final-team"><img src="${teamLogo(state.school.id)}" alt=""><b>${escapeText(state.school.name)}</b></div><div class="game-final-score"><strong>${recap.us}–${recap.them}</strong><span>${recap.win?'FINAL · WIN':'FINAL · LOSS'}</span></div><div class="game-final-team"><img src="${teamLogo(opp?.id)}" alt=""><b>${escapeText(recap.opponent)}</b></div></div><div class="table-wrap"><table class="quarter-table"><thead><tr><th>Team</th><th>1</th><th>2</th><th>3</th><th>4</th><th>F</th></tr></thead><tbody><tr><td>${escapeText(state.school.name)}</td>${uq.map(v=>`<td>${v}</td>`).join('')}<td><b>${recap.us}</b></td></tr><tr><td>${escapeText(recap.opponent)}</td>${oq.map(v=>`<td>${v}</td>`).join('')}<td><b>${recap.them}</b></td></tr></tbody></table></div><div class="result-summary-grid"><div><small>RECORD</small><b>${state.record.w}-${state.record.l}</b></div><div><small>CONFERENCE PLACE</small><b>${conferencePosition()}</b></div><div><small>NATIONAL RANK</small><b>${ranking?'#'+ranking:'NR'}</b></div></div><div class="box-score-grid">${Object.entries(recap.boxScore||{}).map(([k,v])=>`<div class="box-stat"><small>${k.replace(/([A-Z])/g,' $1')}</small><b>${v}</b></div>`).join('')}</div><h3>Standout Players</h3><div class="postgame-stars">${(recap.stars||[]).map(s=>`<div class="postgame-star">${escapeText(s)}</div>`).join('')||'<span class="muted">No standout data recorded.</span>'}</div>${next?`<div class="app-week-card"><img src="${teamLogo(next.oppId)}" alt=""><div><small class="eyebrow">NEXT: WEEK ${next.week}</small><strong>${next.home?'vs':'at'} ${escapeText(next.opponent)}</strong><span class="sub">${next.weather||'Clear'} · Power ${next.oppPower}</span></div></div>`:'<div class="postseason-empty">The regular season is complete. Open the Postseason tab for what comes next.</div>'}<div class="postgame-actions"><button class="btn primary" onclick="closeGameResult()">Continue</button><button class="btn neutral" onclick="closeGameResult();showTab('season')">View Schedule</button>${next?`<button class="btn neutral" onclick="closeGameResult();showTab('gameplan')">Prepare Next Game</button><button class="btn neutral" onclick="closeGameResult();showTab('recruiting')">Recruiting</button>`:`<button class="btn warning" onclick="closeGameResult();showTab('postseason')">Open Postseason Hub</button>`}</div>`;
  modal.classList.remove('hidden');body.scrollTop=0}
@@ -2963,10 +2968,10 @@ function portalFit(p){let need=needs()[p.pos],pt=clamp(50+need.sev*8+(p.ovr-(nee
 function portalSeed(text){let h=2166136261;for(let ch of String(text)){h^=ch.charCodeAt(0);h=Math.imul(h,16777619)}return Math.abs(h>>>0)}
 function ensurePortal(){if(!Array.isArray(state.portal))state.portal=[];state.portal.forEach((p,i)=>{p.portalInterest??=clamp(24+portalFit(p).overall*.45+rand(-8,8),20,78);p.portalNIL??=Math.round((10000+Math.max(0,p.ovr-68)*3500+rand(0,15000))/5000)*5000;p.portalRivals??=[choice(schools.filter(s=>s.id!==state.school.id)).name,choice(schools.filter(s=>s.id!==state.school.id)).name];p.portalRivals=[...new Set(p.portalRivals)].filter(n=>n&&n!==state.school.name);while(p.portalRivals.length<2){let n=choice(schools.filter(s=>s.id!==state.school.id&&!p.portalRivals.includes(s.name))).name;p.portalRivals.push(n)}p.portalRivalScores??={};p.portalRivals.forEach((name,j)=>{if(p.portalRivalScores[name]==null){let offset=(portalSeed(`${p.id}-${name}`)%19)-7+(j===0?3:0);p.portalRivalScores[name]=clamp(Math.round(p.portalInterest+offset),20,92)}});p.portalCommitted??=false;p.portalLost??=null;p.portalContact??=0})}
 function portalRank(p){ensurePortal();let rivals=p.portalRivals.map(name=>({name,score:Math.round(p.portalRivalScores?.[name]||20)})),all=[{name:state.school.name,score:Math.round(p.portalInterest),user:true},...rivals].sort((a,b)=>b.score-a.score);return{all,userRank:all.findIndex(x=>x.user)+1,leader:all[0]}}
-window.portalContact=(id,type)=>{ensurePortal();let p=state.portal.find(x=>x.id===id);if(!p||state.offseasonFlow217?.portalClosed||p.portalCommitted||p.portalLost)return;if(window.SDF_SCENARIOS?.allowed(p)===false){window.toast?.(window.SDF_SCENARIOS.reason(p),'error');return}let cost=type==='VISIT'?15:5,gain=type==='VISIT'?rand(9,15):rand(3,7);if(state.portalHours<cost)return;state.portalHours-=cost;p.portalInterest=clamp(p.portalInterest+gain,0,100);p.portalContact+=cost;if(p.portalInterest>=100)signPortal(p);renderPortal11();save11('Portal contact')};
-window.portalNil=(id)=>{ensurePortal();let p=state.portal.find(x=>x.id===id);if(!p||state.offseasonFlow217?.portalClosed||p.portalCommitted||p.portalLost||state.nilBudget<p.portalNIL)return;if(window.SDF_SCENARIOS?.allowed(p)===false){window.toast?.(window.SDF_SCENARIOS.reason(p),'error');return}state.nilBudget-=p.portalNIL;p.portalInterest=clamp(p.portalInterest+rand(8,14),0,100);p.portalNILOffered=p.portalNIL;if(p.portalInterest>=100)signPortal(p);renderPortal11();save11('Portal NIL')};
-function signPortal(p){if(p.portalCommitted||p.portalLost||window.SDF_SCENARIOS?.allowed(p)===false)return;window.SDF_SCENARIOS?.portalSigned(p);p.portalCommitted=true;p.taken=true;const real=window.SDF_V198?.toUserRosterPlayer?.(p);state.roster.push(real||{...p,id:(window.SDF_SEEDS?.uuid()??crypto.randomUUID()),morale:80,starter:false,walkOn:false,scholarship:true,seasonStats:emptySeasonStats(),statHistory:p.statHistory||[],gameLog:[],stats:{games:0,yards:0,td:0,tackles:0,sacks:0,int:0}});state.achievementStats.portalAdds++;state.news.push(`${p.name} committed from the transfer portal${p.sourceTeamName?` from ${p.sourceTeamName}`:''}.`);playSound('commit')}
-window.retainTransfer=(id)=>{let d=state.portalDepartures.find(x=>x.player.id===id);if(!d||d.retained)return;let cost=d.nilAsk;if(state.nilBudget<cost)return;state.nilBudget-=cost;d.retained=true;let p=d.v198?{...d.player,morale:72,injury:null,starter:false}:{...d.player,year:Math.min(5,(Number(d.player.year)||1)+1),morale:72,injury:null,starter:false};state.roster.push(p);window.SDF_V198?.onRetainedTransfer?.(id);state.news.push(`${p.name} withdrew from the portal after a ${money11(cost)} retention package and returns as a ${portalClass(p)}.`);ensureRealDepth();renderPortal11();save11('Retained transfer')};
+window.portalContact=(id,type)=>{ensurePortal();let p=state.portal.find(x=>x.id===id);if(!p||state.offseasonFlow217?.portalClosed||p.portalCommitted||p.portalLost||p.portalUserOut||p.portalOwnDeparture)return;if(window.SDF_SCENARIOS?.allowed(p)===false){window.toast?.(window.SDF_SCENARIOS.reason(p),'error');return}let cost=type==='VISIT'?15:5,gain=type==='VISIT'?rand(9,15):rand(3,7);if(state.portalHours<cost)return;state.portalHours-=cost;p.portalInterest=clamp(p.portalInterest+gain,0,100);p.portalContact+=cost;if(p.portalInterest>=100)window.SDF299_PORTAL?window.SDF299_PORTAL.onUserPeak?.(p):signPortal(p);renderPortal11();save11('Portal contact')};
+window.portalNil=(id)=>{ensurePortal();let p=state.portal.find(x=>x.id===id);if(!p||state.offseasonFlow217?.portalClosed||p.portalCommitted||p.portalLost||p.portalUserOut||p.portalOwnDeparture||state.nilBudget<p.portalNIL)return;if(window.SDF_SCENARIOS?.allowed(p)===false){window.toast?.(window.SDF_SCENARIOS.reason(p),'error');return}state.nilBudget-=p.portalNIL;p.portalInterest=clamp(p.portalInterest+rand(8,14),0,100);p.portalNILOffered=p.portalNIL;if(p.portalInterest>=100)window.SDF299_PORTAL?window.SDF299_PORTAL.onUserPeak?.(p):signPortal(p);renderPortal11();save11('Portal NIL')};
+function signPortal(p){if(p.portalCommitted||p.portalLost||p.portalOwnDeparture||window.SDF_SCENARIOS?.allowed(p)===false)return false;if(window.SDF299_PORTAL?.rosterFull?.()){window.toast?.(`No scholarship available for ${p.name}. Your roster is at the scholarship limit.`,'error');return false}window.SDF_SCENARIOS?.portalSigned(p);p.portalCommitted=true;p.taken=true;const real=window.SDF_V198?.toUserRosterPlayer?.(p);state.roster.push(real||{...p,id:(window.SDF_SEEDS?.uuid()??crypto.randomUUID()),morale:80,starter:false,walkOn:false,scholarship:true,seasonStats:emptySeasonStats(),statHistory:p.statHistory||[],gameLog:[],stats:{games:0,yards:0,td:0,tackles:0,sacks:0,int:0}});state.achievementStats.portalAdds++;p.portalStage='COMMITTED';state.news.push(`${p.name} committed from the transfer portal${p.sourceTeamName?` from ${p.sourceTeamName}`:''}.`);window.SDF299_PORTAL?.onUserSigned?.(p);playSound('commit');return true}
+window.retainTransfer=(id)=>{let d=state.portalDepartures.find(x=>x.player.id===id);if(!d||d.retained||d.resolved||state.offseasonFlow217?.portalClosed)return;let cost=d.nilAsk;if(state.nilBudget<cost)return;state.nilBudget-=cost;d.retained=true;let p=d.v198?{...d.player,morale:72,injury:null,starter:false}:{...d.player,year:Math.min(5,(Number(d.player.year)||1)+1),morale:72,injury:null,starter:false};state.roster.push(p);window.SDF_V198?.onRetainedTransfer?.(id);window.SDF299_PORTAL?.onRetained?.(id);state.news.push(`${p.name} withdrew from the portal after a ${money11(cost)} retention package and returns as a ${portalClass(p)}.`);ensureRealDepth();renderPortal11();save11('Retained transfer')};
 function filterPortalProspects(){
  const value=id=>$11(id)?.value||'ALL',query=($11('portalSearch')?.value||'').trim().toLowerCase(),position=value('portalPositionFilter'),classYear=value('portalClassFilter'),minimumOvr=Number(value('portalOverallFilter')||0),fitFilter=value('portalFitFilter'),interestFilter=value('portalInterestFilter'),status=value('portalStatusFilter'),sort=value('portalSortFilter');
  let list=(state.portal||[]).filter(p=>{
@@ -2992,13 +2997,13 @@ function filterPortalProspects(){
  return list
 }
 function renderPortal11(){
- let o=$11('portalOverviewV11'),list=$11('portalListV11'),depart=$11('portalDepartureListV11'),dir=$11('portalDirectionV11'),btn=$11('portalAdvanceWeekBtn');if(!o)return;ensurePortal();let open=state.phase==='PORTAL'&&!state.offseasonFlow217?.portalClosed;o.innerHTML=metric('Portal Status',open?`Week ${state.portalWeek}/4`:'Closed')+metric('Portal Hours',open?state.portalHours:'—')+metric('NIL Pool',money11(state.nilBudget))+metric('Signed Transfers',state.portal.filter(p=>p.portalCommitted).length);dir.innerHTML=open?`<b>The portal is open.</b> Contact players with a 5-hour call, host a 15-hour visit, or make a recruit-only NIL offer. Playing time, scheme, winning and location determine your starting position.`:state.offseasonFlow217?.portalClosed?`<b>The portal is closed.</b> Your starters are set by current OVR; review any position battles before next season.`:`<b>The portal opens after the season.</b> You can always find this tab here. During the season it shows how the system works; after the season it becomes fully interactive.`;btn.disabled=!open;btn.textContent=open&&state.portalWeek>=4?'Finish Portal Window':'Advance Portal Week';depart.innerHTML=(state.portalDepartures||[]).map(d=>`<article class="portal-card ${d.retained?'signed':''}"><h4>${d.player.name}</h4><span class="sub">${d.player.pos} · ${portalClass(d.player)} · ${d.player.ovr} OVR</span><p>${d.reason}</p><b>Retention ask: ${money11(d.nilAsk)}</b><button class="btn warning full" onclick="retainTransfer('${d.player.id}')" ${!open||d.retained||state.nilBudget<d.nilAsk?'disabled':''}>${d.retained?'Returning to Team':'Try to Retain'}</button></article>`).join('')||'<p class="muted">No outgoing transfers recorded.</p>';
- const prospects=filterPortalProspects();list.innerHTML=prospects.map(p=>{let fit=portalFit(p),race=portalRank(p);return`<article class="portal-card ${p.portalCommitted?'signed':p.portalLost?'lost':''}"><h4>${p.name}</h4><span class="sub">${p.pos} · ${p.arch} · ${portalClass(p)} · ${p.ovr} OVR / ${p.pot} POT${p.sourceTeamName?` · from ${p.sourceTeamName}`:''}</span><p>${p.reason||'Seeking a better opportunity'}</p><div class="portal-fit-row"><div><small>PLAYING TIME</small><b>${grade11(fit.pt)}</b></div><div><small>SCHEME</small><b>${grade11(fit.scheme)}</b></div><div><small>OVERALL FIT</small><b>${grade11(fit.overall)}</b></div></div><b>${p.portalCommitted?'SIGNED TO YOU':p.portalLost?`SIGNED: ${p.portalLost}`:`#${race.userRank} · ${Math.round(p.portalInterest)} interest`}</b><span class="sub">Leader: ${race.leader.name} · NIL ask ${money11(p.portalNIL)}</span><div class="actions"><button class="btn neutral" onclick="portalContact('${p.id}','CALL')" ${!open||p.portalCommitted||p.portalLost||state.portalHours<5?'disabled':''}>Call · 5 hrs</button><button class="btn warning" onclick="portalContact('${p.id}','VISIT')" ${!open||p.portalCommitted||p.portalLost||state.portalHours<15?'disabled':''}>Visit · 15 hrs</button><button class="btn primary" onclick="portalNil('${p.id}')" ${!open||p.portalCommitted||p.portalLost||p.portalNILOffered||state.nilBudget<p.portalNIL?'disabled':''}>${p.portalNILOffered?'NIL Offered':'NIL '+money11(p.portalNIL)}</button></div></article>`}).join('')||'<p class="muted">No portal players match those filters. Try clearing one or more filters.</p>'
+ let o=$11('portalOverviewV11'),list=$11('portalListV11'),depart=$11('portalDepartureListV11'),dir=$11('portalDirectionV11'),btn=$11('portalAdvanceWeekBtn');if(!o)return;ensurePortal();let open=state.phase==='PORTAL'&&!state.offseasonFlow217?.portalClosed;o.innerHTML=metric('Portal Status',open?`Week ${state.portalWeek}/4`:'Closed')+metric('Portal Hours',open?state.portalHours:'—')+metric('NIL Pool',money11(state.nilBudget))+metric('Signed Transfers',state.portal.filter(p=>p.portalCommitted).length)+(window.SDF299_PORTAL?.overviewMetrics?.()||'');dir.innerHTML=open?`<b>The portal is open.</b> Contact players with a 5-hour call, host a 15-hour visit, or make a recruit-only NIL offer. Playing time, scheme, winning and location determine your starting position.`:state.offseasonFlow217?.portalClosed?`<b>The portal is closed.</b> Your starters are set by current OVR; review any position battles before next season.`:`<b>The portal opens after the season.</b> You can always find this tab here. During the season it shows how the system works; after the season it becomes fully interactive.`;btn.disabled=!open;btn.textContent=open&&state.portalWeek>=4?'Finish Portal Window':'Advance Portal Week';depart.innerHTML=(state.portalDepartures||[]).map(d=>`<article class="portal-card ${d.retained?'signed':''}"><h4>${d.player.name}</h4><span class="sub">${d.player.pos} · ${portalClass(d.player)} · ${d.player.ovr} OVR</span><p>${d.reason}</p><b>Retention ask: ${money11(d.nilAsk)}</b>${window.SDF299_PORTAL?.departureExtras?.(d)||''}<button class="btn warning full" onclick="retainTransfer('${d.player.id}')" ${!open||d.retained||d.resolved||state.nilBudget<d.nilAsk?'disabled':''}>${d.retained?'Returning to Team':d.resolved?'Transferred':'Try to Retain'}</button></article>`).join('')||'<p class="muted">No outgoing transfers recorded.</p>';
+ const prospects=filterPortalProspects();list.innerHTML=prospects.map(p=>{let fit=portalFit(p),race=portalRank(p);return`<article class="portal-card ${p.portalCommitted?'signed':p.portalLost?'lost':''}"><h4>${p.name}</h4><span class="sub">${p.pos} · ${p.arch} · ${portalClass(p)} · ${p.ovr} OVR / ${p.pot} POT${p.sourceTeamName?` · from ${p.sourceTeamName}`:''}</span><p>${p.reason||'Seeking a better opportunity'}</p><div class="portal-fit-row"><div><small>PLAYING TIME</small><b>${grade11(fit.pt)}</b></div><div><small>SCHEME</small><b>${grade11(fit.scheme)}</b></div><div><small>OVERALL FIT</small><b>${grade11(fit.overall)}</b></div></div><b>${p.portalCommitted?'SIGNED TO YOU':p.portalLost?`SIGNED: ${p.portalLost}`:`#${race.userRank} · ${Math.round(p.portalInterest)} interest`}</b><span class="sub">Leader: ${race.leader.name} · NIL ask ${money11(p.portalNIL)}</span>${window.SDF299_PORTAL?.cardExtras?.(p,race)||''}<div class="actions"><button class="btn neutral" onclick="portalContact('${p.id}','CALL')" ${!open||p.portalCommitted||p.portalLost||p.portalUserOut||p.portalOwnDeparture||state.portalHours<5?'disabled':''}>Call · 5 hrs</button><button class="btn warning" onclick="portalContact('${p.id}','VISIT')" ${!open||p.portalCommitted||p.portalLost||p.portalUserOut||p.portalOwnDeparture||state.portalHours<15?'disabled':''}>Visit · 15 hrs</button><button class="btn primary" onclick="portalNil('${p.id}')" ${!open||p.portalCommitted||p.portalLost||p.portalUserOut||p.portalOwnDeparture||p.portalNILOffered||state.nilBudget<p.portalNIL?'disabled':''}>${p.portalNILOffered?'NIL Offered':'NIL '+money11(p.portalNIL)}</button></div></article>`}).join('')||'<p class="muted">No portal players match those filters. Try clearing one or more filters.</p>';window.SDF299_PORTAL?.afterRender?.()
 }
 window.setRecruitingMode=mode=>{let portal=mode==='portal';$11('highSchoolRecruitingBoard').classList.toggle('hidden',portal);$11('highSchoolCommitSection').classList.toggle('hidden',portal);$11('portalRecruitingSection').classList.toggle('hidden',!portal);$11('highSchoolRecruitingBtn').className=`btn ${portal?'neutral':'primary'}`;$11('transferPortalRecruitingBtn').className=`btn ${portal?'primary':'neutral'}`;state.recruitingView=portal?'portal':'highschool';if(portal)renderPortal11();window.scrollTo({top:0,behavior:'smooth'})};
-function advancePortalWeek(){if(state.phase!=='PORTAL')return;if(state.portalWeek>=4)return window.finishOffseason();ensurePortal();state.portal.forEach(p=>{if(p.portalCommitted||p.portalLost)return;p.portalRivals.forEach(name=>{let school=schools.find(s=>s.name===name),current=school?(window.SDF_V197?.programForTeam?.(school.id)||school):null,push=rand(2,6)+Math.round(((current?.prestige||65)-60)/18);p.portalRivalScores[name]=clamp((p.portalRivalScores[name]||20)+push,0,100)});let race=portalRank(p);if(race.leader.name!==state.school.name&&race.leader.score>=100){p.portalLost=race.leader.name;p.taken=true;window.SDF_V198?.commitPortalPlayer?.(p,p.portalLost);state.news.push(`${p.name} committed to ${p.portalLost} from the transfer portal.`)}else if(p.portalInterest>=100)signPortal(p)});state.portalWeek++;state.portalHours=40;renderPortal11();showInfoPopup('Portal Week Advanced',`The transfer window moved to Week ${state.portalWeek}. Your portal interest did not decrease, but rival programs gained influence and may have moved ahead.`);save11('Portal week')}
+function advancePortalWeek(){if(state.phase!=='PORTAL')return;if(state.portalWeek>=4)return window.finishOffseason();ensurePortal();const race=window.SDF299_PORTAL;if(race?.advanceWeek)race.advanceWeek();else state.portal.forEach(p=>{if(p.portalCommitted||p.portalLost)return;p.portalRivals.forEach(name=>{let school=schools.find(s=>s.name===name),current=school?(window.SDF_V197?.programForTeam?.(school.id)||school):null,push=rand(2,6)+Math.round(((current?.prestige||65)-60)/18);p.portalRivalScores[name]=clamp((p.portalRivalScores[name]||20)+push,0,100)});let race=portalRank(p);if(race.leader.name!==state.school.name&&race.leader.score>=100){p.portalLost=race.leader.name;p.taken=true;window.SDF_V198?.commitPortalPlayer?.(p,p.portalLost);state.news.push(`${p.name} committed to ${p.portalLost} from the transfer portal.`)}else if(p.portalInterest>=100)signPortal(p)});state.portalWeek++;state.portalHours=40;renderPortal11();if(race?.announceWeek)race.announceWeek();else showInfoPopup('Portal Week Advanced',`The transfer window moved to Week ${state.portalWeek}. Your portal interest did not decrease, but rival programs gained influence and may have moved ahead.`);save11('Portal week')}
 function showInfoPopup(title,body,extra=''){let m=$11('modalBody');m.innerHTML=`<span class="eyebrow">SATURDAY DYNASTY FOOTBALL</span><h2>${title}</h2><p>${body}</p>${extra}<button class="btn primary full" onclick="document.getElementById('modal').classList.add('hidden')">Continue</button>`;$11('modal').classList.remove('hidden');playSound('popup')}
-function meaningfulWeeklyEvent(){window.SDF_DISCIPLINE?.processWeek?.();const policy=state.disciplinePolicy==='Strict'?.82:state.disciplinePolicy==='Player-Friendly'?1.12:1,eventChance=.24*policy*(1-clamp(Number(window.coachEffect?.('disciplineEventReduction')||0),0,.60));if((window.SDF_SEEDS?.random()??Math.random())>eventChance)return;let active=state.roster.filter(p=>(!p.injury&&window.SDF_DISCIPLINE?.available?.(p)!==false)&&!p.redshirt),p=choice(active);if(!p)return;let backup=choice(state.roster.filter(x=>x.pos===p.pos&&x.id!==p.id));let events=[{title:'Team Rules Violation',text:`${p.name}, your ${p.starter?'starting':'reserve'} ${p.pos}, missed a required team meeting.`,choices:[['Suspend one game',()=>{p.injury={weeks:1,type:'Team suspension'};p.starter=false;state.fanApproval=clamp(state.fanApproval+3,0,100)}],['Internal discipline',()=>{p.morale=clamp(p.morale-8,0,99);state.boosterSupport=clamp(state.boosterSupport+1,0,100)}],['Let him play',()=>{state.fanApproval=clamp(state.fanApproval-6,0,100);state.jobSecurity=clamp(state.jobSecurity-3,0,100)}]]},{title:'Playing-Time Complaint',text:`${p.name} wants a clearer role. He currently has ${p.starter?'a starting job':'a backup role'}.`,choices:[['Promise more snaps',()=>{if(window.SDF_V188?.makePlayerPromise)window.SDF_V188.makePlayerPromise(p.id,'MORE_PLAYING_TIME');else{p.morale=clamp(p.morale+10,0,99);state.promises.push({id:(window.SDF_SEEDS?.uuid()??crypto.randomUUID()),targetId:p.id,target:p.name,type:'More playing time',year:state.year,resolved:false,kept:null})}}],['Hold an open competition',()=>{p.morale=clamp(p.morale+5,0,99);if(backup)backup.morale=clamp(backup.morale+3,0,99)}],['Refuse',()=>{p.morale=clamp(p.morale-12,0,99)}]]},{title:'Academic Warning',text:`${p.name} is falling behind academically and may miss next week.`,choices:[['Mandatory tutoring',()=>{state.budget=Math.max(0,Number(state.budget||0)-20000);p.morale=clamp(p.morale-2,0,99);state.playerEligibility[p.id]=true}],['Reduce practice load',()=>{p.morale=clamp(p.morale+4,0,99);p.ovr=Math.max(45,p.ovr-1)}],['Take the risk',()=>{if((window.SDF_SEEDS?.random()??Math.random())<.55)p.injury={weeks:1,type:'Academically ineligible'}}]]}];if(window.SDF_DISCIPLINE)events=events.filter(e=>!['Team Rules Violation','Academic Warning'].includes(e.title));if(!events.length||state.pendingEvent)return;state.pendingEvent=choice(events);window.showDecisionEvent();playSound('event')}
+function meaningfulWeeklyEvent(){window.SDF_DISCIPLINE?.processWeek?.();const policy=state.disciplinePolicy==='Strict'?.82:state.disciplinePolicy==='Player-Friendly'?1.12:1,eventChance=.24*policy*(1-clamp(Number(window.coachEffect?.('disciplineEventReduction')||0),0,.60));if((window.SDF_SEEDS?.random()??Math.random())>eventChance)return;let active=state.roster.filter(p=>(!p.injury&&window.SDF_DISCIPLINE?.available?.(p)!==false)&&!p.redshirt),p=choice(active);if(!p)return;let backup=choice(state.roster.filter(x=>x.pos===p.pos&&x.id!==p.id));let events=[{title:'Team Rules Violation',text:`${p.name}, your ${p.starter?'starting':'reserve'} ${p.pos}, missed a required team meeting.`,choices:[['Suspend one game',()=>{if(!window.SDF_DISCIPLINE?.suspend?.(p,1,'Missed a required team meeting'))p.injury={weeks:1,type:'Team suspension'};p.starter=false;state.fanApproval=clamp(state.fanApproval+3,0,100)}],['Internal discipline',()=>{p.morale=clamp(p.morale-8,0,99);state.boosterSupport=clamp(state.boosterSupport+1,0,100)}],['Let him play',()=>{state.fanApproval=clamp(state.fanApproval-6,0,100);state.jobSecurity=clamp(state.jobSecurity-3,0,100)}]]},{title:'Playing-Time Complaint',text:`${p.name} wants a clearer role. He currently has ${p.starter?'a starting job':'a backup role'}.`,choices:[['Promise more snaps',()=>{if(window.SDF_V188?.makePlayerPromise)window.SDF_V188.makePlayerPromise(p.id,'MORE_PLAYING_TIME');else{p.morale=clamp(p.morale+10,0,99);state.promises.push({id:(window.SDF_SEEDS?.uuid()??crypto.randomUUID()),targetId:p.id,target:p.name,type:'More playing time',year:state.year,resolved:false,kept:null})}}],['Hold an open competition',()=>{p.morale=clamp(p.morale+5,0,99);if(backup)backup.morale=clamp(backup.morale+3,0,99)}],['Refuse',()=>{p.morale=clamp(p.morale-12,0,99)}]]},{title:'Academic Warning',text:`${p.name} is falling behind academically and may miss next week.`,choices:[['Mandatory tutoring',()=>{state.budget=Math.max(0,Number(state.budget||0)-20000);p.morale=clamp(p.morale-2,0,99);state.playerEligibility[p.id]=true}],['Reduce practice load',()=>{p.morale=clamp(p.morale+4,0,99);p.ovr=Math.max(45,p.ovr-1)}],['Take the risk',()=>{if((window.SDF_SEEDS?.random()??Math.random())<.55)p.injury={weeks:1,type:'Academically ineligible'}}]]}];if(window.SDF_DISCIPLINE)events=events.filter(e=>!['Team Rules Violation','Academic Warning'].includes(e.title));if(!events.length||state.pendingEvent)return;state.pendingEvent=choice(events);window.showDecisionEvent();playSound('event')}
 window.weeklyEvent=meaningfulWeeklyEvent;
 window.showDecisionEvent=function(){let e=state.pendingEvent;if(!e)return;$11('modalBody').innerHTML=`<span class="eyebrow">PROGRAM EVENT</span><h2>${e.title}</h2><p>${e.text}</p><div class="event-impact"><b>This decision changes actual player status, morale, finances, eligibility or job support.</b></div><div>${e.choices.map((c,i)=>`<button class="btn primary full" onclick="chooseDecision(${i})">${c[0]}</button>`).join('')}</div>`;$11('modal').classList.remove('hidden')};
 window.maybeInjury=function(){let chance=.20*difficultyConfig().injury*coachInjuryMult()*(state.weeklyPractice==='Injury Prevention'?.65:1);if((window.SDF_SEEDS?.random()??Math.random())>=chance)return;ensureRealDepth();let pool=state.roster.filter(p=>p.starter&&(!p.injury&&window.SDF_DISCIPLINE?.available?.(p)!==false)&&!p.redshirt);if(!pool.length)return;let p=choice(pool),severity=choice([{type:'Ankle sprain',weeks:1},{type:'Shoulder strain',weeks:2},{type:'Hamstring injury',weeks:3},{type:'Concussion',weeks:2},{type:'Knee injury',weeks:4}]);p.injury={weeks:severity.weeks,type:severity.type};p.starter=false;state.lastInjuryAlert={player:p.name,pos:p.pos,type:severity.type,weeks:severity.weeks};state.news.push(`${p.name} (${p.pos}) suffered a ${severity.type} and will miss approximately ${severity.weeks} week(s).`);ensureRealDepth();playSound('injury')};
@@ -3034,7 +3039,7 @@ const priorRenderAll=window.renderAll;window.renderAll=function(...args){let out
 $11('highSchoolRecruitingBtn').onclick=()=>window.setRecruitingMode('highschool');$11('transferPortalRecruitingBtn').onclick=()=>window.setRecruitingMode('portal');$11('portalAdvanceWeekBtn').onclick=()=>window.advanceWeek();$11('soundSetting').onchange=updateSoundSetting;$11('closeGameSim').onclick=window.closeGameSimulation;$11('gameSimModal').addEventListener('click',e=>{if(e.target===$11('gameSimModal'))window.closeGameSimulation()});
 for(const id of ['portalPositionFilter','portalClassFilter','portalOverallFilter','portalFitFilter','portalInterestFilter','portalStatusFilter','portalSortFilter'])if($11(id))$11(id).onchange=renderPortal11;
 if($11('portalSearch'))$11('portalSearch').oninput=renderPortal11;
-ensure11();lastCommitCount=state.commits?.length||0;if(state.recruitingView==='portal')window.setRecruitingMode('portal');window.SDF_V11_TEST={ROLE_DEFS,grade11,staffBuyout,portalFit,filterPortalProspects,phaseLabel,ensureRealDepth,annualProgramAllocation,scaledHeadCoachSalary,auditProgramFinances,playSound,unlockAudio:unlockSystemAudio,audioContext:soundContext11,emergencyLineup,recordEmergencyLineup,emergencyCandidate,emergencyPenalty,depthSnapshot:()=>JSON.parse(JSON.stringify(state.realDepthChart||{})),participantWeights:keys=>participants(keys).map(x=>({id:x.p.id,name:x.p.name,pos:x.p.pos,weight:x.weight,emergency:!!x.emergency}))};
+ensure11();lastCommitCount=state.commits?.length||0;if(state.recruitingView==='portal')window.setRecruitingMode('portal');window.SDF_V11_TEST={ROLE_DEFS,grade11,staffBuyout,portalFit,portalRank,signPortal,renderPortal11,ensurePortal,filterPortalProspects,phaseLabel,ensureRealDepth,annualProgramAllocation,scaledHeadCoachSalary,auditProgramFinances,playSound,unlockAudio:unlockSystemAudio,audioContext:soundContext11,emergencyLineup,recordEmergencyLineup,emergencyCandidate,emergencyPenalty,depthSnapshot:()=>JSON.parse(JSON.stringify(state.realDepthChart||{})),participantWeights:keys=>participants(keys).map(x=>({id:x.p.id,name:x.p.name,pos:x.p.pos,weight:x.weight,emergency:!!x.emergency}))};
 })();
 
 (()=>{
@@ -3262,7 +3267,7 @@ function applyPlayerStats(g,win,team,opp,plan){
  const stars=[];if(qbMain)stars.push(`${qbMain.name}: ${qbComp.get(qbMain.id)||0}/${qbAtt.get(qbMain.id)||0}, ${qbYds.get(qbMain.id)||0} pass yds, ${passTD} TD`);const topRush=[...rushers].sort((a,b)=>(rushYdMap.get(b.p.id)||0)-(rushYdMap.get(a.p.id)||0))[0];if(topRush)stars.push(`${topRush.p.name}: ${carryMap.get(topRush.p.id)||0} carries, ${rushYdMap.get(topRush.p.id)||0} rush yds, ${rushTdMap.get(topRush.p.id)||0} TD`);const topRec=[...receivers].sort((a,b)=>(recYdMap.get(b.p.id)||0)-(recYdMap.get(a.p.id)||0))[0];if(topRec)stars.push(`${topRec.p.name}: ${catchMap.get(topRec.p.id)||0} rec, ${recYdMap.get(topRec.p.id)||0} yds, ${recTdMap.get(topRec.p.id)||0} TD`);const topDef=[...defs].sort((a,b)=>(tackleMap.get(b.p.id)||0)+5*(sackMap.get(b.p.id)||0)+7*(intMap.get(b.p.id)||0)-((tackleMap.get(a.p.id)||0)+5*(sackMap.get(a.p.id)||0)+7*(intMap.get(a.p.id)||0)))[0];if(topDef)stars.push(`${topDef.p.name}: ${tackleMap.get(topDef.p.id)||0} tackles, ${sackMap.get(topDef.p.id)||0} sacks, ${intMap.get(topDef.p.id)||0} INT`);return stars.slice(0,4)
 }
 function injuryAfterGame(plan){const tempo=Math.max(0,(plan.tempo-50)/50),agg=Math.max(0,(plan.agg-50)/50),practice=state.weeklyPractice==='Injury Prevention'?.55:1,medical=1-Math.max(0,Number(state.facilities?.medical||1)-1)*.07,chance=.12*difficultyConfig().injury*coachInjuryMult()*practice*medical*(1+tempo*.65+agg*.22);if((window.SDF_SEEDS?.random()??Math.random())>=chance)return;const pool=roleParticipants(window.SDF_V11_TEST?.ROLE_DEFS?.map(r=>r.key)||[]);if(!pool.length)return;const total=pool.reduce((n,x)=>n+x.weight,0),roll=(window.SDF_SEEDS?.random()??Math.random())*total;let acc=0,p=pool[0].p;for(const x of pool){acc+=x.weight;if(roll<=acc){p=x.p;break}}const severity=choice([{type:'Ankle sprain',weeks:1},{type:'Shoulder strain',weeks:2},{type:'Hamstring injury',weeks:3},{type:'Concussion',weeks:2},{type:'Knee injury',weeks:4}]);p.injury={...severity};p.starter=false;state.lastInjuryAlert={player:p.name,pos:p.pos,...severity};state.news.push(`${p.name} (${p.pos}) suffered a ${severity.type} and will miss approximately ${severity.weeks} week(s).`);window.SDF_V11_TEST?.ensureRealDepth?.()}
-window.simGame=function(w){ensure13();state.conferenceRecords??={};state.achievementStats??={};const g=state.schedule[w-1];window.SDF_ACHIEVEMENTS277?.captureRank(g);const t=teamRatings(),plan=planEffects(g),oppProfile=stableOpponent(g),matchups=window.SDF_V144?.matchupReport?.(g)||{userOffEdge:0,userDefEdge:0,userPassEff:1,userRunEff:1,oppPassEff:1,oppRunEff:1,userExplosiveBonus:0,oppExplosiveBonus:0,passEdge:0,runEdge:0,passDefEdge:0,runDefEdge:0},offMatch=schemeMatchOff(state.offense,oppProfile.defense),defMatch=schemeMatchDef(state.defense,oppProfile.tendency),practiceOff=(state.weeklyPractice==='Passing Offense'&&plan.passRate>=50)||(state.weeklyPractice==='Rushing Offense'&&plan.passRate<50)?3:state.weeklyPractice==='Opponent Scouting'?2:state.weeklyPractice==='Balanced'?1:state.weeklyPractice==='Young Player Development'?-2:0,practiceDef=['Run Defense','Pass Defense'].includes(state.weeklyPractice)?3:state.weeklyPractice==='Opponent Scouting'?2:state.weeklyPractice==='Balanced'?1:0,coverageMatch=(oppProfile.tendency==='Pass Heavy'||oppProfile.tendency==='Tempo')?(plan.zone-50)/20:(oppProfile.tendency==='Run Heavy'||oppProfile.tendency==='Ball Control')?(50-plan.zone)/28:-Math.abs(plan.zone-50)/45,weather=weatherModifier(g.weather,state.offense),coachMatch=Number(window.coachEffect?.('matchupEdge')||0)+(state.weeklyPractice==='Opponent Scouting'?Number(window.coachEffect?.('counterSchemeEdge')||0):0)+(state.captains?.length>=2?Number(window.coachEffect?.('captainGameBonus')||0):0),rivalryEdge=Number(window.SDF_V191?.gameEdge?.(g)||0),ourOff=t.offense+offMatch+practiceOff*coachPracticeBonus()+weather+(state.staff?.oc?.game||70)/30-2.3+matchups.userOffEdge*.28+coachMatch+rivalryEdge+Number(window.SDF_V192?.captainTeamBonus?.()||0),ourDef=t.defense+defMatch+practiceDef*coachPracticeBonus()+coverageMatch+(state.staff?.dc?.game||70)/32-2.2+matchups.userDefEdge*.26+coachMatch+rivalryEdge+Number(window.SDF_V192?.captainTeamBonus?.()||0),oppOff=g.oppPower+seeded13(`${state.year}-${g.oppId}-off`,-4,5),oppDef=g.oppPower+seeded13(`${state.year}-${g.oppId}-def`,-4,5),oppPass=oppProfile.tendency==='Pass Heavy'?70:oppProfile.tendency==='Tempo'?62:oppProfile.tendency==='Run Heavy'?36:oppProfile.tendency==='Ball Control'?42:52,our={points:0},them={points:0},drives=[];for(let i=1;i<=plan.poss;i++){const a=driveSim(ourOff,oppDef,{passRate:plan.passRate,turnoverRisk:plan.turnoverRisk,explosive:clamp(plan.explosive+matchups.userExplosiveBonus,3,38),sackPressure:0,passEff:plan.op.passEff*matchups.userPassEff,runEff:plan.op.runEff*matchups.userRunEff,tempo:plan.tempo,fourth:plan.fourth,fourthBonus:Number(window.coachEffect?.('fourthDownSuccessPct')||0),variance:state.weeklyPractice==='Opponent Scouting'?9:13}),b=driveSim(oppOff,ourDef,{passRate:oppPass,turnoverRisk:clamp(8+plan.pressure*.25,5,14),explosive:clamp(11+plan.bigRisk+matchups.oppExplosiveBonus,4,34),sackPressure:plan.pressure,passEff:matchups.oppPassEff,runEff:matchups.oppRunEff,tempo:oppProfile.tendency==='Tempo'?75:45,fourth:45,variance:13});our.points+=a.points;them.points+=b.points;mergeStats(our,a);mergeStats(them,b);if(our.points<them.points)our.trailed277=true;drives.push(`Drive ${i}: ${state.school.name} ${a.result} (${a.yards} yds); ${g.opponent} ${b.result} (${b.yards} yds)`)}if(our.points===them.points){const ot=(window.SDF_SEEDS?.random()??Math.random())>.5?7:3,winner=(window.SDF_SEEDS?.random()??Math.random())>.5?our:them;winner.points+=ot;winner.touchdowns=(winner.touchdowns||0)+(ot===7?1:0);winner.fieldGoals=(winner.fieldGoals||0)+(ot===3?1:0);drives.push(`Overtime decided by ${ot} points.`)}const win=our.points>them.points,margin=our.points-them.points;g.result=win?'W':'L';g.score=`${our.points}-${them.points}`;window.SDF_ACHIEVEMENTS277?.recordGame(g,{us:our.points,them:them.points,trailed277:!!our.trailed277});win?state.record.w++:state.record.l++;state.conferenceRecords[state.school.id]??={w:0,l:0};if(g.conference){win?state.conferenceRecords[state.school.id].w++:state.conferenceRecords[state.school.id].l++}const me=state.standings.find(x=>x.id===state.school.id);if(me)win?me.w++:me.l++;state.standings.filter(x=>x.id!==state.school.id).forEach(x=>(window.SDF_SEEDS?.random()??Math.random())>.5?x.w++:x.l++);const visitResults=resolveVisits(g,win,margin),stars=applyPlayerStats(g,win,our,them,plan),top=Math.max(1,our.plays+them.plays),ourMinutes=clamp(Math.round(30+(our.rushYds-them.rushYds)/35+(50-plan.tempo)/18),21,39);state.lastGameRecap={opponent:g.opponent,home:g.home,win,us:our.points,them:them.points,rivalry:g.rivalry,boxScore:{firstDowns:Math.round(our.yards/18),rushYds:our.rushYds,passYds:our.passYds,totalYds:our.yards,turnovers:our.turnovers,thirdDown:`${our.thirdConv}/${our.thirdAtt}`,fourthDown:`${our.fourthConv}/${our.fourthAtt}`,redZone:`${our.redConv}/${our.redAtt}`,sacksAllowed:our.sacks,timePossession:`${ourMinutes}:${String(rand(0,59)).padStart(2,'0')}`},headline:win?choice(['Game plan delivers a statement victory','Balanced execution powers the win','Fourth-quarter execution seals it']):choice(['Aggressive plan creates costly mistakes','Matchup problems decide the defeat','Late push falls short']),stars,drives,planReport:[`${state.offense}: ${Math.round(plan.passRate)}% pass, ${plan.poss} possessions`,`${state.weeklyPractice} practice applied`,`${state.defense}: pressure ${plan.pressure.toFixed(1)}, big-play risk ${plan.bigRisk.toFixed(1)}`,`Fourth downs: ${our.fourthConv}/${our.fourthAtt}`,`WR/QB vs coverage: ${matchups.passEdge>=0?'+':''}${matchups.passEdge.toFixed(1)} · Run game matchup: ${matchups.runEdge>=0?'+':''}${matchups.runEdge.toFixed(1)}`,`Pass defense matchup: ${matchups.passDefEdge>=0?'+':''}${matchups.passDefEdge.toFixed(1)} · Run defense: ${matchups.runDefEdge>=0?'+':''}${matchups.runDefEdge.toFixed(1)}`],visitResults};if(window.SDF_V191?.recordGameOutcome)window.SDF_V191.recordGameOutcome(g,win,margin);else if(g.rivalry){state.fanApproval=clamp(state.fanApproval+(win?8:-8),0,100);state.boosterSupport=clamp(state.boosterSupport+(win?5:-5),0,100);const rh=state.rivalryHistory[state.rivalId];if(rh){win?rh.wins++:rh.losses++;rh.streak=win?Math.max(1,rh.streak+1):Math.min(-1,rh.streak-1);rh.bestMargin=Math.max(rh.bestMargin,win?margin:0);rh.last={year:state.year,win,score:g.score};if(win)state.achievementStats.rivalWins++}}updateAttendance(win,g);state.coachCareer.careerWins+=win?1:0;state.coachCareer.careerLosses+=win?0:1;if(win&&margin>=35)state.achievementStats.bigWin=true;state.achievementStats.weatherConditions??={};if(win&&['Snow','Rain','Heavy Wind','Extreme Heat'].includes(g.weather))state.achievementStats.weatherConditions[g.weather]=true;addCoachXP(win?18:7);maybeCreateDynamicRivalry(g);state.news.push(`${g.result} ${g.score} ${g.home?'vs':'at'} ${g.opponent}. Game plan: ${state.offense}, ${Math.round(plan.passRate)}% pass, ${plan.poss} possessions.`);window.applyYoungPlayerPracticeDevelopment?.();injuryAfterGame(plan);state.roster.forEach(p=>{const delta=win?rand(0,3):rand(-3,1),pd=window.SDF_V192?.personalityMoraleScale?.(p,delta)??delta;p.morale=clamp(p.morale+(window.coachMoraleDelta?.(pd)??pd)+(state.captains?.length>=2?Number(window.coachEffect?.('captainMoraleBonus')||0):0),35,99)});state.gamePlanHistory.push({year:state.year,week:state.week,opponent:g.opponent,offense:state.offense,defense:state.defense,practice:state.weeklyPractice,runPass:state.gamePlan.runPass,tempo:state.gamePlan.tempo,aggression:state.gamePlan.offenseAggression,blitz:state.gamePlan.blitz,zone:state.gamePlan.manZone,fourth:state.gamePlan.fourthDown,result:g.result,score:g.score})};
+window.simGame=function(w){ensure13();state.conferenceRecords??={};state.achievementStats??={};const g=state.schedule[w-1];window.SDF_ACHIEVEMENTS277?.captureRank(g);const t=teamRatings(),plan=planEffects(g),oppProfile=stableOpponent(g),matchups=window.SDF_V144?.matchupReport?.(g)||{userOffEdge:0,userDefEdge:0,userPassEff:1,userRunEff:1,oppPassEff:1,oppRunEff:1,userExplosiveBonus:0,oppExplosiveBonus:0,passEdge:0,runEdge:0,passDefEdge:0,runDefEdge:0},offMatch=schemeMatchOff(state.offense,oppProfile.defense),defMatch=schemeMatchDef(state.defense,oppProfile.tendency),practiceOff=(state.weeklyPractice==='Passing Offense'&&plan.passRate>=50)||(state.weeklyPractice==='Rushing Offense'&&plan.passRate<50)?3:state.weeklyPractice==='Opponent Scouting'?2:state.weeklyPractice==='Balanced'?1:state.weeklyPractice==='Young Player Development'?-2:0,practiceDef=['Run Defense','Pass Defense'].includes(state.weeklyPractice)?3:state.weeklyPractice==='Opponent Scouting'?2:state.weeklyPractice==='Balanced'?1:0,coverageMatch=(oppProfile.tendency==='Pass Heavy'||oppProfile.tendency==='Tempo')?(plan.zone-50)/20:(oppProfile.tendency==='Run Heavy'||oppProfile.tendency==='Ball Control')?(50-plan.zone)/28:-Math.abs(plan.zone-50)/45,weather=weatherModifier(g.weather,state.offense),coachMatch=Number(window.coachEffect?.('matchupEdge')||0)+(state.weeklyPractice==='Opponent Scouting'?Number(window.coachEffect?.('counterSchemeEdge')||0):0)+(state.captains?.length>=2?Number(window.coachEffect?.('captainGameBonus')||0):0),rivalryEdge=Number(window.SDF_V191?.gameEdge?.(g)||0),ourOff=t.offense+offMatch+practiceOff*coachPracticeBonus()+weather+(state.staff?.oc?.game||70)/30-2.3+matchups.userOffEdge*.28+coachMatch+rivalryEdge+Number(window.SDF_V192?.captainTeamBonus?.()||0),ourDef=t.defense+defMatch+practiceDef*coachPracticeBonus()+coverageMatch+(state.staff?.dc?.game||70)/32-2.2+matchups.userDefEdge*.26+coachMatch+rivalryEdge+Number(window.SDF_V192?.captainTeamBonus?.()||0),oppOff=g.oppPower+seeded13(`${state.year}-${g.oppId}-off`,-4,5),oppDef=g.oppPower+seeded13(`${state.year}-${g.oppId}-def`,-4,5),oppPass=oppProfile.tendency==='Pass Heavy'?70:oppProfile.tendency==='Tempo'?62:oppProfile.tendency==='Run Heavy'?36:oppProfile.tendency==='Ball Control'?42:52,our={points:0},them={points:0},drives=[];for(let i=1;i<=plan.poss;i++){const a=driveSim(ourOff,oppDef,{passRate:plan.passRate,turnoverRisk:plan.turnoverRisk,explosive:clamp(plan.explosive+matchups.userExplosiveBonus,3,38),sackPressure:0,passEff:plan.op.passEff*matchups.userPassEff,runEff:plan.op.runEff*matchups.userRunEff,tempo:plan.tempo,fourth:plan.fourth,fourthBonus:Number(window.coachEffect?.('fourthDownSuccessPct')||0),variance:state.weeklyPractice==='Opponent Scouting'?9:13}),b=driveSim(oppOff,ourDef,{passRate:oppPass,turnoverRisk:clamp(8+plan.pressure*.25,5,14),explosive:clamp(11+plan.bigRisk+matchups.oppExplosiveBonus,4,34),sackPressure:plan.pressure,passEff:matchups.oppPassEff,runEff:matchups.oppRunEff,tempo:oppProfile.tendency==='Tempo'?75:45,fourth:45,variance:13});our.points+=a.points;them.points+=b.points;mergeStats(our,a);mergeStats(them,b);if(our.points<them.points)our.trailed277=true;drives.push(`Drive ${i}: ${state.school.name} ${a.result} (${a.yards} yds); ${g.opponent} ${b.result} (${b.yards} yds)`)}if(our.points===them.points){const ot=(window.SDF_SEEDS?.random()??Math.random())>.5?7:3,winner=(window.SDF_SEEDS?.random()??Math.random())>.5?our:them;winner.points+=ot;winner.touchdowns=(winner.touchdowns||0)+(ot===7?1:0);winner.fieldGoals=(winner.fieldGoals||0)+(ot===3?1:0);drives.push(`Overtime decided by ${ot} points.`)}const win=our.points>them.points,margin=our.points-them.points;g.result=win?'W':'L';g.score=`${our.points}-${them.points}`;window.SDF_ACHIEVEMENTS277?.recordGame(g,{us:our.points,them:them.points,trailed277:!!our.trailed277});win?state.record.w++:state.record.l++;state.conferenceRecords[state.school.id]??={w:0,l:0};if(g.conference){win?state.conferenceRecords[state.school.id].w++:state.conferenceRecords[state.school.id].l++}const me=state.standings.find(x=>x.id===state.school.id);if(me)win?me.w++:me.l++;window.syncStandingsRecords?.();const visitResults=resolveVisits(g,win,margin),stars=applyPlayerStats(g,win,our,them,plan),top=Math.max(1,our.plays+them.plays),ourMinutes=clamp(Math.round(30+(our.rushYds-them.rushYds)/35+(50-plan.tempo)/18),21,39);state.lastGameRecap={opponent:g.opponent,home:g.home,win,us:our.points,them:them.points,rivalry:g.rivalry,boxScore:{firstDowns:Math.round(our.yards/18),rushYds:our.rushYds,passYds:our.passYds,totalYds:our.yards,turnovers:our.turnovers,thirdDown:`${our.thirdConv}/${our.thirdAtt}`,fourthDown:`${our.fourthConv}/${our.fourthAtt}`,redZone:`${our.redConv}/${our.redAtt}`,sacksAllowed:our.sacks,timePossession:`${ourMinutes}:${String(rand(0,59)).padStart(2,'0')}`},headline:win?choice(['Game plan delivers a statement victory','Balanced execution powers the win','Fourth-quarter execution seals it']):choice(['Aggressive plan creates costly mistakes','Matchup problems decide the defeat','Late push falls short']),stars,drives,planReport:[`${state.offense}: ${Math.round(plan.passRate)}% pass, ${plan.poss} possessions`,`${state.weeklyPractice} practice applied`,`${state.defense}: pressure ${plan.pressure.toFixed(1)}, big-play risk ${plan.bigRisk.toFixed(1)}`,`Fourth downs: ${our.fourthConv}/${our.fourthAtt}`,`WR/QB vs coverage: ${matchups.passEdge>=0?'+':''}${matchups.passEdge.toFixed(1)} · Run game matchup: ${matchups.runEdge>=0?'+':''}${matchups.runEdge.toFixed(1)}`,`Pass defense matchup: ${matchups.passDefEdge>=0?'+':''}${matchups.passDefEdge.toFixed(1)} · Run defense: ${matchups.runDefEdge>=0?'+':''}${matchups.runDefEdge.toFixed(1)}`],visitResults};if(window.SDF_V191?.recordGameOutcome)window.SDF_V191.recordGameOutcome(g,win,margin);else if(g.rivalry){state.fanApproval=clamp(state.fanApproval+(win?8:-8),0,100);state.boosterSupport=clamp(state.boosterSupport+(win?5:-5),0,100);const rh=state.rivalryHistory[state.rivalId];if(rh){win?rh.wins++:rh.losses++;rh.streak=win?Math.max(1,rh.streak+1):Math.min(-1,rh.streak-1);rh.bestMargin=Math.max(rh.bestMargin,win?margin:0);rh.last={year:state.year,win,score:g.score};if(win)state.achievementStats.rivalWins++}}updateAttendance(win,g);state.coachCareer.careerWins+=win?1:0;state.coachCareer.careerLosses+=win?0:1;if(win&&margin>=35)state.achievementStats.bigWin=true;state.achievementStats.weatherConditions??={};if(win&&['Snow','Rain','Heavy Wind','Extreme Heat'].includes(g.weather))state.achievementStats.weatherConditions[g.weather]=true;addCoachXP(win?18:7);maybeCreateDynamicRivalry(g);state.news.push(`${g.result} ${g.score} ${g.home?'vs':'at'} ${g.opponent}. Game plan: ${state.offense}, ${Math.round(plan.passRate)}% pass, ${plan.poss} possessions.`);window.applyYoungPlayerPracticeDevelopment?.();injuryAfterGame(plan);state.roster.forEach(p=>{const delta=win?rand(0,3):rand(-3,1),pd=window.SDF_V192?.personalityMoraleScale?.(p,delta)??delta;p.morale=clamp(p.morale+(window.coachMoraleDelta?.(pd)??pd)+(state.captains?.length>=2?Number(window.coachEffect?.('captainMoraleBonus')||0):0),35,99)});state.gamePlanHistory.push({year:state.year,week:state.week,opponent:g.opponent,offense:state.offense,defense:state.defense,practice:state.weeklyPractice,runPass:state.gamePlan.runPass,tempo:state.gamePlan.tempo,aggression:state.gamePlan.offenseAggression,blitz:state.gamePlan.blitz,zone:state.gamePlan.manZone,fourth:state.gamePlan.fourthDown,result:g.result,score:g.score})};
 
 const offenseSelect=$13('offenseScheme'),defenseSelect=$13('defenseScheme');if(offenseSelect)offenseSelect.onchange=e=>{state.offense=e.target.value;window.renderAll();save13('Offensive playbook changed')};if(defenseSelect)defenseSelect.onchange=e=>{state.defense=e.target.value;window.renderAll();save13('Defensive playbook changed')};
 function decoratePostgame(){const body=$13('gameResultBody'),r=state.lastGameRecap;if(!body||!r||body.querySelector('.postgame-plan-report'))return;body.insertAdjacentHTML('beforeend',`<section class="postgame-plan-report"><b>Game Plan Impact</b><ul>${(r.planReport||[]).map(x=>`<li>${x}</li>`).join('')}</ul></section>${r.visitResults?.length?`<section class="postgame-visit-results"><b>Official Visit Results</b><ul>${r.visitResults.map(x=>`<li>${x}</li>`).join('')}</ul></section>`:''}`)}
@@ -3374,15 +3379,18 @@ function markGamesMissed(ids=null){
  state.roster.filter(p=>p.injury&&(!allowed||allowed.has(p.id))).forEach(p=>{normalizeInjury(p).gamesMissed++});
 }
 function renderInjuries(){
- ensure12();if(!state.school)return;
- const active=state.roster.filter(p=>p.injury).sort((a,b)=>n(b.injury.weeks)-n(a.injury.weeks)||b.ovr-a.ovr);
+ ensure12();if(!state.school)return;try{window.SDF_DISCIPLINE?.ensure?.()}catch{}
+ // Suspensions and academic holds are discipline, not injuries: list them separately.
+ const medical=p=>p.injury&&!/suspension|academically ineligible/i.test(p.injury.type||''),held=state.roster.map(p=>({p,s:window.SDF_DISCIPLINE?.status?.(p)})).filter(x=>x.s&&x.s.kind!=='injury');
+ const heldHtml=held.length?`<div class="discipline-unavailable299"><small>DISCIPLINE & ACADEMICS · NOT INJURIES</small>${held.map(({p,s})=>`<div class="discipline-row299 ${s.kind}"><b>${safe(p.name)} · ${p.pos}</b><span>${safe(s.label)}</span></div>`).join('')}</div>`:'';
+ const active=state.roster.filter(medical).sort((a,b)=>n(b.injury.weeks)-n(a.injury.weeks)||b.ovr-a.ovr);
  const starters=active.filter(p=>p.injury?.wasStarter).length;
  const summary=$12('injurySummary');
- if(summary)summary.innerHTML=metric('Unavailable',active.length)+metric('Projected starters out',starters)+metric('Games missed',active.reduce((t,p)=>t+n(p.injury.gamesMissed),0))+metric('Sports Medicine',`Level ${state.facilities?.medical||1}`);
+ if(summary)summary.innerHTML=metric('Unavailable',active.length)+metric('Projected starters out',starters)+metric('Games missed',active.reduce((t,p)=>t+n(p.injury.gamesMissed),0))+metric('Sports Medicine',`Level ${state.facilities?.medical||1}`)+(held.length?metric('Discipline / academic holds',held.length):'');
  const list=$12('injuryReportList');
  if(list)list.innerHTML=active.length?active.map(p=>{
   const i=normalizeInjury(p);return `<article class="injury-row ${injuryStatusClass(i)}"><div class="injury-player"><b>${safe(p.name)}</b><span>${p.pos} · ${classLabel?.(p)||`Year ${p.year}`} · ${p.ovr} OVR</span></div><div><small>DIAGNOSIS</small><b>${safe(i.type)}</b><span>${safe(i.severity)} · ${safe(i.source)}</span></div><div><small>TIME OUT</small><b>${i.weeks} week${i.weeks===1?'':'s'}</b><span>${expectedReturn(i)}</span></div><div><small>SEASON IMPACT</small><b>${i.gamesMissed||0} game${i.gamesMissed===1?'':'s'} missed</b><span>Removed from active snap shares</span></div><button class="btn neutral" onclick="openPlayer('${p.id}')">Player Profile</button></article>`
- }).join(''):'<div class="injury-empty"><b>Full-strength roster</b><span>No players are currently unavailable.</span></div>';
+ }).join('')+heldHtml:held.length?'<div class="injury-empty"><b>No injuries</b><span>No players are currently injured.</span></div>'+heldHtml:'<div class="injury-empty"><b>Full-strength roster</b><span>No players are currently unavailable.</span></div>';
  const history=$12('injuryHistoryList');
  if(history){const rows=(state.injuryHistory||[]).slice(-20).reverse();history.innerHTML=rows.length?rows.map(x=>`<div class="injury-history-row"><b>${safe(x.player)} · ${x.pos}</b><span>${safe(x.type)} · Year ${x.occurredYear}, Week ${x.occurredWeek}</span><span>${x.returnedYear?`Returned Year ${x.returnedYear}, Week ${x.returnedWeek}`:`Active · ${x.weeks} weeks initially`}</span></div>`).join(''):'<p class="muted">No recorded injuries yet.</p>'}
  const gd=$12('gameDayInjurySummary');
@@ -3767,7 +3775,7 @@ function finalizeLiveGame(game){
  if(postseason){addCoachXP(coachGameXP(win,game.contextType,game.contextMeta?.stage));applyPlayerStats(game,result);try{window.SDF_V175?.recordLiveGame?.(game)}catch(err){console.warn('National live-game stats recovery',err)}win?state.record.w++:state.record.l++;state.coachCareer.careerWins+=win?1:0;state.coachCareer.careerLosses+=win?0:1;window.applyYoungPlayerPracticeDevelopment?.();state.roster.forEach(p=>{const delta=win?rnd(0,3):rnd(-3,1),pd=window.SDF_V192?.personalityMoraleScale?.(p,delta)??delta;p.morale=clamp(p.morale+(window.coachMoraleDelta?.(pd)??pd)+(state.captains?.length>=2?Number(window.coachEffect?.('captainMoraleBonus')||0):0),35,99)});const us=game.stats.us,them=game.stats.them,stars=topPlayers(game).map(x=>`${x.name}: ${playerLine(x)}`);state.lastGameRecap={opponent:g.opponent,home:!!game.home,neutral:!!game.neutral,win,us:game.score.us,them:game.score.them,rivalry:false,headline:`${game.gameLabel} · ${win?'Victory':'Defeat'}`,boxScore:{firstDowns:us.firstDowns,rushYds:us.rushYds,passYds:us.passYds,totalYds:us.totalYds,turnovers:us.turnovers,thirdDown:`${us.thirdConv}/${us.thirdAtt}`,fourthDown:`${us.fourthConv}/${us.fourthAtt}`,sacksAllowed:us.sacks,timePossession:clockText(us.timePossession)},opponentBoxScore:{firstDowns:them.firstDowns,rushYds:them.rushYds,passYds:them.passYds,totalYds:them.totalYds,turnovers:them.turnovers},stars,drives:game.driveSummary,planReport:[game.gameLabel,`${game.plays} live plays simulated`],liveGame:true,postseason:true,injuries:game.injuries};state.news.push(`${result} ${g.score} vs ${g.opponent} in ${game.gameLabel}. Watched live in Game Center.`);markGamesMissed(game.preGameInjuredIds||[]);recoveryTick();window.SDF_DISCIPLINE?.completedGame?.(`${game.year}:${game.week}:postseason:${game.gameLabel}:${game.opponent}`,game.preGameSuspendedIds||[]);state.liveGame=null;const context=state.liveGameContext;state.liveGameContext=null;window.SDF_V16?.completePostseasonGame?.(context,game,{win,margin,result});window.renderAll();renderFinal(game);window.SDF_RELEASE_TEST?.scheduleSave?.('Postseason live game completed',180,true);return}
 
  win?state.record.w++:state.record.l++;state.conferenceRecords??={};state.conferenceRecords[state.school.id]??={w:0,l:0};if(g.conference)win?state.conferenceRecords[state.school.id].w++:state.conferenceRecords[state.school.id].l++;
- const me=state.standings?.find(x=>x.id===state.school.id);if(me)win?me.w++:me.l++;(state.standings||[]).filter(x=>x.id!==state.school.id).forEach(x=>(window.SDF_SEEDS?.random()??Math.random())>.5?x.w++:x.l++);
+ const me=state.standings?.find(x=>x.id===state.school.id);if(me)win?me.w++:me.l++;window.syncStandingsRecords?.();
  applyPlayerStats(game,result);try{window.SDF_V175?.recordLiveGame?.(game)}catch(err){console.warn('National live-game stats recovery',err)}const visitResults=window.SDF_V113_TEST?.resolveVisits?.(g,win,margin)||[];
  if(window.SDF_V191?.recordGameOutcome)window.SDF_V191.recordGameOutcome(g,win,margin);else if(g.rivalry){state.fanApproval=clamp(state.fanApproval+(win?8:-8),0,100);state.boosterSupport=clamp(state.boosterSupport+(win?5:-5),0,100);const rh=state.rivalryHistory?.[state.rivalId];if(rh){win?rh.wins++:rh.losses++;rh.streak=win?Math.max(1,n(rh.streak)+1):Math.min(-1,n(rh.streak)-1);rh.bestMargin=Math.max(n(rh.bestMargin),win?margin:0);rh.last={year:state.year,win,score:g.score}}}
  try{updateAttendance(win,g)}catch{};state.coachCareer.careerWins+=win?1:0;state.coachCareer.careerLosses+=win?0:1;try{addCoachXP(win?18:7)}catch{};try{maybeCreateDynamicRivalry(g)}catch{};
@@ -3883,10 +3891,18 @@ function scheduleTick(){stopTimer();if(!state.liveGame||state.liveGame.paused||c
 function startTimer(){if(!state.liveGame||state.liveGame.halftimePending)return;state.liveGame.paused=false;scheduleTick()}
 function stopTimer(){if(timer){clearTimeout(timer);timer=null}}
 function setLiveSpeed(v){currentSpeed=[.5,1,2,4].includes(v)?v:1;if(state.liveGame&&!state.liveGame.paused)scheduleTick();paintGameCenter(true)}
+// A tie left by the fast-sim safety stop is settled like the normal sim's overtime, never handed to the user.
+function settleTie12(game){
+ if(!game?.score||game.score.us!==game.score.them)return false;
+ const random=()=>window.SDF_SEEDS?.random()??Math.random(),ours=n(window.teamRatings?.()?.overall,n(game.userPower,70)),theirs=n(game.oppPower,70),drive=typeof window.simOvertimeDrive==='function'?window.simOvertimeDrive:null;
+ for(let ot=1;ot<=5&&game.score.us===game.score.them;ot++){if(!drive)break;game.score.us+=n(drive(ours,theirs)?.points);game.score.them+=n(drive(theirs,ours)?.points)}
+ if(game.score.us===game.score.them){if(random()<.5)game.score.us+=2;else game.score.them+=2}
+ game.quarter=Math.max(5,n(game.quarter,4));addFeed(game,`Overtime settled it: ${state.school.name} ${game.score.us}, ${game.opponent} ${game.score.them}.`,'quarter');return true
+}
 function simToFinal(){
  if(window.SDF_BONUSES283?.isPending?.())return false;
  const game=state.liveGame;if(!game||game.finalized||game.simulatingToFinal)return;stopTimer();game.simulatingToHalf=false;game.halftimePending=false;game.paused=true;game.simulatingToFinal=true;renderGameCenter();let safety=0;
- const finishSafely=()=>{if(game.finalized)return;game.simulatingToFinal=false;if(!game.complete){if(game.score.us===game.score.them)game.score.us+=3;game.complete=true;addFeed(game,'The remaining game clock was completed by the fast-sim safety engine.','quarter')}setTimeout(()=>finalizeLiveGame(game),0)};
+ const finishSafely=()=>{if(game.finalized)return;game.simulatingToFinal=false;if(!game.complete){settleTie12(game);game.complete=true;addFeed(game,'The remaining game clock was completed by the fast-sim safety engine.','quarter')}setTimeout(()=>finalizeLiveGame(game),0)};
  const runBatch=()=>{if(state.liveGame!==game||game.finalized)return;try{let count=0;while(!game.complete&&count++<18&&safety++<500)simulatePlay(game);if(game.complete||safety>=500){finishSafely();return}paintGameCenter();setTimeout(runBatch,0)}catch(error){console.error('Sim to Final recovered from an error',error);game.lastPlay='Fast simulation recovered and completed the game.';finishSafely()}};
  setTimeout(runBatch,0)
 }
@@ -3950,7 +3966,7 @@ function enforceGameCenterLabels(){
 const renderBeforeRequired=window.renderAll;
 window.renderAll=function(...args){const out=renderBeforeRequired?.apply(this,args);enforceGameCenterLabels();return out};
 
-repairQuickSimInjuries();ensure12();wire12();if(state.school)window.renderAll();window.SDF_V12_TEST={newLiveGame,simulatePlay,renderInjuries,recoveryTick,recordInjury,finalizeLiveGame,gameConfig,emptyTeamStats,topPlayers,playerLine,skill12,resumableLiveGame,unlockAudio:unlockGameAudio,audioContext:soundContext,requiredGameCenter:true,aiGamePlan,schemeClash,halftimeReport,enterHalftime,halftimePreset,resumeAfterHalftime,quarterTransition,simToHalftime,simToFinal};
+repairQuickSimInjuries();ensure12();wire12();if(state.school)window.renderAll();window.SDF_V12_TEST={settleTie:settleTie12,newLiveGame,simulatePlay,renderInjuries,recoveryTick,recordInjury,finalizeLiveGame,gameConfig,emptyTeamStats,topPlayers,playerLine,skill12,resumableLiveGame,unlockAudio:unlockGameAudio,audioContext:soundContext,requiredGameCenter:true,aiGamePlan,schemeClash,halftimeReport,enterHalftime,halftimePreset,resumeAfterHalftime,quarterTransition,simToHalftime,simToFinal};
 })();
 
 (()=>{
@@ -4376,8 +4392,16 @@ function statusText(){
  if(!canRequestAds)return 'Google privacy consent is not ready. Try again in a moment.';
  return cfg().useTestAds?'Google test ads are active. Test ads still grant in-game rewards.':'Production ad IDs are active.';
 }
+// Build 299: rewarded videos only exist in the Android app. The browser build hides the reward
+// controls and Sponsor Center instead of showing buttons that can never work; native behaviour is unchanged.
+function hideBrowserRewards(){
+ if(native())return false;document.documentElement.classList.add('sdf-browser-no-rewards299');
+ const center=$m('sponsorCenter');if(center){center.classList.add('hidden');center.setAttribute('aria-hidden','true')}
+ for(const id of ['openSponsorDashboardBtn','openSponsorRecruitingBtn','openSponsorMobileBtn','recruitRewardHoursAdBtn','recruitRewardNilAdBtn'])if($m(id))$m(id).hidden=true;
+ document.querySelectorAll?.('.recruit-inline-ad-buttons,[data-budget-reward]')?.forEach(n=>{n.hidden=true});return true
+}
 function render(){
- const panel=$m('adStatusPanel');if(!panel)return;ensureState();
+ hideBrowserRewards();const panel=$m('adStatusPanel');if(!panel)return;ensureState();
  const c=cfg(),hoursUses=claimCount('HOURS'),nilUses=claimCount('NIL'),budgetUses=claimCount('BUDGET');
  const persisted=state?.monetization?.lastRewardStatus;
  const shownStatus=lastRewardStatus!=='Idle'?lastRewardStatus:(persisted?.stage?(persisted.detail?`${persisted.stage}: ${persisted.detail}`:persisted.stage):'No sponsor video completed yet');
@@ -4611,7 +4635,7 @@ window.finishSeason=function(...args){const owner=state,year=Number(state?.year|
 window.openSponsorCenter=openSponsorCenter;
 document.addEventListener('visibilitychange',()=>{if(foreground())drainSeason()});
  window.addEventListener?.('focus',()=>setTimeout(drainSeason,600));
-window.SDF_MONETIZATION={registerReward:(kind,definition)=>{if(['HOURS','NIL','BUDGET'].includes(kind)||customRewards.has(kind))throw new Error('Reward kind already registered');customRewards.set(kind,definition)},initializeAds,showReward,showSeasonInterstitial,privacyOptions,render,openSponsorCenter,getAdAudit:()=>adAudit.map(e=>({...e})),getRewardDebug:()=>({status:lastRewardStatus,busy,initialized,canRequestAds,consentChecked,lastConsentStatus,lastConsentError,interstitialPrepared,interstitialShowing,lastInitError:lastInitError?.message||null,active:activeRewardAttempt?{...activeRewardAttempt,owner:undefined,customContext:undefined,resolveLifecycle:undefined}:null})};
+window.SDF_MONETIZATION={hideBrowserRewards,registerReward:(kind,definition)=>{if(['HOURS','NIL','BUDGET'].includes(kind)||customRewards.has(kind))throw new Error('Reward kind already registered');customRewards.set(kind,definition)},initializeAds,showReward,showSeasonInterstitial,privacyOptions,render,openSponsorCenter,getAdAudit:()=>adAudit.map(e=>({...e})),getRewardDebug:()=>({status:lastRewardStatus,busy,initialized,canRequestAds,consentChecked,lastConsentStatus,lastConsentError,interstitialPrepared,interstitialShowing,lastInitError:lastInitError?.message||null,active:activeRewardAttempt?{...activeRewardAttempt,owner:undefined,customContext:undefined,resolveLifecycle:undefined}:null})};
 
 document.addEventListener('DOMContentLoaded',()=>{
  $m('rewardHoursAdBtn')?.addEventListener('click',()=>showReward('HOURS'));
@@ -4978,7 +5002,7 @@ document.addEventListener('click',event=>{
   const game=state.liveGame;if(!game||game.finalized||!game.simulatingToFinal)return;
   console.warn('V1.6.5 fast-sim watchdog completed a stalled game.');
   game.simulatingToFinal=false;game.paused=true;
-  if(game.score?.us===game.score?.them)game.score.us+=3;
+  if(game.score?.us===game.score?.them){if(window.SDF_V12_TEST?.settleTie)window.SDF_V12_TEST.settleTie(game);else if((window.SDF_SEEDS?.random()??Math.random())<.5)game.score.us+=3;else game.score.them+=3}
   game.complete=true;game.lastPlay='The fast-sim watchdog safely completed the remaining game clock.';
   try{window.SDF_V12_TEST?.finalizeLiveGame?.(game)}catch(error){console.error('Fast-sim watchdog finalize failed',error);game.finalized=true;window.renderAll?.()}
  },8000);
@@ -7085,7 +7109,7 @@ ensureWorldParity();
 
 (()=>{
 'use strict';
-const VERSION='27.4.7',BUILD=198,MAX_VISIBLE=72;
+const VERSION='27.4.8',BUILD=198,MAX_VISIBLE=80,AI_CAP=85;
 const n=(v,d=0)=>Number.isFinite(Number(v))?Number(v):d,clip=(v,a,b)=>Math.max(a,Math.min(b,n(v))),uid=()=>Number(state.school?.id);
 function hash(text){let h=2166136261;for(const ch of String(text||'')){h^=ch.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
 function roll(seed){return(hash(seed)%100000)/100000}
@@ -7113,12 +7137,14 @@ function applyProPipelineResult(teamId,current,drafted,firstRounders){
  return{value:clip(current+delta,20,99),delta,baseline:base,drafted,firstRounders,draftRep}
 }
 function transferReason(p,source){
- if(n(p.morale,75)<58)return'Unhappy with role and morale';if(p.personality==='Homesick')return'Wants to be closer to home';if(p.personality==='Money-driven')return'Seeking a stronger NIL opportunity';if(p.personality==='Ambitious')return'Seeking a larger role and stronger stage';if(!p.starter&&n(p.depthIndex,9)>=3)return'Buried on the depth chart';if(n(source?.recent,50)<45)return'Looking for a more competitive situation';return'Seeking a better role and program fit'
+ const coach=source?.id!=null?window.SDF_V201?.coachForTeam?.(source.id,false):null;if(coach&&n(coach.startYear,-99)>=n(state.year)-1&&roll(`v198-coach-reason-${state.year}-${p.id}`)<.6)return'Coaching change: new staff in charge';
+ if(n(p.morale,75)<58)return'Unhappy with role and morale';if(p.personality==='Homesick')return'Wants to be closer to home';if(p.personality==='Money-driven'||n(source?.nil,60)<45&&roll(`v198-nil-reason-${state.year}-${p.id}`)<.5)return'Seeking a stronger NIL opportunity';if(p.personality==='Ambitious')return'Seeking a larger role and stronger stage';if(!p.starter&&n(p.depthIndex,9)>=3)return'Buried on the depth chart';if(n(source?.recent,50)<45)return'Looking for a more competitive situation';return'Seeking a better role and program fit'
 }
 function aiTransferRisk(p,source,roster){
  if(n(p.year)>3||p.redshirt)return 0;let risk=.025;if(!p.starter)risk+=.07+Math.min(.10,Math.max(0,n(p.depthIndex,3)-2)*.025);if(n(p.morale,75)<60)risk+=.16;else if(n(p.morale,75)<70)risk+=.08;else if(n(p.morale,75)<78)risk+=.025;
  const pers={Ambitious:.055,'Money-driven':.065,Homesick:.06,Volatile:.05,Loyal:-.055,'Team-first':-.035,Competitive:.015,Academic:-.015};risk+=pers[p.personality]||0;
  const room=(roster||[]).filter(x=>x.pos===p.pos&&x.id!==p.id).sort((a,b)=>n(b.ovr)-n(a.ovr));if(!p.starter&&room[0]&&n(room[0].ovr)>=n(p.ovr)+5)risk+=.045;if(n(source?.recent,50)<42)risk+=.035;if(n(p.ovr)>=84&&!p.starter)risk+=.035;
+ if(n(p.ovr)>=90)risk*=.25;else if(n(p.ovr)>=86)risk*=.55;else if(n(p.ovr)>=82)risk*=.8;
  risk*=n(state.realismSettings?.transfers,1);return clip(risk,0,.46)
 }
 function advanceAiTransfer(p,school){
@@ -7138,10 +7164,17 @@ function prepareAiTransfers(){
  market.year=Number(state.year);market.prepared=true;market.aiEntries=entries;market.hiddenEntries=[];market.userOutgoing=[];market.resolved=[];market.summary={year:n(state.year),aiEntries:entries.length,userEntries:0,retained:0,userSigned:0,aiToAi:0};return entries
 }
 function opportunityScore(player,teamId){const room=opportunityRoom(teamId,player.pos),cut=room.cut,best=room.best;let score=65;if(cut==null)score=95;else score+=clip((n(player.ovr)-n(cut))*3,-28,28);if(best!=null&&n(player.ovr)>n(best))score+=8;return clip(score,20,99)}
-function destinationScore(player,teamId){const p=currentProgram(teamId),base=baseSchool(teamId);if(!p||Number(teamId)===Number(player.sourceTeamId))return-999;const opp=opportunityScore(player,teamId),home=stateCode(player),regional=home&&(base?.state===home||base?.pipelines?.includes?.(home))?9:0;return opp*.38+n(p.prestige,50)*.18+n(p.recent,50)*.16+n(p.nil,50)*.12+n(p.pro,50)*.08+n(p.facilities,50)*.05+regional+roll(`v198-dest-${state.year}-${player.id}-${teamId}`)*7}
-function contenders(player,count=3,excludeUser=false){return schools.filter(s=>Number(s.id)!==Number(player.sourceTeamId)&&(!excludeUser||Number(s.id)!==uid())).map(s=>({school:s,score:destinationScore(player,s.id)})).sort((a,b)=>b.score-a.score).slice(0,count)}
-function decorateForUser(player){const p={...player};const fit=window.SDF_V11_TEST?.portalFit?.(p)?.overall??65,cs=contenders(p,3,true);p.portalInterest=clip(Math.round(20+fit*.55+(n(p.ovr)-65)*.35),20,86);p.portalNIL=Math.max(5000,Math.round((10000+Math.max(0,n(p.ovr)-68)*3500+Math.max(0,n(p.pot)-n(p.ovr))*900)/5000)*5000);p.portalRivals=cs.map(x=>x.school.name);p.portalRivalScores={};cs.forEach((x,i)=>p.portalRivalScores[x.school.name]=clip(Math.round(48+x.score*.48-i*3),30,94));p.portalCommitted=false;p.portalLost=null;p.portalContact=0;p.portalUserScore=fit+n(p.ovr)*.45+n(p.pot)*.18;return p}
-function buildPortalMarket(){const market=ensure(),all=prepareAiTransfers();const ranked=[...all].sort((a,b)=>(n(b.ovr)+n(b.pot)*.30+n(b.transferRisk)*10)-(n(a.ovr)+n(a.pot)*.30+n(a.transferRisk)*10));const visible=ranked.filter(p=>window.SDF_SCENARIOS?.allowed(p)!==false).slice(0,MAX_VISIBLE).map(decorateForUser).sort((a,b)=>n(b.portalUserScore)-n(a.portalUserScore));state.portal=visible;market.aiEntries=all;market.hiddenEntries=ranked.slice(MAX_VISIBLE);return state.portal}
+function destinationScore(player,teamId){const p=currentProgram(teamId),base=baseSchool(teamId);if(!p||Number(teamId)===Number(player.sourceTeamId))return-999;const opp=opportunityScore(player,teamId),home=stateCode(player),regional=home&&(base?.state===home||base?.pipelines?.includes?.(home))?9:0;const size=Number(teamId)===uid()?70:aiRoster(teamId).length,need=size<72?Math.min(12,(72-size)*.5):0;return opp*.38+n(p.prestige,50)*.18+n(p.recent,50)*.16+n(p.nil,50)*.12+n(p.pro,50)*.08+n(p.facilities,50)*.05+regional+need+roll(`v198-dest-${state.year}-${player.id}-${teamId}`)*7}
+function hasRoom(teamId){return Number(teamId)===uid()||aiRoster(teamId).length<AI_CAP}
+function contenders(player,count=3,excludeUser=false){return schools.filter(s=>Number(s.id)!==Number(player.sourceTeamId)&&(!excludeUser||Number(s.id)!==uid())&&hasRoom(s.id)).map(s=>({school:s,score:destinationScore(player,s.id)})).sort((a,b)=>b.score-a.score).slice(0,count)}
+function transferStars(p){const o=n(p.ovr);return o>=88?5:o>=80?4:o>=72?3:2}
+function pickRivals(p){const pool=contenders(p,16,true),want=2+(n(p.ovr)>=78?1:0)+(n(p.ovr)>=85?1:0),out=[];for(let i=0;i<pool.length&&out.length<want;i++){if(roll(`v198-rival-${state.year}-${p.id}-${pool[i].school.id}`)<.42||pool.length-i<=want-out.length)out.push(pool[i])}return out}
+function decorateForUser(player){const p={...player};const fit=window.SDF_V11_TEST?.portalFit?.(p)?.overall??65,cs=pickRivals(p),prestige=n(state.school?.prestige,60);p.transferStars=transferStars(p);p.portalInterest=clip(Math.round(16+fit*.55+(prestige-60)*.2-Math.max(0,n(p.ovr)-78)*.7),18,72);p.portalNIL=Math.max(5000,Math.round((10000+Math.max(0,n(p.ovr)-68)*3500+Math.max(0,n(p.pot)-n(p.ovr))*900)/5000)*5000);p.portalRivals=cs.map(x=>x.school.name);p.portalRivalScores={};cs.forEach((x,i)=>p.portalRivalScores[x.school.name]=clip(Math.round(14+x.score*.45-i*2+roll(`v198-rival-score-${state.year}-${p.id}-${x.school.id}`)*8),24,70));p.portalStage='OPEN';p.portalCommitted=false;p.portalLost=null;p.portalContact=0;p.portalUserScore=fit+n(p.ovr)*.45+n(p.pot)*.18;return p}
+// Transfers are mostly depth players: the visible market is stratified by OVR band and spread across schools,
+// so a few elite rosters cannot fill the board with 95+ OVR backups.
+const VISIBLE_BANDS=[[90,99,3],[85,89,10],[80,84,18],[74,79,24],[68,73,17],[0,67,8]];
+function stratifiedVisible(ranked){const perSchool=new Map(),chosen=[],used=new Set();let carry=0,ceiling=0;for(const [lo,hi,quota] of VISIBLE_BANDS){let need=quota+carry;const band=ranked.filter(p=>n(p.ovr)>=lo&&n(p.ovr)<=hi).sort((a,b)=>roll(`v198-vis-${state.year}-${a.id}`)-roll(`v198-vis-${state.year}-${b.id}`));for(const p of band){if(need<=0)break;const k=String(p.sourceTeamId),c=perSchool.get(k)||0;if(c>=2||n(p.pot)>=97&&ceiling>=2)continue;if(n(p.pot)>=97)ceiling++;perSchool.set(k,c+1);chosen.push(p);used.add(p.id);need--}carry=lo>=85?0:Math.max(0,need)}return{visible:chosen,hidden:ranked.filter(p=>!used.has(p.id))}}
+function buildPortalMarket(){const market=ensure(),all=prepareAiTransfers();const ranked=[...all].sort((a,b)=>(n(b.ovr)+n(b.pot)*.30+n(b.transferRisk)*10)-(n(a.ovr)+n(a.pot)*.30+n(a.transferRisk)*10));const allowed=ranked.filter(p=>window.SDF_SCENARIOS?.allowed(p)!==false),split=stratifiedVisible(allowed),visibleIds=new Set(split.visible.map(p=>p.id));const visible=split.visible.slice(0,MAX_VISIBLE).map(decorateForUser).sort((a,b)=>n(b.portalUserScore)-n(a.portalUserScore));state.portal=visible;market.aiEntries=all;market.hiddenEntries=ranked.filter(p=>!visibleIds.has(p.id));return state.portal}
 function userTransferRisk(p){if(n(p.year)>4)return 0;let risk=.025;if(!p.starter)risk+=.09;if(n(p.morale,75)<60)risk+=.20;else if(n(p.morale,75)<70)risk+=.09;const trust=n(p.trust,70);if(trust<45)risk+=.18;else if(trust<60)risk+=.08;const pers={Ambitious:.05,'Money-driven':.055,Homesick:.055,Volatile:.045,Loyal:-.06,'Team-first':-.04};risk+=pers[p.personality]||0;const personal=n(window.SDF_V192?.transferRiskMultiplier?.(p),1);risk*=clip(personal,.6,1.6)*n(state.realismSettings?.transfers,1);if(p.starter&&n(p.morale,75)>=58&&trust>=50)risk*=.28;return clip(risk,0,.58)}
 function selectUserTransfers(roster){ensure();const selected=[];for(const p of roster||[]){if(n(p.year)>4)continue;const risk=userTransferRisk(p),r=roll(`v198-user-transfer-${state.year}-${p.id}`);if(r<risk){selected.push(p)}}selected.sort((a,b)=>userTransferRisk(b)-userTransferRisk(a));const final=selected.slice(0,8);state._pendingUserTransfersV198=final.map(p=>({player:JSON.parse(JSON.stringify(p)),reason:window.SDF_V192?.portalReason?.(p)||transferReason(p,state.school),nilAsk:Math.max(5000,Math.round((12000+Math.max(0,n(p.ovr)-65)*2600)/5000)*5000),retained:false,v198:true,sourceTeamId:uid(),sourceTeamName:state.school.name}));return final}
 function userDepartures(){const market=ensure(),rows=(state._pendingUserTransfersV198||[]).map(x=>({...x,player:JSON.parse(JSON.stringify(x.player))}));market.userOutgoing=rows.map(x=>({...x}));market.summary??={year:n(state.year),aiEntries:market.aiEntries.length,userEntries:0,retained:0,userSigned:0,aiToAi:0};market.summary.userEntries=rows.length;return rows}
@@ -7152,7 +7185,7 @@ function toUserRosterPlayer(player){if(!player?._v198RealTransfer)return null;co
 function resolveOutgoingUserTransfers(){const market=ensure();for(const d of state.portalDepartures||[]){if(!d?.v198||d.retained||d.resolved)continue;const player={...d.player,_v198RealTransfer:true,sourceTeamId:uid(),sourceTeamName:state.school.name,reason:d.reason},dest=contenders(player,1,true)[0]?.school;if(dest&&commitPortalPlayer(player,dest.id)){d.resolved=true;state.news?.push?.(`${player.name} transferred from ${state.school.name} to ${dest.name}.`)}}
  for(const p of [...(state.portal||[]),...(market.hiddenEntries||[])]){if(!p?._v198RealTransfer||p.portalCommitted||p.portalResolved)continue;const dest=contenders(p,1,true)[0]?.school;if(dest)commitPortalPlayer(p,dest.id)}market.prepared=false;delete state._pendingUserTransfersV198;return market.resolved}
 const baseFinishOffseason=window.finishOffseason;if(typeof baseFinishOffseason==='function')window.finishOffseason=function(...args){resolveOutgoingUserTransfers();return baseFinishOffseason.apply(this,args)};
-window.SDF_V198={version:VERSION,build:BUILD,ensure,applyProPipelineResult,aiTransferRisk,userTransferRisk,prepareAiTransfers,buildPortalMarket,userDepartures,onRetainedTransfer,commitPortalPlayer,toUserRosterPlayer,resolveOutgoingUserTransfers,contenders,destinationScore};
+window.SDF_V198={version:VERSION,build:BUILD,AI_CAP,ensure,applyProPipelineResult,aiTransferRisk,userTransferRisk,prepareAiTransfers,buildPortalMarket,selectUserTransfers,userDepartures,aiRoster,hasRoom,transferStars,decorateForUser,onRetainedTransfer,commitPortalPlayer,toUserRosterPlayer,resolveOutgoingUserTransfers,contenders,destinationScore};
 ensure();
 })();
 
@@ -7536,7 +7569,7 @@ function openPortal(){
 }
 function runNext(){
  const f=ensureFlow();if(state.phase!=='PORTAL')return baseAdvance?.apply(window,arguments);
- if(f.portalClosed&&!f.postPortalBattleComplete){window.SDF_POST_PORTAL_V269?.openBattles?.();return true}
+ if(f.portalClosed&&!f.postPortalBattleComplete){window.SDF_POST_PORTAL_V269?.openBattles?.({user:true});return true}
  if(f.portalClosed&&f.postPortalBattleComplete)return baseAdvance?.apply(window,arguments);
  const n=nextStep();
  if(n){
@@ -7563,7 +7596,7 @@ function renderGuide(){
 window.setRecruitingMode=function(mode,...args){
  if(mode==='portal'&&state?.phase==='PORTAL'){
   const n=nextStep();if(n&&!enteringOffseason){state.recruitingView='highschool';popup('Offseason first',`${n.label} is next. You can make choices or let the AI staff handle it.`);presentStep(n.key);return false}
-  const f=ensureFlow();if(f?.portalClosed&&!f.postPortalBattleComplete){popup('Portal closed','Position battles now show the best available players at each position. Confirm your starters before the next season.');window.SDF_POST_PORTAL_V269?.openBattles?.();return false}if(f&&!n&&f.stage==='PORTAL_READY')f.stage='PORTAL'
+  const f=ensureFlow();if(f?.portalClosed&&!f.postPortalBattleComplete){if(!window.SDF_POST_PORTAL_V269?.battlesDismissed){popup('Portal closed','Position battles now show the best available players at each position. Confirm your starters before the next season.');window.SDF_POST_PORTAL_V269?.openBattles?.()}return false}if(f&&!n&&f.stage==='PORTAL_READY')f.stage='PORTAL'
  }
  return typeof baseSetRecruitingMode==='function'?baseSetRecruitingMode.call(this,mode,...args):undefined
 };
@@ -7625,9 +7658,19 @@ function autoSetBestDepth(){
 }
 
 function save(reason){try{window.SDF_RELEASE_TEST?.saveNow?.(reason,false,true)}catch{}}
-function openBattles(){
+// Build 299: once the coach closes Position Battles with ×, only an explicit request (header Review Starters
+// or the offseason hub's Position Battles button) opens it again; navigation no longer pops it back up.
+let battlesDismissed=false;
+const battlesOpen=()=>{const m=document.getElementById?.('modal');return!!m&&!m.classList.contains('hidden')&&!!document.getElementById('modalBody')?.querySelector('[data-battle-role]')};
+const pendingBattles=()=>state?.phase==='PORTAL'&&!!state.offseasonFlow217?.portalClosed&&!state.offseasonFlow217.postPortalBattleComplete;
+function markDismissed(){if(pendingBattles()&&battlesOpen()){battlesDismissed=true;window.toast?.('Position Battles saved for later. Review Starters or the offseason hub reopens them.')}}
+document.addEventListener?.('click',e=>{if(e.target?.closest?.('#closeModal')||e.target===document.getElementById('modal'))markDismissed()},true);
+document.addEventListener?.('keydown',e=>{if(e.key==='Escape')markDismissed()},true);
+function openBattles(options={}){
  if(state?.phase!=='PORTAL'||!state.offseasonFlow217?.portalClosed||state.offseasonFlow217.postPortalBattleComplete)return false;
  const f=state.offseasonFlow217;
+ if(battlesDismissed&&!options.user){flow?.renderGuide?.();return false}
+ battlesDismissed=false;
  if(!f.postPortalDepthSet){autoSetBestDepth();f.postPortalDepthSet=true;f.stage='POST_PORTAL_BATTLES';save('Best eligible depth set after transfer portal')}
  flow?.renderGuide?.();
  const button=document.querySelector('[data-offseason-action="battles"]');
@@ -7668,7 +7711,7 @@ window.finishBattles=function(...args){
  return result
 };
 
-window.SDF_POST_PORTAL_V269={VERSION,BUILD,autoSetBestDepth,openBattles};
+window.SDF_POST_PORTAL_V269={VERSION,BUILD,autoSetBestDepth,openBattles,get battlesDismissed(){return battlesDismissed},dismissBattles(){battlesDismissed=true}};
 })();
 
 (()=>{
@@ -9452,7 +9495,9 @@ document.addEventListener('DOMContentLoaded',render);setTimeout(render,0);
 'use strict';
 const $=id=>document.getElementById(id);
 function repairRecord(s){if(!s?.school||!['CHAMP','BOWLS'].includes(s.phase)||Number(s.record?.w)+Number(s.record?.l)<=17)return false;const regular=(s.schedule||[]).filter(g=>['W','L'].includes(g.result));if(regular.length!==12)return false;const d=s.postseasonData||{},games=[...(d.conferenceResults||[]),...(d.bowlResults||[]),...(d.playoffRounds||[]).flatMap(r=>r?.games||[])],seen=new Set();let wins=regular.filter(g=>g.result==='W').length,losses=regular.length-wins;for(const g of games){if(![g.a?.id,g.b?.id].some(id=>Number(id)===Number(s.school.id))||!g.winner)continue;const key=[g.label,...[g.a.id,g.b.id].sort((a,b)=>a-b)].join(':');if(seen.has(key))continue;seen.add(key);Number(g.winner.id)===Number(s.school.id)?wins++:losses++}if(!seen.size||wins+losses>17)return false;const old={...s.record};s.record={w:wins,l:losses};if(s.coachCareer){s.coachCareer.careerWins=Math.max(0,Number(s.coachCareer.careerWins||0)-Math.max(0,old.w-wins));s.coachCareer.careerLosses=Math.max(0,Number(s.coachCareer.careerLosses||0)-Math.max(0,old.l-losses))}s.postseasonRepair242={year:s.year,previous:old,restored:{...s.record}};s.news??=[];s.news.push(`Postseason recovery: restored the season record from ${old.w}-${old.l} to ${wins}-${losses} using saved game results. Continue the existing bracket.`);window.SDF_RELEASE_TEST?.scheduleSave?.('Recovered repeated postseason record',100,true);return true}
-function phaseText(s){if(s.phase==='PORTAL'){const left=window.SDF_V217_OFFSEASON?.missing?.()||[];return left.length?`Offseason · ${5-left.length} of 5 preparation steps complete. Next: ${left[0].label}.`:`Offseason · Transfer portal week ${s.portalWeek||1} of 4. ${s.portalWeek>=4?'Ready to begin Year '+(Number(s.year)+1)+'.':'Advance the portal when your transfer decisions are done.'}`}if(s.phase==='AWARDS')return`Year ${s.year} is complete. Review your awards, then enter the offseason.`;if(s.phase==='CHAMP'||s.phase==='BOWLS')return`Postseason · ${s.liveGameContext?.label||(s.postseasonFlow?.stageComplete?'Continue the saved postseason round.':'Your next matchup is ready.')}`;return''}
+// Build 299: only promise "your next matchup" when the user's team actually has a postseason game.
+function userInPostseason(s){const d=s?.postseasonData,id=Number(s?.school?.id);if(!d||!Number.isFinite(id))return true;const ours=t=>Number(t?.id??t)===id,game=g=>ours(g?.a)||ours(g?.b);if(s.liveGameContext)return true;if(s.phase==='CHAMP')return !Array.isArray(d.conferenceGames)||d.conferenceGames.some(game);if(!Array.isArray(d.bowls)&&!Array.isArray(d.playoffField))return true;return (d.playoffField||[]).some(ours)||(d.bowls||[]).some(game)}
+function phaseText(s){if(s.phase==='PORTAL'){const left=window.SDF_V217_OFFSEASON?.missing?.()||[];return left.length?`Offseason · ${5-left.length} of 5 preparation steps complete. Next: ${left[0].label}.`:`Offseason · Transfer portal week ${s.portalWeek||1} of 4. ${s.portalWeek>=4?'Ready to begin Year '+(Number(s.year)+1)+'.':'Advance the portal when your transfer decisions are done.'}`}if(s.phase==='AWARDS')return`Year ${s.year} is complete. Review your awards, then enter the offseason.`;if((s.phase==='CHAMP'||s.phase==='BOWLS')&&!userInPostseason(s))return'Postseason · Your season is over. Advance to follow the championships, bowls and playoff.';if(s.phase==='CHAMP'||s.phase==='BOWLS')return`Postseason · ${s.liveGameContext?.label||(s.postseasonFlow?.stageComplete?'Continue the saved postseason round.':'Your next matchup is ready.')}`;return''}
 function render(){if(!state?.school)return;const host=$('homeHub232')||$('gameCommandCenterV219')||$('dashboardTab');if(!host)return;let card=$('seasonFlow242');const text=phaseText(state);if(!text){card?.remove();return}if(!card){card=document.createElement('section');card.id='seasonFlow242';card.className='journey-card';host.prepend(card)}card.replaceChildren();const title=document.createElement('h3');title.textContent='Where you are in the season';const p=document.createElement('p');p.textContent=text;card.append(title,p);const b=document.createElement('button');b.className='btn primary';b.textContent=state.phase==='PORTAL'&&state.portalWeek>=4?'Finish portal & begin next season':state.phase==='AWARDS'?'Review awards & enter offseason':'Continue';b.onclick=async()=>{if(b.disabled)return;b.disabled=true;try{await window.advanceWeek()}finally{b.disabled=false}};card.append(b);if(state.phase==='PORTAL'&&window.SDF_V217_OFFSEASON.missing().length){const auto=document.createElement('button');auto.className='btn neutral';auto.textContent='Let staff handle remaining preparation';auto.onclick=()=>{for(const task of window.SDF_V217_OFFSEASON.missing())window.SDF_V217_OFFSEASON.autoResolve(task.key);$('modal')?.classList.add('hidden');window.renderAll()};card.append(auto)}}
 function resetPageScroll(){window.scrollTo({top:0,left:0,behavior:'instant'});for(const page of document.querySelectorAll('.tab-page:not(.hidden)'))resetScrollTree(page)}
 function resetScrollTree(root){if(!root)return;root.scrollTop=0;for(const node of root.querySelectorAll('*'))if(node.scrollTop)node.scrollTop=0}
@@ -9483,13 +9528,14 @@ function withByes(games){if(games.length!==12||games.some(g=>g.bye))return games
 const originalSchedule=window.genSchedule;
 window.genSchedule=function(...args){return withByes(originalSchedule.apply(this,args))};
 function isBye(){return state?.phase==='REGULAR'&&!!state.schedule?.[Number(state.week)-1]?.bye}
-function label(){if(state.phase==='PORTAL'){const missing=window.SDF_V217_OFFSEASON?.missing?.()||[];return missing.length?`Offseason preparation · ${5-missing.length} of 5 complete`:`Transfer portal · Week ${state.portalWeek||1} of 4`}if(state.phase==='REGULAR')return`Year ${state.year} · Week ${state.week} of ${state.schedule?.length||12}${isBye()?' · Bye week':''}`;return`Year ${state.year} · ${{SIGNING:'Signing Day',CHAMP:'Conference championships',BOWLS:'Bowl / playoff',AWARDS:'Awards',POST:'Season complete'}[state.phase]||state.phase}`}
+function portalLabel(){const f=state.offseasonFlow217;if(f?.portalClosed)return f.postPortalBattleComplete?`Transfer portal closed · Ready for Year ${Number(state.year||1)+1}`:'Transfer portal closed · Position battles';return`Transfer portal · Week ${Math.min(4,Math.max(1,Number(state.portalWeek)||1))} of 4`}
+function label(){if(state.phase==='PORTAL'){const missing=window.SDF_V217_OFFSEASON?.missing?.()||[];return missing.length?`Offseason preparation · ${5-missing.length} of 5 complete`:portalLabel()}if(state.phase==='REGULAR')return`Year ${state.year} · Week ${state.week} of ${state.schedule?.length||12}${isBye()?' · Bye week':''}`;return`Year ${state.year} · ${{SIGNING:'Signing Day',CHAMP:'Conference championships',BOWLS:'Bowl / playoff',AWARDS:'Awards',POST:'Season complete'}[state.phase]||state.phase}`}
 function byeHtml(){return`<section class="playbook-truth" style="grid-column:1/-1"><span class="eyebrow">WEEK ${state.week} OF ${state.schedule.length}</span><h3>Bye week · Rest. Recruit. Prepare.</h3><p>No game this week. Recruit, set your practice focus, and check your roster. Advancing refreshes recruiting hours and gives injured players a recovery week without counting a missed game.</p><button class="btn primary" onclick="advanceWeek()">Advance bye week →</button></section>`}
 function advanceBye(){const g=state.schedule?.[Number(state.week)-1];if(!isBye()||g.completed)return false;window.resolveRecruiting?.();window.healInjuries?.();window.applyYoungPlayerPracticeDevelopment?.();window.SDF_V103_TEST?.progressFacilityProject?.();window.SDF_DISCIPLINE?.processWeek?.();g.completed=true;state.news.push(`Week ${state.week}: bye week completed. No game was played; the team recovered and recruiting continued.`);state.week++;window.resetHours?.();window.SDF_V103_TEST?.applyWeeklyFacilityBenefits?.();window.renderAll();window.SDF_RELEASE_TEST?.saveNow?.('Bye week completed',false,true);return true}
 let pending=null;
 function advance(next){if(pending)return pending;let finish;pending=new Promise(resolve=>finish=resolve);const result=pending;const before=label();let overlay=document.createElement('div');overlay.id='weekTransition243';overlay.setAttribute('role','status');overlay.setAttribute('aria-live','polite');overlay.setAttribute('aria-busy','true');overlay.style.cssText='position:fixed;inset:0;z-index:2147483000;display:grid;place-content:center;text-align:center;background:#04101feb;color:#fff;padding:28px;font-size:20px;';overlay.textContent='Advancing… '+before;document.body.append(overlay);
  // Yield through a paint, so long simulation work cannot hide the acknowledgement.
- requestAnimationFrame(()=>requestAnimationFrame(async()=>{try{const value=isBye()?advanceBye():await next();if(label()!==before)window.toast?.(label());finish(value)}catch(error){console.error('Week transition failed',error);window.toast?.('Could not finish advancing. Your current stage is still available.','error');finish(false)}finally{overlay.remove();pending=null}}));return result}
+ requestAnimationFrame(()=>requestAnimationFrame(async()=>{try{const value=isBye()?advanceBye():await next();render();try{window.SDF_FLOW242?.render?.()}catch{}if(label()!==before)window.toast?.(label());finish(value)}catch(error){console.error('Week transition failed',error);window.toast?.('Could not finish advancing. Your current stage is still available.','error');finish(false)}finally{overlay.remove();pending=null}}));return result}
 function render(){if(!state?.school)return;let progress=$('seasonProgress243');const host=$('gameScreen');if(host){if(!progress){progress=document.createElement('div');progress.id='seasonProgress243';progress.className='playbook-truth';progress.setAttribute('role','status');host.prepend(progress)}progress.textContent=label()}
  if(!isBye())return;
  for(const id of ['gameDayMatchup','nextGameCard']){const e=$(id);if(e)e.innerHTML=byeHtml()}
@@ -9497,7 +9543,9 @@ function render(){if(!state?.school)return;let progress=$('seasonProgress243');c
  const home=document.querySelector('#gameCommandCenterV219 .ui-next-game-stage');if(home)home.innerHTML=byeHtml();
  for(const id of ['advanceWeekBtn','recruitAdvanceBtn','mobileAdvance','quickSimGameBtn','watchLiveGameBtn','watchLiveDashboardBtn','simToEndBtn']){const b=$(id);if(b){b.disabled=false;b.hidden=false;b.textContent='Advance bye week →';if(id==='watchLiveGameBtn'||id==='watchLiveDashboardBtn')b.disabled=true}}
 }
-window.SDF_CALENDAR243={withByes,isBye,label,advance,advanceBye,render,byeHtml};
+// Portal steps re-render only the portal board; keep the page kicker in step with the real portal week.
+const baseRecruitingMode=window.setRecruitingMode;if(typeof baseRecruitingMode==='function')window.setRecruitingMode=function(...args){const out=baseRecruitingMode.apply(this,args);try{render()}catch{}return out};
+window.SDF_CALENDAR243={portalLabel,withByes,isBye,label,advance,advanceBye,render,byeHtml};
 })();
 
 (()=>{
@@ -9511,7 +9559,7 @@ function seen(){try{return new Set(JSON.parse(localStorage.getItem(KEY+':'+scope
 const retiredMessages=new Set(['a7f88a72-6158-4c0e-94b6-000000000294','481d4fb0-780e-4898-bf52-9ad77dbec144','535b3d66-92d2-49ba-9648-e79035d78e00']);
 function eligible(m,now=Date.now()){const platform=window.Capacitor?.isNativePlatform?.()?'android':'browser';return m&&!retiredMessages.has(m.id)&&typeof m.id==='string'&&typeof m.title==='string'&&typeof m.body==='string'&&m.title.length<=160&&m.body.length<=12000&&Number(m.min_build||0)<=BUILD&&(!m.platform||m.platform==='all'||m.platform===platform)&&(!m.published_at||Date.parse(m.published_at)<=now)&&(!m.expires_at||Date.parse(m.expires_at)>now)}
 function acknowledge(id){const ids=seen();ids.add(id);shown.add(scope()+':'+id);try{localStorage.setItem(KEY+':'+scope(),JSON.stringify([...ids]))}catch{} }
-function occupied(){return [...document.querySelectorAll('dialog[open],.modal:not(.hidden)')].some(e=>e.id!=='systemMessage243'&&e.getClientRects().length)||!!document.getElementById('weekTransition243')}
+function occupied(){return [...document.querySelectorAll('dialog[open],.modal:not(.hidden)')].some(e=>e.id!=='systemMessage243'&&e.getClientRects().length)||!!document.querySelector?.('#sdfContextHelp.open,#sdfHelpCenter.open,#tutorialPanel.open:not(.hidden),#gameSimModal:not(.hidden)')||!!document.getElementById('weekTransition243')}
 function present(){if(active||document.hidden||occupied())return;const ids=seen();queue=queue.filter(m=>eligible(m)&&!ids.has(m.id)&&!shown.has(scope()+':'+m.id));const message=queue.shift();if(!message)return;const isWelcome=String(message.id)===String(WELCOME_ID);const dialog=document.createElement('dialog');dialog.id='systemMessage243';dialog.setAttribute('aria-labelledby','systemMessageTitle243');dialog.style.cssText='color:#edf4fc;background:#0b1b29;border:1px solid #687ea0;border-radius:20px;padding:24px;max-width:520px;width:calc(100% - 40px);max-height:82vh;overflow:auto;';const heading=document.createElement('h2');heading.id='systemMessageTitle243';heading.textContent=message.title;const body=document.createElement('p');body.style.cssText='white-space:pre-wrap;line-height:1.5;max-height:46vh;overflow-y:auto;padding-right:6px';message.body.split(/(\*\*.*?\*\*|\[[^\]]+\]\(https:\/\/[^\s)]+\))/gs).forEach(part=>{if(part.startsWith('**')&&part.endsWith('**')){const strong=document.createElement('strong');strong.textContent=part.slice(2,-2);body.append(strong)}else if(/^\[[^\]]+\]\(https:\/\/[^\s)]+\)$/.test(part)){const match=part.match(/^\[([^\]]+)\]\((https:\/\/[^\s)]+)\)$/),link=document.createElement('a');link.textContent=match[1];link.href=match[2];link.target='_blank';link.rel='noopener noreferrer';link.style.color='#9bcaff';body.append(link)}else body.append(document.createTextNode(part))});const button=document.createElement('button');button.className='btn primary full';button.textContent=isWelcome?'Thanks — let’s play':'Got it — thank you!';const close=()=>{acknowledge(message.id);dialog.close();dialog.remove();active=null;setTimeout(present,300)};button.onclick=close;dialog.addEventListener('cancel',event=>{event.preventDefault();close()});dialog.append(heading,body,button);document.body.append(dialog);active=message;dialog.showModal();dialog.scrollTop=0;button.focus({preventScroll:true})}
 async function refresh(){if(fetching||(lastFetch&&Date.now()-lastFetch<3600000))return;fetching=true;const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),5000);try{const response=await fetch(URL,{headers:{apikey:API_KEY},signal:controller.signal});if(!response.ok)throw Error('Messages unavailable');const rows=await response.json();queue=[...new Map((Array.isArray(rows)?rows:[]).filter(m=>eligible(m)).map(m=>[m.id,m])).values()];lastFetch=Date.now()}catch{queue=[]}finally{clearTimeout(timeout);fetching=false;present()}}
 window.SDF_MESSAGES243={refresh,present,eligible,acknowledge};
@@ -10036,6 +10084,9 @@ function completedGame(key,servedIds){ensure();if(state.discipline272.games.incl
  const ids=new Set(servedIds);for(const p of state.roster||[]){const d=student(p);if(ids.has(p.id)&&d.suspendedGames>0){d.suspendedGames--;if(!d.suspendedGames)state.news.push(`${p.name} completed his suspension. ${d.gpa>=2?'Available for selection again.':'Academic ineligibility still applies.'}`);}}
  eligibility();return true;
 }
+// Discipline is not medical: a suspension lives on the student record, never in p.injury.
+function suspend(p,games=1,reason='Team rules violation'){if(!p||!state?.school)return false;ensure();const d=student(p);d.suspendedGames=Math.max(d.suspendedGames,Math.max(1,Number(games)||1));d.history.push({year:state.year,week:state.week,type:'SUSPENSION',text:`${reason}: suspended ${d.suspendedGames} game${d.suspendedGames===1?'':'s'}.`});d.history=d.history.slice(-16);p.starter=false;return true}
+function status(p){if(!p)return null;if(p.injury&&!/suspension|academically ineligible/i.test(p.injury.type||''))return{kind:'injury',label:p.injury.type||'Injured'};if(!p.student272&&!p.injury)return null;const d=student(p);if(d.suspendedGames>0||/suspension/i.test(p.injury?.type||''))return{kind:'discipline',label:`Suspended · ${Math.max(d.suspendedGames,Number(p.injury?.weeks)||0)} game${Math.max(d.suspendedGames,Number(p.injury?.weeks)||0)===1?'':'s'} left`};if(d.gpa<2||state.playerEligibility?.[p.id]===false||/academically ineligible/i.test(p.injury?.type||''))return{kind:'academic',label:'Academically ineligible'};return null}
 function suspendedIds(){return(state.roster||[]).filter(p=>student(p).suspendedGames>0).map(p=>p.id)}
 function act(id,action){ensure();const c=state.discipline272.cases.find(x=>x.id===id&&!x.resolved),p=c&&(state.roster||[]).find(x=>x.id===c.playerId);if(!p)return false;const d=student(p);
  if(c.type==='ACADEMIC'){
@@ -10057,7 +10108,7 @@ function render(){ensure();const root=document.getElementById('leadershipPanel')
  const gd=document.getElementById('gameDayInjurySummary');if(gd){gd.querySelector('[data-discipline272]')?.remove();const unavailable=players.filter(p=>!available(p));if(unavailable.length)gd.insertAdjacentHTML('beforeend',`<div data-discipline272><b>Non-medical unavailability</b>${unavailable.map(p=>`<p>${esc(p.name)} · ${esc(p.pos)} · ${student(p).gpa<2?'Academically ineligible':''}${student(p).suspendedGames?` · ${student(p).suspendedGames} game(s) suspended`:''}</p>`).join('')}</div>`);}host.querySelectorAll('button[data-case]').forEach(b=>b.onclick=()=>act(b.dataset.case,b.dataset.action));
 }
 function profile(p,body){const d=student(p);if(body.querySelector('.student272-profile'))return;const fit=window.SDF_V170?.playerSchemeFit?.(p),tier=window.SDF_V170?.schemeFitTier?.(fit);body.insertAdjacentHTML('beforeend',`<section class="student272-profile recruit-profile-section"><h3>Mentality, academics & availability</h3><p>${esc(p.personality)} · Responsibility ${Math.round(d.responsibility)} · Teamwork ${Math.round(d.teamwork)} · Morale ${Math.round(p.morale??75)}</p><p>College GPA ${d.gpa.toFixed(2)} · ${d.gpa<2?'Academically ineligible':d.suspendedGames?'Suspended':'Academically eligible'}${d.suspendedGames?` · ${d.suspendedGames} game(s) to serve`:''}</p>${p.recruitCharacter272?`<p>High-school GPA at recruitment: ${Number(p.recruitCharacter272.highSchoolGpa).toFixed(2)} / 4.00</p>`:''}${tier?`<p>Current scheme fit: ${esc(tier.label)} · ${fit}/100 · ${tier.bonus>0?'+':''}${tier.bonus} contribution to the starters’ average scheme adjustment.</p>`:''}<p>Review open cases and support options under Coach → Leadership.</p>${d.history.length?`<h4>Conduct & academic history</h4>${d.history.slice(-5).reverse().map(x=>`<p>Year ${x.year} · Week ${x.week}: ${esc(x.text)}</p>`).join('')}`:''}</section>`);}
-window.SDF_DISCIPLINE={ensure,student,available,eligibility,addCase,processWeek,completedGame,suspendedIds,act,render,profile,recruitCharacter,recruitEnrollment,recruitScoutingHtml};
+window.SDF_DISCIPLINE={suspend,status,ensure,student,available,eligibility,addCase,processWeek,completedGame,suspendedIds,act,render,profile,recruitCharacter,recruitEnrollment,recruitScoutingHtml};
 })();
 
 (()=>{
@@ -10113,7 +10164,8 @@ function showRecap(recap=latest()){
  overlay.innerHTML=`<section class="recruit-recap-box280" role="dialog" aria-modal="true" aria-labelledby="recruitRecapTitle280"><header class="recruit-recap-head280"><div><span class="eyebrow">YEAR ${recap.year} · WEEK ${recap.week}</span><h2 id="recruitRecapTitle280">${recap.signing?'Signing Day Results':'Weekly Recruiting Recap'}</h2><p>${recap.signing?'Your next class is official.':'Your staff reports back from the recruiting trail.'}</p></div><button type="button" id="closeRecruitRecap280" aria-label="Close recruiting recap">×</button></header><div class="recruit-recap-body280"><div class="recruit-recap-counts280"><div><small>${recap.signing?'SIGNED':'COMMITTED CLASS'}</small><b>${recap.signing?recap.signed:recap.classSize}/25</b></div><div><small>NEW ${recap.signing?'SIGNATURES':'COMMITS'}</small><b>${(c.commits||0)+(recap.signing?(c.signed||0):0)}</b></div><div><small>${recap.signing?'OTHER DECISIONS':'STILL DECIDING'}</small><b>${recap.signing?(c.lost||0):recap.waiting}</b></div></div>${planLine}${groups||'<p>No commitments or shortlist changes this week. Keep building relationships around each player’s priorities; high interest does not force an early decision.</p>'}<p>${recap.signing?'Signatures are final. Unsigned players without a suitable scholarship offer do not automatically join your roster.':'Soft commitments may switch for a clearly better finalist offer. Hard commitments remain secure. Recruits waiting for Signing Day will not be rushed by extra hours or NIL.'}</p></div><footer class="recruit-recap-actions280"><button type="button" class="btn neutral" id="recapBoard280">Recruiting Board</button><button type="button" class="btn primary" id="recapContinue280">Continue</button></footer></section>`;
  window.SDF_BONUSES283?.decorateRecap?.(recap,overlay);overlay.hidden=false;$('closeRecruitRecap280').onclick=closeRecap;$('recapContinue280').onclick=closeRecap;$('recapBoard280').onclick=()=>{closeRecap();window.showTab?.('recruiting')};$('closeRecruitRecap280').focus();
 }
-function queueRecap(){clearTimeout(recapTimer);recapTimer=setTimeout(()=>{const recap=latest();if(!gameScreenOpen()&&recap&&state.recruitingRecapPending280===recap.key&&state.recruitingRecapRead280!==recap.key)showRecap(recap)},100)}
+// Build 299: an automatic recap only interrupts when something happened; a quiet week stays under Last Recruiting Recap.
+function queueRecap(){clearTimeout(recapTimer);recapTimer=setTimeout(()=>{const recap=latest();if(!gameScreenOpen()&&recap&&state.recruitingRecapPending280===recap.key&&state.recruitingRecapRead280!==recap.key){if(!recap.signing&&Array.isArray(recap.events)&&!recap.events.length&&!(state.recruits||[]).some(r=>r.edge283?.key===`${recap.year}-${recap.week}`&&r.edge283.result)){state.recruitingRecapPending280=null;state.recruitingRecapRead280=recap.key;return}showRecap(recap)}},100)}
 function refreshBoard(){
  const byId=new Map((state.recruits||[]).map(r=>[String(r.id),r]));
  for(const card of document.querySelectorAll('#recruitCardList [data-recruit-id]')){const r=byId.get(card.dataset.recruitId);if(!r)continue;let row=card.querySelector('.recruit-timeline280');if(!row){row=document.createElement('div');row.className='recruit-timeline280';card.querySelector('.mobile-data-head')?.after(row)}const d=R.ensureDecisionProfile(r);row.innerHTML='<b>'+esc(window.recStage(r))+'</b><span>'+esc(r.committedTo?R.decisionOutlook(r):d.decisionWeek>=15?'Signing Day decision':d.decisionWeek<=7?'Early decision':d.decisionWeek<=11?'Midseason decision':'Late decision')+'</span>'}
@@ -10536,7 +10588,7 @@ if(typeof document!=='undefined'){const style=document.createElement('style');st
 'use strict';
 const $=id=>document.getElementById(id);
 const compactViewport=()=>innerWidth<=760||(innerWidth<=1000&&innerHeight<=500);
-let queued=false,navigationStyle='select';const editorSections={team:'identity',player:'identity'};
+let queued=false,navigationStyle=(()=>{try{return localStorage.getItem('sdfNavigationStyle296')==='buttons'?'buttons':'select'}catch{return'select'}})();const editorSections={team:'identity',player:'identity'};
 function schedule(){if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;refresh()})}
 function utilities(tab){
  const help=tab.querySelector('.sdf-page-help');if(!help)return;
@@ -10662,5 +10714,1086 @@ function watch(){for(const n of document.querySelectorAll('dialog,'+overlayIds.m
 document.addEventListener('click',e=>{if(!overlays().length)pending=remember(e.target.closest('button,a,input,select,summary')||e.target)},true);
 new MutationObserver(watch).observe(document.body,{childList:true});watch();schedule();
 window.addEventListener('resize',schedule);
-window.SDF_MOBILE296={areas,refresh,editorSection,activateEditor,remember,restore,setNavigationStyle(style){navigationStyle=style==='buttons'?'buttons':'select';schedule()}};
+window.SDF_MOBILE296={areas,refresh,editorSection,activateEditor,remember,restore,get navigationStyle(){return navigationStyle},setNavigationStyle(style){navigationStyle=style==='buttons'?'buttons':'select';try{localStorage.setItem('sdfNavigationStyle296',navigationStyle)}catch{}schedule()}};
+// Build 299: section navs are (re)built after this module's refresh (first launch, Home re-render resets the nav class),
+// which left the chip grid and the Navigation select visible together. Re-sync whenever a section nav appears or loses its mode class.
+const navMode=n=>n.classList.contains('phone-select-nav296')||n.classList.contains('phone-visible-sections296');
+const isSectionNav=n=>n?.nodeType===1&&(n.id==='dashboardSectionNavV219'||n.classList?.contains('ui-section-nav-v219'));
+const navObserver=new MutationObserver(list=>{for(const m of list){if(m.type==='childList'?[...m.addedNodes].some(n=>isSectionNav(n)||n.nodeType===1&&n.querySelector?.('#dashboardSectionNavV219')):isSectionNav(m.target)&&compactViewport()&&!navMode(m.target)){schedule();return}}});
+const observeNavs=()=>{const host=$('gameScreen')||document.body;if(host&&!host.dataset.nav299){host.dataset.nav299='1';navObserver.observe(host,{subtree:true,childList:true,attributes:true,attributeFilter:['class']})}};observeNavs();
+})();
+
+// Build 299 shared hooks: one registry the Build 299 modules use for the Home "This Week" card,
+// the post-game recap and week/game change notifications, so features never patch each other.
+(()=>{
+'use strict';
+const V=299;
+const homeSections=[],postGameSections=[],gameListeners=[],weekListeners=[];
+let lastResults=null,lastWeekKey=null,refreshing=false;
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const resultsCount=()=>(state?.schedule||[]).filter(g=>g&&g.result).length;
+const weekKey=()=>state?.school?`${state.year}:${state.phase}:${state.week}`:null;
+function safe(fn,...args){try{return fn(...args)}catch(error){window.SDF_RUNTIME_ERRORS?.capture?.(error,{operation:'v299-hook'});return null}}
+function register(list,section){if(!section||!section.id||typeof section.render!=='function')return;const i=list.findIndex(s=>s.id===section.id);if(i>=0)list.splice(i,1);list.push({order:50,...section});list.sort((a,b)=>a.order-b.order)}
+function renderSections(list,ctx){return list.map(s=>{const html=safe(s.render,ctx);return html?`<div class="sdf299-section" data-section="${esc(s.id)}">${html}</div>`:''}).join('')}
+function thisWeekHost(){const tab=document.getElementById('dashboardTab');if(!tab)return null;let host=document.getElementById('sdf299ThisWeek');if(!host){host=document.createElement('section');host.id='sdf299ThisWeek';host.className='panel sdf299-this-week';host.setAttribute('aria-label','This week');tab.prepend(host)}return host}
+function refreshThisWeek(){if(!state?.school)return;const host=thisWeekHost();if(!host)return;const body=renderSections(homeSections,{state});host.hidden=!body;host.innerHTML=body?`<h3 class="sdf299-title">This Week</h3>${body}`:''}
+function lastFinishedGame(){const done=(state?.schedule||[]).filter(g=>g&&g.result);return done[done.length-1]||null}
+function detectChanges(){
+ if(!state?.school)return;
+ const count=resultsCount(),key=weekKey();
+ if(lastResults===null){lastResults=count;lastWeekKey=key;return}
+ if(count>lastResults){const g=lastFinishedGame();lastResults=count;for(const fn of gameListeners)safe(fn,g)}
+ else if(count<lastResults)lastResults=count;
+ if(key!==lastWeekKey){const prev=lastWeekKey;lastWeekKey=key;for(const fn of weekListeners)safe(fn,{previous:prev,current:key})}
+}
+function afterRender(){if(refreshing)return;refreshing=true;try{detectChanges();refreshThisWeek()}finally{refreshing=false}}
+const baseRenderAll=window.renderAll;
+if(typeof baseRenderAll==='function'){window.renderAll=function(...args){const out=baseRenderAll.apply(this,args);afterRender();return out}}
+window.SDF299={
+ version:V,esc,
+ registerHomeSection:s=>register(homeSections,s),
+ registerPostGameSection:s=>register(postGameSections,s),
+ renderPostGameSections:ctx=>renderSections(postGameSections,ctx),
+ onGameFinished:fn=>{if(typeof fn==='function')gameListeners.push(fn)},
+ onWeekChanged:fn=>{if(typeof fn==='function')weekListeners.push(fn)},
+ refreshThisWeek,afterRender,lastFinishedGame,
+ resetTracking(){lastResults=null;lastWeekKey=null}
+};
+})();
+
+// Build 299 week flow: post-game windows open one at a time (result first), program events get cooldowns,
+// weekly coaching dilemmas with real tradeoffs, a richer post-game recap with celebrations, and weekly mini-goals.
+(()=>{
+'use strict';
+const H=window.SDF299;if(!H)return;
+const esc=H.esc,$=id=>document.getElementById(id);
+const rng=()=>window.SDF_SEEDS?.random?.()??Math.random();
+const lim=(v,a,b)=>Math.max(a,Math.min(b,v));
+const num=(v,d=0)=>v!==null&&v!==''&&Number.isFinite(Number(v))?Number(v):d;
+const EVENT_COOLDOWN=4,DILEMMA_COOLDOWN=6,DILEMMA_CHANCE=.55,FLOW=['gameSimModal','gameResultModal','recruitRecap280','modal'];
+const uid=()=>Number(state?.school?.id);
+// 16 slots per year so the offseason counts as only a short gap for cooldowns (no repeat dilemma from Week 14 to Week 1).
+const weekIndex=(y=state.year,w=state.week)=>num(y,1)*16+num(w,1);
+const safe=(fn,fallback=null)=>{try{return fn()}catch(error){window.SDF_RUNTIME_ERRORS?.capture?.(error,{operation:'v299-week-flow'});return fallback}};
+function ws(){const w=state.weekFlow299??={};w.version??=1;w.history??=[];w.pending??=null;w.lastOutcome??=null;w.decisions??=[];w.goals??=null;w.goalResults??=[];w.hoursLeft??={};return w}
+function hash(s){let h=2166136261;for(const c of String(s)){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
+function seeded(seed){let x=hash(seed)||1;return()=>{x^=x<<13;x>>>=0;x^=x>>17;x^=x<<5;x>>>=0;return x/4294967296}}
+const pick=(list,r=rng)=>list.length?list[Math.floor(r()*list.length)%list.length]:null;
+const money=v=>`$${Math.round(Math.abs(v)/1000).toLocaleString()}k`;
+const CLASS=['FR','SO','JR','SR','GR'];
+
+// ---------- One window at a time ----------
+// Game-flow windows: Final Whistle (live), quick-sim result, Weekly Recruiting Recap and the program-event modal.
+// Events and dilemmas wait in this queue until every one of those is closed, so nothing opens underneath another window.
+const queue=[],offered=new Set();let pumpTimer=null,current=null,generating=false,opening=false;
+function shown(n){return !!n&&!n.hidden&&!n.classList.contains('hidden')}
+function flowOpen(){return FLOW.some(id=>shown($(id)))||!!document.body?.classList.contains('app-building')}
+function schedulePump(delay=260){clearTimeout(pumpTimer);pumpTimer=setTimeout(pump,delay)}
+function enqueue(item){if(!item?.key||typeof item.open!=='function')return;const i=queue.findIndex(q=>q.key===item.key);if(i>=0)queue.splice(i,1);queue.push({priority:50,...item});queue.sort((a,b)=>a.priority-b.priority);schedulePump()}
+function pump(){
+ pumpTimer=null;watch();if(!queue.length||!state?.school||flowOpen())return;
+ const item=queue.shift();current=item;opening=true;try{item.open()}catch(error){window.SDF_RUNTIME_ERRORS?.capture?.(error,{operation:'v299-week-flow-queue'})}finally{opening=false}
+ const m=$('modal');if(shown(m))m.dataset.weekflow299=item.key;else current=null;
+ if(queue.length)schedulePump()
+}
+const watched=new WeakSet();let obs=null;
+function onFlowChange(){
+ const m=$('modal'),recap=$('recruitRecap280');
+ // The recruiting recap opens on its own timer; if it lands on top of a queued window, step that window back into the queue.
+ if(shown(recap)&&shown(m)&&m.dataset.weekflow299&&current){m.classList.add('hidden');delete m.dataset.weekflow299;enqueue({...current,priority:0});current=null;return}
+ if(m&&!shown(m)&&m.dataset.weekflow299){delete m.dataset.weekflow299;current=null}
+ if(!flowOpen()&&queue.length)schedulePump()
+}
+function watch(){if(typeof MutationObserver!=='function')return;obs??=new MutationObserver(onFlowChange);for(const id of FLOW){const n=$(id);if(n&&!watched.has(n)){watched.add(n);obs.observe(n,{attributes:true,attributeFilter:['class','hidden']})}}}
+if(typeof MutationObserver==='function'&&document.body)new MutationObserver(()=>{const r=$('recruitRecap280');if(r&&!watched.has(r))watch()}).observe(document.body,{childList:true});
+
+const baseShow=window.showDecisionEvent;
+window.showDecisionEvent=function(...a){
+ if(generating)return;// weeklyEvent() queues the event itself once it has passed the cooldown check
+ if(!state?.pendingEvent||opening||(!flowOpen()&&!queue.length))return baseShow?.apply(this,a);
+ const e=state.pendingEvent;enqueue({key:'event:'+(e.title||'program'),priority:30,open:()=>{state.pendingEvent??=e;baseShow?.call(window)}})
+};
+
+// ---------- Event cooldown + weekly dilemmas ----------
+function firedAt(idx){return ws().history.some(h=>h.i===idx)}
+function onCooldown(type,idx,gap){return ws().history.some(h=>h.t===type&&idx>=h.i&&idx-h.i<gap)}
+function remember(type,idx){const w=ws();w.history.push({t:type,i:idx,y:state.year,w:state.week});w.history=w.history.slice(-30)}
+const baseWeekly=window.weeklyEvent;
+window.weeklyEvent=function(...a){
+ const w=ws(),idx=weekIndex(),before=state.pendingEvent;let out;
+ if(w.pending&&w.pending.i!==idx)autoResolve();
+ generating=true;try{out=baseWeekly?.apply(this,a)}finally{generating=false}
+ let e=state.pendingEvent;
+ if(e&&e!==before){
+  // One program event per week, and the same event type at most once every EVENT_COOLDOWN weeks.
+  if(firedAt(idx)||onCooldown(e.title,idx,EVENT_COOLDOWN)){state.pendingEvent=before??null;e=null}
+  // Hold the event outside state.pendingEvent so the quick-sim result is not parked behind it; it opens after the result.
+  else{remember(e.title,idx);state.pendingEvent=null;enqueue({key:'event:'+idx,priority:30,open:()=>{state.pendingEvent=e;baseShow?.call(window)}})}
+ }else if(e)e=null;
+ if(!e&&!firedAt(idx)&&state.phase==='REGULAR')maybeDilemma(idx);
+ return out
+};
+// Helpers for dilemma subjects and effects.
+const rosterReady=()=>(state.roster||[]).filter(p=>!p.injury&&!p.redshirt&&window.SDF_DISCIPLINE?.available?.(p)!==false);
+const playerById=id=>(state.roster||[]).find(p=>String(p.id)===String(id));
+const recruitById=id=>(state.recruits||[]).find(r=>String(r.id)===String(id));
+const boardRecruits=()=>(state.recruits||[]).filter(r=>r.onBoard&&!r.committedTo&&!(r.lockedOut||[]).map(Number).includes(uid()));
+const commitType=r=>safe(()=>window.SDF_RECRUITING_V2?.commitmentType?.(r))||'';
+const softCommits=()=>(state.recruits||[]).filter(r=>Number(r.committedTo)===uid()&&!['HARD','SIGNED'].includes(commitType(r)));
+const schoolName=id=>(window.schools||[]).find(s=>Number(s.id)===Number(id))?.name||'A rival program';
+const nextGame=()=>(state.schedule||[]).slice(Math.max(0,num(state.week,1)-1)).find(g=>g&&!g.result&&!g.bye)||null;
+const tag=p=>p?`${esc(p.pos)} · ${num(p.ovr)} OVR · ${CLASS[lim(num(p.year,1)-1,0,4)]||'FR'}`:'';
+const rtag=r=>r?`${esc(r.pos)} · ${num(r.stars)}★`:'';
+const userInterest=r=>num(r?.interest&&typeof r.interest==='object'?r.interest[uid()]:r?.interest);
+function fx(L,label,before,after,unit=''){const d=Math.round((after-before)*10)/10;if(d)L.push({label,d,unit})}
+const E={
+ morale(L,p,d){if(!p)return;const b=num(p.morale,70);p.morale=lim(Math.round(b+d),0,99);fx(L,`${p.name} morale`,b,p.morale)},
+ ovr(L,p,d){if(!p)return;const b=num(p.ovr,60);p.ovr=lim(b+d,40,99);fx(L,`${p.name} overall`,b,p.ovr)},
+ interest(L,r,d){if(!r)return;const before=userInterest(r);if(r.interest&&typeof r.interest==='object'){r.recruitInfluence??={};r.recruitInfluence[uid()]=lim(num(r.recruitInfluence[uid()])+d,0,58);const re=window.SDF_RECRUITING_V2?.recalculateRecruit;if(re)safe(()=>re(r,true));else r.interest[uid()]=lim(before+d,0,100)}else r.interest=lim(num(r.interest)+d,0,100);fx(L,`${r.name} interest`,before,userInterest(r))},
+ stat(L,key,label,d){const b=num(state[key],50);state[key]=lim(b+d,0,100);fx(L,label,b,state[key])},
+ cash(L,key,label,d){const b=num(state[key]);state[key]=Math.max(0,b+d);fx(L,label,b,state[key],'$')},
+ hours(L,d){const b=num(state.weeklyHours);state.weeklyHours=Math.max(0,b+d);fx(L,'Recruiting hours',b,state.weeklyHours,'hrs')},
+ culture(L,key,label,d){const c=state.cultureComponentsV188;if(!c||typeof c!=='object')return;const b=num(c[key],60);c[key]=lim(b+d,0,100);fx(L,label,b,c[key])},
+ staff(L,role,key,d){const s=state.staff?.[role];if(!s)return;if(key==='relationship'){const p=s.staffProfileV189??={};const b=num(p.relationship,60);p.relationship=lim(b+d,0,100);fx(L,`${s.name} relationship`,b,p.relationship)}else{const b=num(s[key],60);s[key]=lim(b+d,30,99);fx(L,`${s.name} ${key} rating`,b,s[key])}},
+ plan(L,key,label,d){state.gamePlan??={};const b=num(state.gamePlan[key],50);state.gamePlan[key]=lim(b+d,0,100);fx(L,label,b,state.gamePlan[key])},
+ sit(L,p,type){if(!p)return;p.injury={weeks:1,type};p.starter=false;L.push({label:`${p.name} misses next game`,d:-1,unit:'out'})}
+};
+const starters=()=>rosterReady().filter(p=>p.starter);
+const DILEMMAS=[
+ {id:'booster_nil',title:'Booster Wants a Favor',need(){const r=boardRecruits().filter(r=>num(r.stars)>=3).sort((a,b)=>num(b.stars)-num(a.stars))[0];return r?{r:r.id}:null},
+  text:c=>{const r=recruitById(c.r);return`A deep-pocketed booster will steer extra NIL money toward <b>${esc(r?.name)}</b> (${rtag(r)}) if you give his nephew a preferred walk-on spot and sideline passes.`},subject:c=>rtag(recruitById(c.r)),
+  options:[{label:'Take the deal',hint:'Recruit and boosters up; the compliance office notices.',apply:(L,c)=>{E.interest(L,recruitById(c.r),6);E.stat(L,'boosterSupport','Booster support',4);E.stat(L,'jobSecurity','Job security',-2)}},
+   {label:'Route it through the collective',hint:'Clean, but it costs your NIL pool.',tone:'neutral',apply:(L,c)=>{E.cash(L,'nilBudget','NIL pool',-25000);E.interest(L,recruitById(c.r),4);E.stat(L,'boosterSupport','Booster support',1)}},
+   {label:'Decline politely',hint:'Stay clean; the booster cools on you.',tone:'neutral',fallback:true,apply:L=>{E.stat(L,'boosterSupport','Booster support',-4);E.stat(L,'jobSecurity','Job security',1)}}]},
+ {id:'rival_poach',title:'Rival Poaching Your Commit',need(){const r=softCommits().sort((a,b)=>num(b.stars)-num(a.stars))[0];if(!r)return null;const rival=(r.contenderIds||[]).map(Number).find(id=>id&&id!==uid());return{r:r.id,rival:schoolName(rival)}},
+  text:c=>{const r=recruitById(c.r);return`<b>${esc(c.rival)}</b> is in the living room of your soft commit <b>${esc(r?.name)}</b> (${rtag(r)}), pitching early playing time.`},subject:c=>rtag(recruitById(c.r)),
+  options:[{label:'Head coach home visit',hint:'Locks him in, but eats recruiting hours.',apply:(L,c)=>{E.hours(L,-30);E.interest(L,recruitById(c.r),8)}},
+   {label:'Bump his NIL package',hint:'Money talks; your NIL pool shrinks.',tone:'neutral',apply:(L,c)=>{E.cash(L,'nilBudget','NIL pool',-30000);E.interest(L,recruitById(c.r),6)}},
+   {label:'Trust the relationship',hint:'Free now, but his interest slips.',tone:'neutral',fallback:true,apply:(L,c)=>E.interest(L,recruitById(c.r),-5)}]},
+ {id:'portal_rumor',title:'Transfer-Portal Rumor',need(){const p=pick(starters().sort((a,b)=>num(b.ovr)-num(a.ovr)).slice(0,10));return p?{p:p.id}:null},
+  text:c=>{const p=playerById(c.p);return`A recruiting site reports that starter <b>${esc(p?.name)}</b> could enter the transfer portal after the season. His camp is not denying it.`},subject:c=>tag(playerById(c.p)),
+  options:[{label:'Sit down and define his role',hint:'Morale up; costs a chunk of your week.',apply:(L,c)=>{E.morale(L,playerById(c.p),8);E.hours(L,-10)}},
+   {label:'NIL retention package',hint:'Strong fix, paid from the NIL pool.',tone:'neutral',apply:(L,c)=>{E.cash(L,'nilBudget','NIL pool',-35000);E.morale(L,playerById(c.p),10)}},
+   {label:'Call his bluff',hint:'Locker room respects it; he does not.',tone:'neutral',fallback:true,apply:(L,c)=>{E.morale(L,playerById(c.p),-8);E.culture(L,'leadership','Team leadership',2)}}]},
+ {id:'visit_clash',title:'Visit Clashes With Practice',need(){const r=boardRecruits().sort((a,b)=>num(b.stars)-num(a.stars)||userInterest(b)-userInterest(a))[0];return r?{r:r.id}:null},
+  text:c=>{const r=recruitById(c.r);return`<b>${esc(r?.name)}</b> (${rtag(r)}) can only visit Thursday afternoon, right on top of your most important practice of the week.`},subject:c=>rtag(recruitById(c.r)),
+  options:[{label:'Host him, shorten practice',hint:'Big recruiting bump; the team notices.',apply:(L,c)=>{E.interest(L,recruitById(c.r),7);E.culture(L,'morale','Team morale',-2)}},
+   {label:'Send an assistant instead',hint:'Smaller bump, costs recruiting hours.',tone:'neutral',apply:(L,c)=>{E.hours(L,-20);E.interest(L,recruitById(c.r),3)}},
+   {label:'Ask him to reschedule',hint:'Practice stays sharp; he feels second.',tone:'neutral',fallback:true,apply:(L,c)=>{E.interest(L,recruitById(c.r),-4);E.culture(L,'morale','Team morale',1)}}]},
+ {id:'academics',title:'Midterm Crunch',need(){const p=pick(rosterReady().filter(p=>num(p.ovr)>=60).slice(0,40));return p?{p:p.id}:null},
+  text:c=>{const p=playerById(c.p);return`Academic support flags <b>${esc(p?.name)}</b>: two missing papers and a midterm on Friday. Eligibility is not at risk yet.`},subject:c=>tag(playerById(c.p)),
+  options:[{label:'Mandatory tutoring',hint:'He stays eligible; costs budget and some morale.',apply:(L,c)=>{E.cash(L,'budget','Program budget',-15000);E.morale(L,playerById(c.p),-3)}},
+   {label:'Lighten his practice load',hint:'Happier player, a step slower on Saturday.',tone:'neutral',apply:(L,c)=>{E.morale(L,playerById(c.p),3);E.ovr(L,playerById(c.p),-1)}},
+   {label:'Sit him until he catches up',hint:'Administration approves; he misses a game.',tone:'warning',fallback:true,apply:(L,c)=>{E.sit(L,playerById(c.p),'Academic hold');E.stat(L,'jobSecurity','Job security',1)}}]},
+ {id:'media_access',title:'Media Wants Access',need(){const g=nextGame();return g?{opp:g.opponent,rival:!!g.rivalry,p:(starters().find(p=>p.pos==='QB')||pick(starters()))?.id}:null},
+  text:c=>`Local TV wants an all-access day before ${c.rival?'<b>rivalry week</b> against':'the game with'} <b>${esc(c.opp)}</b>: cameras at practice, mics on players.`,subject:()=>'',
+  options:[{label:'Open the doors',hint:'Fans and boosters love it; it is a distraction.',apply:L=>{E.stat(L,'fanApproval','Fan approval',5);E.stat(L,'boosterSupport','Booster support',2);E.culture(L,'morale','Team morale',-2)}},
+   {label:'Send the captains only',hint:'A smaller splash; your leader gets the spotlight.',tone:'neutral',apply:(L,c)=>{E.stat(L,'fanApproval','Fan approval',2);E.morale(L,playerById(c.p),3)}},
+   {label:'Closed practice',hint:'Focus stays inside the building; fans grumble.',tone:'neutral',fallback:true,apply:L=>{E.stat(L,'fanApproval','Fan approval',-3);E.culture(L,'morale','Team morale',2)}}]},
+ {id:'assistant_offer',title:'Coordinator Gets an Offer',need(){const role=['oc','dc'].filter(k=>state.staff?.[k]).sort((a,b)=>num(state.staff[b].staffProfileV189?.ambition)-num(state.staff[a].staffProfileV189?.ambition))[0];return role?{role}:null},
+  text:c=>{const s=state.staff?.[c.role];return`Your ${esc(s?.role||'coordinator')} <b>${esc(s?.name)}</b> has been offered a head-coach interview at a smaller program and wants your blessing.`},subject:c=>{const s=state.staff?.[c.role];return s?`Recruiting ${num(s.recruiting)} · Development ${num(s.development)} · Game ${num(s.game)}`:''},
+  options:[{label:'Match it with a raise',hint:'He is all in; the budget takes the hit.',apply:(L,c)=>{E.cash(L,'budget','Program budget',-75000);E.staff(L,c.role,'relationship',8)}},
+   {label:'Expand his role',hint:'More responsibility, more recruiting time from you.',tone:'neutral',apply:(L,c)=>{E.staff(L,c.role,'relationship',4);E.staff(L,c.role,'recruiting',1);E.hours(L,-10)}},
+   {label:'Let him interview',hint:'No cost, but he is distracted and feels unvalued.',tone:'neutral',fallback:true,apply:(L,c)=>{E.staff(L,c.role,'relationship',-6);E.staff(L,c.role,'recruiting',-1)}}]},
+ {id:'star_touches',title:'Star Wants the Ball',need(){const p=starters().filter(p=>['RB','WR'].includes(p.pos)).sort((a,b)=>num(b.ovr)-num(a.ovr))[0];if(!p)return null;const b=(state.roster||[]).filter(x=>x.pos===p.pos&&x.id!==p.id).sort((a,b)=>num(b.ovr)-num(a.ovr))[0];return{p:p.id,b:b?.id||null}},
+  text:c=>{const p=playerById(c.p);return`<b>${esc(p?.name)}</b> says he needs more ${p?.pos==='RB'?'carries':'targets'} to reach his draft goals. Teammates are listening.`},subject:c=>tag(playerById(c.p)),
+  options:[{label:'Feature him',hint:'Morale up; your game plan shifts toward him.',apply:(L,c)=>{const p=playerById(c.p);E.morale(L,p,8);E.plan(L,'runPass','Pass rate in game plan',p?.pos==='RB'?-6:6)}},
+   {label:'Keep the rotation',hint:'His backup is thrilled; he is not.',tone:'neutral',apply:(L,c)=>{E.morale(L,playerById(c.p),-6);E.morale(L,playerById(c.b),4)}},
+   {label:'Make him earn it in practice',hint:'He sharpens up but sulks a little.',tone:'neutral',fallback:true,apply:(L,c)=>{E.morale(L,playerById(c.p),-2);E.ovr(L,playerById(c.p),1)}}]},
+ {id:'donor_strings',title:'Donor Money With Strings',need:()=>({}),
+  text:()=>`A donor will fund a facility upgrade, but wants his name on the building and a voice in your staff hires.`,subject:()=>'',
+  options:[{label:'Take it, strings and all',hint:'Big budget boost; fans and the AD are uneasy.',apply:L=>{E.cash(L,'budget','Program budget',150000);E.stat(L,'boosterSupport','Booster support',3);E.stat(L,'fanApproval','Fan approval',-2);E.stat(L,'jobSecurity','Job security',-2)}},
+   {label:'Negotiate a no-strings gift',hint:'Smaller check, no headaches.',tone:'neutral',apply:L=>{E.cash(L,'budget','Program budget',50000);E.stat(L,'boosterSupport','Booster support',-1)}},
+   {label:'Turn it down',hint:'The AD appreciates it; the donor does not.',tone:'neutral',fallback:true,apply:L=>{E.stat(L,'boosterSupport','Booster support',-3);E.stat(L,'jobSecurity','Job security',1)}}]},
+ {id:'family_visit',title:'Family Wants a Second Look',need(){const r=pick(boardRecruits().filter(r=>num(r.stars)>=3).sort((a,b)=>userInterest(b)-userInterest(a)).slice(0,6));return r?{r:r.id}:null},
+  text:c=>{const r=recruitById(c.r);return`The parents of <b>${esc(r?.name)}</b> (${rtag(r)}) want to see campus again before he narrows his list.`},subject:c=>rtag(recruitById(c.r)),
+  options:[{label:'Fly the family in',hint:'Strong impression; paid from the program budget.',apply:(L,c)=>{E.cash(L,'budget','Program budget',-12000);E.interest(L,recruitById(c.r),6)}},
+   {label:'Set up a video call',hint:'Cheaper; costs recruiting hours.',tone:'neutral',apply:(L,c)=>{E.hours(L,-10);E.interest(L,recruitById(c.r),3)}},
+   {label:'Not this week',hint:'Saves time and money; they feel brushed off.',tone:'neutral',fallback:true,apply:(L,c)=>E.interest(L,recruitById(c.r),-3)}]},
+ {id:'locker_feud',title:'Locker-Room Feud',need(){const s=starters();for(const side of [['QB','RB','WR','TE','OT','IOL'],['EDGE','DL','LB','CB','S']]){const list=s.filter(p=>side.includes(p.pos));if(list.length>=2){const a=pick(list),b=pick(list.filter(p=>p.id!==a.id));if(a&&b)return{a:a.id,b:b.id}}}return null},
+  text:c=>`<b>${esc(playerById(c.a)?.name)}</b> and <b>${esc(playerById(c.b)?.name)}</b> got into a shoving match in the film room. The team is waiting to see what you do.`,subject:c=>`${tag(playerById(c.a))} vs ${tag(playerById(c.b))}`,
+  options:[{label:'Mediate it yourself',hint:'Both calm down; it costs your week.',apply:(L,c)=>{E.morale(L,playerById(c.a),3);E.morale(L,playerById(c.b),3);E.hours(L,-10)}},
+   {label:'Back the veteran',hint:'One side wins, the other stews.',tone:'neutral',apply:(L,c)=>{const a=playerById(c.a),b=playerById(c.b),vet=num(a?.year)>=num(b?.year)?a:b,other=vet===a?b:a;E.morale(L,vet,5);E.morale(L,other,-7)}},
+   {label:'Let the captains handle it',hint:'Builds leadership; both stay a bit sour.',tone:'neutral',fallback:true,apply:(L,c)=>{E.culture(L,'leadership','Team leadership',2);E.morale(L,playerById(c.a),-2);E.morale(L,playerById(c.b),-2)}}]}
+];
+const dilemmaById=id=>DILEMMAS.find(d=>d.id===id);
+function maybeDilemma(idx,force=false){
+ const w=ws();if(w.pending||(!force&&rng()>DILEMMA_CHANCE))return null;
+ const options=DILEMMAS.filter(d=>!onCooldown('D:'+d.id,idx,DILEMMA_COOLDOWN)).map(d=>({d,ctx:safe(()=>d.need())})).filter(x=>x.ctx);
+ const choice=pick(options);if(!choice)return null;
+ w.pending={id:choice.d.id,ctx:choice.ctx,i:idx,year:state.year,week:state.week};remember('D:'+choice.d.id,idx);offered.add(idx);
+ enqueue({key:'dilemma',priority:40,open:openDilemma});return w.pending
+}
+function openDilemma(){
+ const w=ws(),p=w.pending,d=p&&dilemmaById(p.id),m=$('modal'),b=$('modalBody');if(!d||!m||!b){if(p&&!d)w.pending=null;return false}
+ const subject=safe(()=>d.subject(p.ctx))||'';
+ b.innerHTML=`<span class="eyebrow">COACHING DILEMMA · WEEK ${num(p.week)}</span><h2>${esc(d.title)}</h2>${subject?`<p class="sdf299-wf-subject">${subject}</p>`:''}<p>${d.text(p.ctx)}</p><div class="event-impact"><b>Every option has a cost. The exact changes are shown after you choose.</b></div><div class="sdf299-wf-options">${d.options.map((o,i)=>`<button type="button" class="btn ${o.tone||'primary'} full sdf299-wf-option" data-wf-choice="${i}"><b>${esc(o.label)}</b><small>${esc(o.hint)}</small></button>`).join('')}</div>`;
+ b.querySelectorAll('[data-wf-choice]').forEach(btn=>btn.onclick=()=>choose(Number(btn.dataset.wfChoice)));
+ m.classList.remove('hidden');m.dataset.weekflow299='dilemma';window.playSound?.('event');return true
+}
+function resolveDilemma(i,auto=false){
+ const w=ws(),p=w.pending,d=p&&dilemmaById(p.id);if(!d){if(p)w.pending=null;return null}
+ const o=d.options[i]||d.options.find(x=>x.fallback)||d.options[d.options.length-1],L=[];
+ safe(()=>o.apply(L,p.ctx));const outcome={id:d.id,title:d.title,choice:o.label,auto,effects:L,year:p.year,week:p.week};
+ w.pending=null;w.lastOutcome=outcome;w.decisions.push(outcome);w.decisions=w.decisions.slice(-12);
+ state.news??=[];state.news.push(`${d.title}: ${auto?'your staff chose':'you chose'} "${o.label}". ${L.map(fmtEffect).join(', ')||'No measurable change.'}`);return outcome
+}
+function autoResolve(){return resolveDilemma(-1,true)}
+function fmtEffect(e){if(e.unit==='out')return e.label;const sign=e.d>0?'+':'−',v=Math.abs(e.d);return`${e.label} ${sign}${e.unit==='$'?money(v):e.unit==='hrs'?v+' hrs':v}`}
+function effectList(L){return L.length?`<ul class="sdf299-wf-effects">${L.map(e=>`<li class="${e.d>0?'up':'down'}">${esc(fmtEffect(e))}</li>`).join('')}</ul>`:'<p class="muted">No measurable change.</p>'}
+function choose(i){
+ const outcome=resolveDilemma(i);if(!outcome)return;const b=$('modalBody'),m=$('modal');
+ if(b&&m){b.innerHTML=`<span class="eyebrow">DECISION MADE · WEEK ${num(outcome.week)}</span><h2>${esc(outcome.title)}</h2><p>You chose <b>${esc(outcome.choice)}</b>.</p>${effectList(outcome.effects)}<button type="button" class="btn primary full" id="sdf299WfDone">Continue</button>`;$('sdf299WfDone').onclick=()=>m.classList.add('hidden');$('sdf299WfDone').focus?.()}
+ window.SDF_RELEASE_TEST?.scheduleSave?.('Coaching dilemma',200,false);safe(()=>window.renderAll?.())
+}
+function openPending(){if(!ws().pending)return;if(flowOpen())enqueue({key:'dilemma',priority:40,open:openDilemma});else openDilemma()}
+
+// ---------- Weekly mini-goals ----------
+const count4=()=>(state.recruits||[]).filter(r=>r.onBoard&&num(r.stars)>=4).length;
+const countOffers=()=>(state.recruits||[]).filter(r=>r.onBoard&&r.offered).length;
+const boardFull=()=>{const R=window.SDF_RECRUITING_V2;const n=safe(()=>R?.boardCount?.()),cap=num(R?.RECRUIT_BOARD_LIMIT,0);return cap>0&&num(n)>=cap};
+const hoursCap=g=>Math.max(1,num(g.cap)||num(state.recruitingHoursCapacity)||num(state.weeklyHours,1));
+function hoursLeft(g){const v=ws().hoursLeft[`${g.year}-${g.week}`],live=Number(state.year)===Number(g.year)&&Number(state.week)===Number(g.week);return v!=null&&!live?num(v):num(state.weeklyHours)}
+const GOALS={
+ win10:{group:'game',label:()=>'Win by 10+ points',xp:12,check:c=>c.margin>=10},
+ hold20:{group:'game',label:()=>'Hold the opponent under 20',xp:10,check:c=>c.them<20},
+ rival:{group:'game',label:g=>`Beat your rival ${g.opp}`,xp:20,need:n=>!!n.rivalry,check:c=>c.win},
+ rush150:{group:'play',label:()=>'Rush for 150+ yards',xp:8,check:c=>c.rushYds>=150},
+ pass250:{group:'play',label:()=>'Pass for 250+ yards',xp:8,check:c=>c.passYds>=250},
+ clean:{group:'play',label:()=>'Play a turnover-free game',xp:10,check:c=>c.turnovers===0},
+ board4:{group:'recruit',label:()=>'Add a 4★+ prospect to your board',hours:15,need:()=>!boardFull(),base:count4,progress:g=>lim(count4()-num(g.base),0,1),check:(c,g)=>count4()>num(g.base)},
+ offers2:{group:'recruit',label:()=>'Make 2 new scholarship offers',hours:12,base:countOffers,progress:g=>lim((countOffers()-num(g.base))/2,0,1),check:(c,g)=>countOffers()-num(g.base)>=2},
+ hours:{group:'recruit',label:()=>'Use 60% of your recruiting hours',hours:10,xp:4,progress:g=>lim((hoursCap(g)-hoursLeft(g))/hoursCap(g)/.6,0,1),check:(c,g)=>(hoursCap(g)-hoursLeft(g))/hoursCap(g)>=.6}
+};
+function currentGame(){const g=state.schedule?.[num(state.week,1)-1];return state.phase==='REGULAR'&&!state.seasonDone&&g&&!g.result&&!g.bye?g:null}
+function ensureGoals(){
+ if(!state?.school)return null;const w=ws(),g=currentGame(),key=`${state.year}:${state.week}`;
+ if(w.goals&&w.goals.key!==key&&!w.goals.resolved)w.goals=null;// week moved on without this game (bye, season sim): goals lapse
+ if(!g)return null;if(w.goals?.key===key)return w.goals;
+ const r=seeded(`${key}:${state.school.id}`),n={opp:g.opponent,rivalry:!!g.rivalry},items=[];
+ for(const group of ['game','play','recruit']){const pool=Object.entries(GOALS).filter(([,d])=>d.group===group&&(!d.need||d.need(n)));const pref=group==='game'&&n.rivalry?pool.find(([id])=>id==='rival'):null;const [id,d]=pref||pick(pool,r)||[];if(!id)continue;items.push({id,label:d.label(n),xp:num(d.xp),hours:num(d.hours),base:d.base?d.base():null})}
+ w.goals={key,year:state.year,week:state.week,opp:g.opponent,cap:num(state.recruitingHoursCapacity)||num(state.weeklyHours),items,resolved:false};return w.goals
+}
+function goalProgress(item,g){const d=GOALS[item.id];return d?.progress?safe(()=>d.progress({...item,year:g.year,week:g.week,cap:g.cap}),0):null}
+function resolveGoals(game){
+ const w=ws(),g=w.goals;if(!g||g.resolved||!game)return null;
+ if(Number(game.week)!==Number(g.week)){w.goals=null;return null}
+ const rec=state.lastGameRecap||{},score=String(game.score||'').split('-').map(Number),us=num(rec.us,score[0]),them=num(rec.them,score[1]),bx=rec.boxScore||{};
+ const c={win:game.result==='W'||us>them,us,them,margin:us-them,rushYds:num(bx.rushYds),passYds:num(bx.passYds),turnovers:num(bx.turnovers,99)};
+ let xp=0,hours=0;for(const item of g.items){const d=GOALS[item.id];item.done=!!safe(()=>d?.check(c,{...item,year:g.year,week:g.week,cap:g.cap}));if(item.done){xp+=item.xp;hours+=item.hours}}
+ if(xp)safe(()=>window.addCoachXP?.(xp));if(hours)state.weeklyHours=num(state.weeklyHours)+hours;
+ g.resolved=true;const result={key:g.key,year:g.year,week:g.week,opp:g.opp,items:g.items.map(i=>({label:i.label,done:i.done,xp:i.xp,hours:i.hours})),xp,hours};
+ w.goalResults.push(result);w.goalResults=w.goalResults.slice(-8);w.goals=null;
+ state.news??=[];state.news.push(`Weekly goals vs ${g.opp}: ${result.items.filter(i=>i.done).length}/${result.items.length} complete${xp?` · +${xp} Coach XP`:''}${hours?` · +${hours} recruiting hours`:''}.`);
+ return result
+}
+// Capture unspent hours at the week boundary so the "use your hours" goal is judged on the finished week.
+const baseReset=window.resetHours;
+if(typeof baseReset==='function')window.resetHours=function(...a){const key=state?.school&&state._recruitingHoursWeekKey;if(key&&key!==`${state.year}-${state.week}`)ws().hoursLeft={[key]:num(state.weeklyHours)};return baseReset.apply(this,a)};
+
+// ---------- Post-game recap ----------
+const rankSnap={};
+function snapshotRank(){const g=currentGame();if(!g)return;const key=`${state.year}:${g.week}`;if(rankSnap[key]!==undefined)return;rankSnap[key]=num((state.rankings||[]).find(t=>Number(t.id)===Number(g.oppId))?.rank,0)||null}
+function opponentRank(game){if(!game)return null;const key=`${state.year}:${game.week}`;if(rankSnap[key]!==undefined)return rankSnap[key];return num((state.rankings||[]).find(t=>Number(t.id)===Number(game.oppId))?.rank,0)||null}
+function celebration(ctx,eyebrow){
+ if(!ctx.win)return null;const e=String(eyebrow||'').toUpperCase(),type=String(ctx.contextType||'').toUpperCase();
+ if(/NATIONAL CHAMPIONS/.test(e))return{kind:'title',headline:'National Champions!'};
+ if(/CONFERENCE CHAMPIONS/.test(e)||type==='CONFERENCE')return{kind:'title',headline:'Conference Champions!'};
+ if(/BOWL CHAMPIONS/.test(e)||type==='BOWL')return{kind:'bowl',headline:'Bowl Champions!'};
+ if(ctx.postseason)return null;
+ if(ctx.rivalry)return{kind:'rivalry',headline:`Rivalry win over ${ctx.recap?.opponent||'your rival'}!`};
+ if(ctx.oppRank&&ctx.oppRank<=25)return{kind:'ranked',headline:`Ranked win: you beat #${ctx.oppRank} ${ctx.recap?.opponent||''}!`.replace(' !','!')};
+ if(num(state.record?.w)===1)return{kind:'first',headline:'First win of the season!'};
+ return null
+}
+function confetti(){let s='';for(let i=0;i<22;i++)s+=`<i style="--x:${(i*37)%100}%;--d:${(i%7)*.09}s;--h:${(i*53)%360}"></i>`;return`<div class="sdf299-wf-confetti" aria-hidden="true">${s}</div>`}
+function recapContext(postseason){
+ const recap=state.lastGameRecap||null,pg=!!(postseason||recap?.postseason),game=pg?(state.liveGameContext?.game||null):H.lastFinishedGame();
+ const win=recap?!!recap.win:game?.result==='W',lc=state.liveGameContext||{};
+ return{state,game,recap,postseason:pg,contextType:pg?(lc.type||lc.contextType||null):'REGULAR',win,rivalry:!!(recap?.rivalry||game?.rivalry),oppRank:pg?null:opponentRank(game)}
+}
+function buildRecap(ctx,eyebrow){
+ const party=celebration(ctx,eyebrow),rec=state.record||{w:0,l:0},cr=state.conferenceRecords?.[state.school?.id];
+ const head=party?`<div class="sdf299-wf-party sdf299-wf-party-${party.kind}">${document.body?.classList.contains('reduce-motion')?'':confetti()}<span>CELEBRATE</span><strong>${esc(party.headline)}</strong></div>`:'';
+ const record=`<div class="sdf299-wf-record"><span>Record <b>${num(rec.w)}-${num(rec.l)}</b></span>${cr&&!ctx.postseason?`<span>Conference <b>${num(cr.w)}-${num(cr.l)}</b></span>`:''}${ctx.oppRank&&ctx.oppRank<=25&&!ctx.postseason?`<span>Opponent rank <b>#${ctx.oppRank}</b></span>`:''}</div>`;
+ return`<section class="sdf299-recap${party?' sdf299-recap-party':''}" aria-label="Game recap">${head}<h3 class="sdf299-wf-h">Game recap</h3>${record}${H.renderPostGameSections(ctx)}</section>`
+}
+const playText=x=>typeof x==='string'?x:(x?.text||x?.summary||x?.result||'');
+H.registerPostGameSection({id:'weekflow-plays',order:10,render(ctx){
+ const r=ctx.recap;if(!r)return'';const all=(r.drives||[]).map(playText).map(t=>String(t).replace(/<[^>]*>/g,'')).filter(Boolean),key=all.filter(t=>/touchdown|\bTD\b|intercept|fumble|field goal|safety|turnover/i.test(t));const plays=(key.length?key:all).slice(-3),leaders=document.querySelector('.gc-final')?[]:(r.stars||[]).slice(0,3);
+ if(!plays.length&&!leaders.length)return'';
+ return`${plays.length?`<h4>Key plays</h4><ol class="sdf299-wf-list">${plays.map(t=>`<li>${esc(t)}</li>`).join('')}</ol>`:''}${leaders.length?`<h4>Stat leaders</h4><ul class="sdf299-wf-list">${leaders.map(t=>`<li>${esc(t)}</li>`).join('')}</ul>`:''}`}});
+H.registerPostGameSection({id:'weekflow-recruiting',order:60,render(ctx){
+ if(ctx.postseason||!ctx.game)return'';const key=`${state.year}-${ctx.game.week}-weekly`,rc=(state.recruitingRecaps280||[]).find(x=>x.key===key);if(!rc?.events?.length)return'';
+ const label={commits:'Committed to you',signed:'Signed',flipsIn:'Flipped to you',flipsOut:'Flipped away',hard:'Hard commit',lost:'Chose elsewhere',cuts:'Cut you',shortlists:'Shortlist move',reopened:'Reopened'};
+ return`<h4>Recruiting this week</h4><ul class="sdf299-wf-list">${rc.events.slice(0,4).map(e=>`<li><b>${esc(e.name)}</b> · ${esc(e.pos)} · ${num(e.stars)}★ — ${esc(label[e.kind]||e.kind)}</li>`).join('')}${rc.events.length>4?`<li class="muted">+${rc.events.length-4} more in the recruiting recap</li>`:''}</ul>`}});
+H.registerPostGameSection({id:'weekflow-goals',order:70,render(ctx){
+ if(ctx.postseason||!ctx.game)return'';const r=ws().goalResults.find(x=>Number(x.year)===Number(state.year)&&Number(x.week)===Number(ctx.game.week));if(!r)return'';
+ return`<h4>Weekly goals · ${r.items.filter(i=>i.done).length}/${r.items.length}</h4><ul class="sdf299-wf-goals">${r.items.map(i=>`<li class="${i.done?'done':'miss'}"><span>${i.done?'✓':'✗'} ${esc(i.label)}</span><small>${[i.xp?`+${i.xp} XP`:'',i.hours?`+${i.hours} hrs`:''].filter(Boolean).join(' · ')}</small></li>`).join('')}</ul>${r.xp||r.hours?`<p class="sdf299-wf-reward">Earned ${[r.xp?`+${r.xp} Coach XP`:'',r.hours?`+${r.hours} recruiting hours next week`:''].filter(Boolean).join(' and ')}.</p>`:''}`}});
+function injectFinal(){
+ const final=$('gameSimBody')?.querySelector('.gc-final');if(!final||final.querySelector('.sdf299-recap'))return;
+ const eyebrow=final.querySelector('.gc-final-heading .gc-eyebrow')?.textContent||'';
+ const html=safe(()=>buildRecap(recapContext(!!state.lastGameRecap?.postseason),eyebrow),'');if(!html)return;const actions=final.querySelector('.gc-final-actions');
+ if(actions)actions.insertAdjacentHTML('beforebegin',html);else final.insertAdjacentHTML('beforeend',html)
+}
+function injectResult(){
+ const body=$('gameResultBody'),actions=body?.querySelector('.postgame-actions');if(!actions||body.querySelector('.sdf299-recap'))return;
+ const html=safe(()=>buildRecap(recapContext(false),''),'');if(html)actions.insertAdjacentHTML('beforebegin',html)
+}
+if(typeof MutationObserver==='function'){for(const [id,fn] of [['gameSimBody',injectFinal],['gameResultBody',injectResult]]){const n=$(id);if(n)new MutationObserver(fn).observe(n,{childList:true})}}
+
+// ---------- Home sections ----------
+H.registerHomeSection({id:'weekflow-dilemma',order:20,render(){
+ const p=state.weekFlow299?.pending,d=p&&dilemmaById(p.id);if(!d)return'';
+ return`<div class="sdf299-wf-card"><div><small>COACHING DECISION WAITING</small><b>${esc(d.title)}</b></div><button type="button" class="btn primary" onclick="SDF_WEEKFLOW299.openPending()">Decide</button></div>`}});
+H.registerHomeSection({id:'weekflow-goals',order:35,render(){
+ const w=ws(),g=ensureGoals(),last=w.goalResults[w.goalResults.length-1],o=w.lastOutcome,recent=x=>x&&state.phase!=='PORTAL'&&Number(x.year)===Number(state.year)&&num(state.week)-num(x.week)<=1;let html='';
+ if(g?.items.length)html+=`<h4 class="sdf299-wf-h">Weekly goals <small>vs ${esc(g.opp)}</small></h4><ul class="sdf299-wf-goals">${g.items.map(i=>{const pr=goalProgress(i,g);return`<li><span>${esc(i.label)}</span><small>${[i.xp?`+${i.xp} XP`:'',i.hours?`+${i.hours} hrs`:''].filter(Boolean).join(' · ')}</small>${pr==null?'<em>Decided by this week’s game</em>':`<div class="sdf299-wf-bar" role="progressbar" aria-label="${esc(i.label)}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(pr*100)}"><i style="width:${Math.round(pr*100)}%"></i></div>`}</li>`}).join('')}</ul>`;
+ if(recent(last))html+=`<p class="sdf299-wf-last">Last week: ${last.items.filter(i=>i.done).length}/${last.items.length} goals${last.xp?` · +${last.xp} XP`:''}${last.hours?` · +${last.hours} hrs`:''}</p>`;
+ if(recent(o))html+=`<p class="sdf299-wf-last">${esc(o.title)}: ${esc(o.choice)}${o.effects.length?` — ${esc(o.effects.slice(0,3).map(fmtEffect).join(', '))}`:''}</p>`;
+ return html}});
+
+// ---------- Hooks ----------
+H.onGameFinished(game=>{resolveGoals(game)});
+H.onWeekChanged(()=>{ensureGoals()});
+const baseRenderAll=window.renderAll;
+if(typeof baseRenderAll==='function')window.renderAll=function(...a){
+ if(state?.school){safe(snapshotRank);const p=state.weekFlow299?.pending;
+  // A decision saved before a reload is offered once per session; afterwards it waits on Home behind the Decide button.
+  if(p&&!offered.has(p.i)&&!queue.some(q=>q.key==='dilemma')){offered.add(p.i);enqueue({key:'dilemma',priority:40,open:openDilemma})}}
+ return baseRenderAll.apply(this,a)};
+
+const css=`.sdf299-wf-options{display:grid;gap:8px;margin-top:10px}.sdf299-wf-option{display:flex!important;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;min-height:52px;white-space:normal;height:auto}.sdf299-wf-option b,.sdf299-wf-option small{text-transform:none;letter-spacing:normal}.sdf299-wf-option b{font-size:.95rem}.sdf299-wf-option small{font-weight:500;opacity:.88;font-size:.78rem;line-height:1.35}.sdf299-wf-subject{margin:-4px 0 6px;color:#9fc3d6;font-size:.82rem;font-weight:700;letter-spacing:.02em}
+.sdf299-wf-effects{list-style:none;padding:0;margin:10px 0 14px;display:grid;gap:6px}.sdf299-wf-effects li{padding:8px 10px;border-radius:10px;font-weight:700;font-size:.88rem;border:1px solid}.sdf299-wf-effects li.up{color:#9ff0b8;background:#0f2e1e;border-color:#2c6b45}.sdf299-wf-effects li.down{color:#ffc2b0;background:#341a14;border-color:#7a3b2a}
+.sdf299-recap{position:relative;overflow:hidden;margin:14px 0;padding:12px;border:1px solid #2f5163;border-radius:14px;background:#0c1f2b;color:#e8f2f7;min-width:0}.sdf299-recap h4{margin:12px 0 6px;font-size:.8rem;letter-spacing:.05em;text-transform:uppercase;color:#9fc3d6}.sdf299-wf-h{margin:0 0 8px;font-size:1rem}.sdf299-wf-h small{font-weight:500;color:#9fb6c3}
+.sdf299-wf-record{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.86rem;color:#cfe0ea}.sdf299-wf-list{margin:0;padding-left:20px;display:grid;gap:4px;font-size:.84rem;line-height:1.4;overflow-wrap:anywhere}
+.sdf299-wf-goals{list-style:none;margin:0;padding:0;display:grid;gap:6px}.sdf299-wf-goals li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 8px;align-items:center;padding:7px 9px;border-radius:10px;background:#ffffff0d;font-size:.85rem;min-width:0}.sdf299-wf-goals li span{overflow-wrap:anywhere}.sdf299-wf-goals li small{color:#f3d585;font-weight:700;white-space:nowrap}.sdf299-wf-goals li em{grid-column:1/-1;font-size:.74rem;color:#9fb6c3;font-style:normal}.sdf299-wf-goals li.done span{color:#9ff0b8}.sdf299-wf-goals li.miss span{color:#c9a9a0}
+.sdf299-wf-bar{grid-column:1/-1;height:6px;border-radius:6px;background:#ffffff1a;overflow:hidden}.sdf299-wf-bar i{display:block;height:100%;background:linear-gradient(90deg,#3fb27f,#9ff0b8);border-radius:6px}.sdf299-wf-last,.sdf299-wf-reward{margin:8px 0 0;font-size:.8rem;color:#cfe0ea;overflow-wrap:anywhere}.sdf299-wf-reward{color:#f3d585;font-weight:700}
+.sdf299-wf-card{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid #7a6a2a;border-radius:12px;background:#2a2410;color:#f4efe0}.sdf299-wf-card small{display:block;color:#f3d585;font-size:.7rem;letter-spacing:.06em}.sdf299-wf-card b{display:block;overflow-wrap:anywhere}.sdf299-wf-card .btn{min-height:44px;flex:0 0 auto}
+.sdf299-wf-party{position:relative;margin:-12px -12px 12px;padding:18px 14px 14px;text-align:center;background:radial-gradient(circle at 50% 0,#f3d58555,transparent 70%),#14301f;border-bottom:1px solid #3c7a50}.sdf299-wf-party span{display:block;font-size:.7rem;letter-spacing:.18em;color:#f3d585;font-weight:800}.sdf299-wf-party strong{display:block;margin-top:4px;font-size:1.3rem;line-height:1.2;color:#fff;animation:sdf299WfPop .6s ease-out both}
+.sdf299-wf-party-title,.sdf299-wf-party-bowl{background:radial-gradient(circle at 50% 0,#ffd54a77,transparent 70%),#2c2410;border-bottom-color:#a8862c}.sdf299-wf-party-rivalry{background:radial-gradient(circle at 50% 0,#ff6b4a55,transparent 70%),#2c1610;border-bottom-color:#a84a2c}
+.sdf299-wf-confetti{position:absolute;inset:0;pointer-events:none;overflow:hidden}.sdf299-wf-confetti i{position:absolute;top:-10px;left:var(--x);width:7px;height:11px;border-radius:2px;background:hsl(var(--h),85%,60%);opacity:0;animation:sdf299WfFall 1.6s ease-in var(--d) 2 both}
+@keyframes sdf299WfFall{0%{opacity:1;transform:translateY(0) rotate(0)}100%{opacity:0;transform:translateY(120px) rotate(540deg)}}@keyframes sdf299WfPop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.08);opacity:1}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.sdf299-wf-confetti{display:none}.sdf299-wf-party strong{animation:none}}body.reduce-motion .sdf299-wf-confetti{display:none}`;
+if(!$('sdf299WeekFlowCss')){const style=document.createElement('style');style.id='sdf299WeekFlowCss';style.textContent=css;document.head.appendChild(style)}
+
+window.SDF_WEEKFLOW299={DILEMMAS,GOALS,enqueue,pump,queue,flowOpen,maybeDilemma,openDilemma,choose,resolveDilemma,autoResolve,openPending,ensureGoals,resolveGoals,goalProgress,celebration,buildRecap,recapContext,onCooldown,weekIndex,state:ws,EVENT_COOLDOWN,DILEMMA_COOLDOWN,DILEMMA_CHANCE};
+})();
+
+// Build 299 module: season stakes. Weekly fan/booster/job-security movement from results vs expectations,
+// a hot-seat status, a Program Pulse home section, post-game stakes and rivalry trophy moments, a rivalry
+// pregame header (Game Day + live Game Center) and a season-end stakes verdict shown in the Season Review
+// and the Coaching Carousel. Reuses state.fanApproval/boosterSupport/jobSecurity, SDF_V193 administration,
+// SDF_V191 rivalries and the existing carousel; its own bookkeeping lives in state.stakesV299.
+(()=>{
+'use strict';
+const BUILD=299;
+const clip=(v,a=0,b=100)=>Math.max(a,Math.min(b,Number(v)||0));
+const n=(v,d=0)=>Number.isFinite(Number(v))?Number(v):d;
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const FIELD={fan:'fanApproval',booster:'boosterSupport',job:'jobSecurity'};
+const LABEL={fan:'Fans',booster:'Boosters',job:'Job security'};
+const ACTIVE=['REGULAR','SIGNING','CHAMP','BOWLS'];
+const HOT=[{key:'SECURE',label:'Secure',cls:'secure'},{key:'WARM',label:'Warm',cls:'warm'},{key:'HOT',label:'Hot seat',cls:'hot'},{key:'FINAL',label:'Final warning',cls:'final'},{key:'DISMISSED',label:'Dismissed',cls:'final'}];
+const hotIndex=key=>Math.max(0,HOT.findIndex(h=>h.key===key));
+function safe(fn,...a){try{return fn(...a)}catch(error){window.SDF_RUNTIME_ERRORS?.capture?.(error,{operation:'v299-stakes'});return null}}
+const uid=()=>Number(state?.school?.id);
+const admin=()=>window.SDF_V193?.ensure?.()||state?.stakeholdersV193||null;
+function jobMult(){let d=1;try{d=n(window.difficultyConfig?.()?.job,1)}catch(e){}return d*n(state.realismSettings?.jobSecurity,1)}
+function snapshot(){return{fan:Math.round(n(state.fanApproval,65)),booster:Math.round(n(state.boosterSupport,65)),job:Math.round(n(state.jobSecurity,70)),admin:Math.round(n(admin()?.adminConfidence,60))}}
+function tenure(){return Math.max(1,n(state.year,1)-n(state.coachCareer?.currentJobStartYear,1)+1)}
+function expectedWins(){return n(state.seasonExpectations?.expectedWins,n(state.school?.expectation,6))}
+function games(){return(state.schedule||[]).filter(g=>g&&!g.bye)}
+function rawProb(g){let p=.5;try{p=n(window.SDF_V170?.expectedGameWin?.(g),.5)}catch(e){}return clip(p,.05,.95)}
+// Per-game chances are scaled so the season adds up to the announced win expectation: the weekly verdict is judged
+// against the same number the administration set ("expected 8"), not a different hidden baseline.
+function expScale(){const s=state.stakesV299;if(s&&s.scale!=null&&Number(s.scale)>0)return Number(s.scale);const sum=games().reduce((a,g)=>a+rawProb(g),0),k=sum>0?clip(expectedWins()/sum,.6,1.6):1;if(s)s.scale=Math.round(k*1000)/1000;return k}
+function winProb(g){return clip(rawProb(g)*expScale(),.05,.95)}
+function score(g){const [us,them]=String(g?.score||'0-0').split('-').map(Number);return{us:n(us),them:n(them),margin:n(us)-n(them)}}
+
+function ensure(){
+ if(!state?.school)return null;
+ let s=state.stakesV299;if(!s||typeof s!=='object')s=state.stakesV299={};
+ s.version=BUILD;s.verdicts??={};
+ if(Number(s.year)!==Number(state.year)||Number(s.programId)!==uid()){
+  // A plain season rollover starts clean; installing mid-season or taking a new job baselines games already played
+  // so an old save never receives a burst of retroactive changes.
+  const rollover=s.year!=null&&Number(s.programId)===uid()&&Number(state.year)===Number(s.year)+1;
+  s.year=Number(state.year);s.programId=uid();s.start=snapshot();s.ledger=[];s.applied={};s.exact={fan:0,booster:0,job:0};s.net={fan:0,booster:0,job:0};s.reverted=false;s.pregame={};s.alerts={};s.lastHot=null;s.scale=null;
+  if(!rollover)for(const g of games())if(g.result)s.applied[g.week]='baseline';
+ }
+ s.ledger??=[];s.applied??={};s.exact??={fan:0,booster:0,job:0};s.net??={fan:0,booster:0,job:0};s.pregame??={};s.alerts??={};
+ return s
+}
+
+function pace(){
+ const all=games(),done=all.filter(g=>g.result),w=done.filter(g=>g.result==='W').length,l=done.length-w,exp=expectedWins();
+ const projected=done.length?Math.round(w/done.length*all.length):exp;
+ return{w,l,played:done.length,total:all.length,exp,projected,gap:projected-exp}
+}
+function hotSeat(){
+ if(!state?.school)return HOT[0];
+ const v=admin(),js=n(state.jobSecurity,70),p=pace(),ult=Number(v?.ultimatumYear)===Number(state.year),early=p.played<3;
+ if(v&&Number(v.dismissedYear)===Number(state.year))return{...HOT[4],reason:'Administration has made a change. Find your next job in the Coaching Carousel.'};
+ if(js<20||(ult&&(js<35||(!early&&p.gap<=-2))))return{...HOT[3],reason:ult?'You are coaching under an administration ultimatum.':'Job security has collapsed.'};
+ if(js<35||(p.played>=4&&p.gap<=-3))return{...HOT[2],reason:js<35?`Job security is down to ${Math.round(js)}%.`:`On pace for ${p.projected} wins against an expectation of ${p.exp}.`};
+ if(js<55||(!early&&p.gap<=-2))return{...HOT[1],reason:js<55?`Job security is ${Math.round(js)}%.`:`Running behind the ${p.exp}-win expectation.`};
+ return{...HOT[0],reason:p.played&&p.gap>=1?'Ahead of expectations.':'Results are tracking with expectations.'}
+}
+
+// Weekly stakes: each finished regular-season game moves fans, boosters and job security by how far the result
+// beat or missed the pregame win probability. Rivalry games keep their existing SDF_V191 swing on top.
+function applyGame(s,g){
+ const win=g.result==='W',{margin}=score(g),pre=s.pregame[g.week],p=clip(Number.isFinite(Number(pre?.p))?Number(pre.p):winProb(g),.05,.95);
+ const surprise=(win?1:0)-p,blowout=Math.abs(margin)>=21?(win?1:-1):0,upset=win&&p<.4,badLoss=!win&&p>.6,before=pre?.hot||s.lastHot||hotSeat().key;
+ const exact={fan:surprise*5+blowout,booster:surprise*4+(upset?1:0)-(badLoss?.5:0),job:surprise*7*jobMult()},d={};
+ for(const k of Object.keys(FIELD)){s.exact[k]+=exact[k];const want=Math.round(s.exact[k])-s.net[k],prev=n(state[FIELD[k]],k==='job'?70:65);state[FIELD[k]]=clip(prev+want);const real=state[FIELD[k]]-prev;s.net[k]+=real;d[k]=real}
+ s.applied[g.week]=true;
+ const entry={week:n(g.week),opp:g.opponent,oppId:n(g.oppId),win,score:g.score,margin,p:Math.round(p*100)/100,upset,badLoss,rivalry:!!g.rivalry,d,hotBefore:before};
+ const after=hotSeat().key;entry.hotAfter=after;s.ledger.push(entry);s.ledger=s.ledger.slice(-20);
+ if(hotIndex(after)>hotIndex(before)&&hotIndex(after)>=2&&!s.alerts[after]){s.alerts[after]=true;const pc=pace();state.news??=[];state.news.push(after==='FINAL'?`Athletic director: "This is a final warning. ${pc.w}-${pc.l} is not the standard at ${state.school.name}."`:`Hot seat: the athletic director wants progress after a ${pc.w}-${pc.l} start (expected ${pc.exp} wins).`)}
+ s.lastHot=after;return entry
+}
+function sync(){
+ const s=ensure();if(!s||s.reverted||!ACTIVE.includes(state.phase))return[];
+ const out=[];for(const g of games())if(g.result&&!s.applied[g.week])out.push(applyGame(s,g));return out
+}
+function prepWeek(){
+ const s=ensure();if(!s)return;sync();
+ if(state.phase!=='REGULAR')return;const g=(state.schedule||[])[n(state.week)-1];
+ if(g&&!g.bye&&!g.result&&!s.pregame[g.week])s.pregame[g.week]={p:Math.round(winProb(g)*100)/100,...snapshot(),hot:hotSeat().key,opp:g.opponent}
+}
+function revert(s){for(const k of Object.keys(FIELD))state[FIELD[k]]=clip(n(state[FIELD[k]])-n(s.net[k]));s.reverted=true}
+function reapply(s){for(const k of Object.keys(FIELD))state[FIELD[k]]=clip(n(state[FIELD[k]])+n(s.net[k]));s.reverted=false}
+
+// Season-end verdict (runs after the existing season review, so firing reuses SDF_V193 dismissal + carousel forced exit).
+function canFire(){return state.challengeV237?.status!=='active'&&window.SDF_SCENARIOS?.canChangeSchools?.(state)!==false&&jobMult()>0}
+function gaps(){const d=state.difficulty;return d==='CASUAL'?{ult:-3,severe:-5}:d==='DYNASTY'?{ult:-1,severe:-3}:{ult:-2,severe:-4}}
+const art=x=>/^(8|11|18)$/.test(String(x))?'an':'a';
+const money=v=>'$'+Math.round(n(v)/1000).toLocaleString()+'k';
+function verdict(pre){
+ const s=ensure(),year=Number(state.year);if(!s||s.verdicts[year])return s?.verdicts[year];
+ const v=admin(),w=n(state.record?.w),l=n(state.record?.l),exp=expectedWins(),d=w-exp,t=tenure(),gp=gaps(),js=n(state.jobSecurity),fire=canFire(),cons=[],rewards=[];
+ let key,title,tone;
+ const rate=Number.isFinite(Number(v?.annualReview?.rate))&&Number(v.annualReview.year)===year?Math.round(Number(v.annualReview.rate)*100):null;
+ const dismiss=why=>{if(v){v.dismissedYear=year;if(v.annualReview)v.annualReview.verdict='DISMISSED';const last=v.history?.at?.(-1);if(last&&Number(last.year)===year)last.verdict='DISMISSED'}state.news??=[];state.news.push(`${state.school.name} dismissed ${state.coachCareer?.name||'the head coach'}: ${why}`)};
+ const ultimatum=()=>{if(v&&n(v.ultimatumYear)<year+1)v.ultimatumYear=year+1};
+ if(v&&Number(v.dismissedYear)===year){key='FIRED';title='Fired';tone='crisis';cons.push('The administration dismissed you. Accept a new head-coaching job in the Coaching Carousel to continue your career.')}
+ else if(fire&&t>=2&&pre.ult&&d<=gp.ult&&js<45){dismiss(`a second straight season ${-d} wins short of expectations under an ultimatum.`);key='FIRED';title='Fired';tone='crisis';cons.push('You missed the ultimatum. Accept a new head-coaching job in the Coaching Carousel to continue your career.')}
+ else if(fire&&t>=2&&exp>=7&&d<=gp.severe-2&&js<=20){dismiss(`${w}-${l} against a ${exp}-win expectation.`);key='FIRED';title='Fired';tone='crisis';cons.push('A collapse at a high-expectation program cost you the job. Accept a new head-coaching job in the Coaching Carousel.')}
+ else if(fire&&t>=2&&exp>=7&&d<=gp.severe){key='STAFF';title='Forced staff change';tone='crisis';ultimatum();s.forcedStaff={year,done:false};cons.push('The administration ordered a coordinator change. Replace a coordinator in the Coaching Carousel.','Next season is an ultimatum: improve or be dismissed.')}
+ else if(d<=gp.severe){key='FINAL';title=t<2?'First-year final warning':'Final warning';tone='crisis';ultimatum();cons.push(t<2?'First seasons get a pass from the administration, but only once. Next season must show real progress or your job is on the line.':'Next season is an ultimatum: improve or be dismissed.')}
+ else if(d<=-2||v?.annualReview?.verdict==='ULTIMATUM'){key='HOT';title='Hot seat';tone='warn';cons.push(v?.annualReview?.verdict==='ULTIMATUM'?'Administration ultimatum: next season must restore confidence.':'The administration expects a better season next year.')}
+ else if(d<=1){key='STEADY';title='Met expectations';tone='ok';cons.push('The administration is satisfied. Your job is stable heading into the offseason.')}
+ else{
+  const triumph=d>=3||(w>=10&&d>=1);key=triumph?'TRIUMPH':'EXCEEDED';title=triumph?'Triumph':'Exceeded expectations';tone='good';
+  const grant=Math.min(400000,Math.round((60000+d*40000+(triumph?100000:0))/10000)*10000);state.budget=n(state.budget)+grant;rewards.push(`Administration bonus: +${money(grant)} to the athletics budget for facilities and staff`);
+  if(triumph&&state.coachCareer){const before=n(state.coachCareer.contractYears);state.coachCareer.contractYears=Math.min(7,before+1);if(state.coachCareer.contractYears>before)rewards.push(`Contract extended by a year: ${state.coachCareer.contractYears} years remaining`);const js0=n(state.jobSecurity);state.jobSecurity=clip(js0+4);if(state.jobSecurity>js0)rewards.push(`Job security +${Math.round(state.jobSecurity-js0)} with the extension`)}
+  state.news??=[];state.news.push(`${title}: ${w}-${l} against a ${exp}-win expectation. ${rewards.join('. ')}.`);
+ }
+ const end=snapshot(),row={year,school:state.school.name,programId:uid(),w,l,exp,d,tenure:t,key,title,tone,start:{...s.start},end,weekly:pre.weekly,consequences:cons,rewards,difficulty:state.difficulty||'STANDARD'};
+ row.why=`${Math.abs(d)} win${Math.abs(d)===1?'':'s'} ${d>=0?'above':'below'} the ${exp}-win expectation${rate!=null?` · ${rate}% of weighted season goals met`:''}${v?.annualReview?.verdict&&Number(v.annualReview.year)===year?` · administration review: ${String(v.annualReview.verdict).toLowerCase()}`:''}`;if(d===0)row.why=row.why.replace(/^0 wins above/,'Right on');
+ row.headline=tone==='crisis'?`Crisis: ${w}-${l} against ${art(exp)} ${exp}-win expectation`:tone==='good'?`${w}-${l}: ${d>=0?'+':''}${d} wins over expectations`:tone==='warn'?`${w}-${l}: short of the ${exp}-win expectation`:`${w}-${l}: right on the ${exp}-win expectation`;
+ s.verdicts[year]=row;return row
+}
+function currentVerdict(){return state?.stakesV299?.verdicts?.[state.year]||null}
+
+// Rivalry data (SDF_V191). Never invents rivalries: only schedule games V191 recognises.
+function rivalryRow(g){if(!g)return null;try{return window.SDF_V191?.rivalryForGame?.(g)||null}catch(e){return null}}
+function rivalrySwing(row){const scale=.8+n(row.intensity)/100,job=row.intensity>=85?[3,-4]:row.intensity>=68?[2,-3]:[1,-2];return{fan:Math.round(6*scale),booster:Math.round(4*scale),jobWin:job[0],jobLoss:job[1]}}
+function rivalryHeader(g,{compact=false}={}){
+ const row=rivalryRow(g);if(!row)return'';
+ const tier=window.SDF_V191?.tier?.(row.intensity)||'',me=state.school.name,lead=row.wins>row.losses?'you lead':row.losses>row.wins?'they lead':'series even',series=row.wins+row.losses?`Series ${row.wins}-${row.losses} · ${lead}`:'First meeting of your tenure';
+ const last=row.last?`Last meeting: ${row.last.win?'W':'L'} ${esc(row.last.score||'')} (Year ${esc(row.last.year)})`:'';
+ const holder=row.ownerId===uid()?'You hold the trophy. Defend it.':row.ownerId==null?'The trophy is up for grabs.':`${esc(row.name)} hold the trophy. Take it back.`;
+ const sw=rivalrySwing(row),stakes=`Win: fans +${sw.fan}, boosters +${sw.booster}, job +${sw.jobWin} · Loss: fans -${sw.fan}, boosters -${sw.booster}, job ${sw.jobLoss}`;
+ return `<div class="sdf299-rivalry-head${compact?' compact':''}" role="note" aria-label="Rivalry game"><div class="sdf299-rivalry-top"><span class="sdf299-rivalry-kicker">⚔ Rivalry week${row.type==='PRIMARY'?' · Primary rival':''}${tier?` · ${esc(tier)} ${n(row.intensity)}`:''}</span><b class="sdf299-rivalry-title">${esc(me)} vs ${esc(row.name)}</b></div><div class="sdf299-rivalry-trophy">🏆 ${esc(row.trophy)} · ${holder}</div><div class="sdf299-rivalry-facts"><span>${esc(series)}</span>${last?`<span>${last}</span>`:''}</div>${compact?'':`<div class="sdf299-rivalry-stakes">${esc(stakes)}</div>`}</div>`
+}
+function trophyMoment(g){
+ const row=rivalryRow(g);if(!row||!g?.result)return'';
+ const win=g.result==='W',recorded=!!g._v191RivalryRecorded,prev=(row.meetings||[])[recorded?1:0],prevWin=prev?!!prev.win:null,trophy=esc(row.trophy),opp=esc(row.name),me=esc(state.school.name);
+ let icon,head,sub;
+ if(win&&prevWin!==true){icon='🏆';head=`The ${trophy} comes home`;sub=prev?`${opp} hand it over after ${me} won ${esc(g.score)}.`:`${me} claim the ${trophy} with a ${esc(g.score)} win.`}
+ else if(win){icon='🏆';head=`The ${trophy} stays in ${me}'s trophy case`;sub=`Defended with a ${esc(g.score)} win.`}
+ else if(prevWin===true){icon='💔';head=`The ${trophy} goes to ${opp}`;sub=`A ${esc(g.score)} loss hands the trophy across the field.`}
+ else{icon='🔒';head=`The ${trophy} stays with them`;sub=`${opp} keep it after a ${esc(g.score)} result.`}
+ const series=`Series ${row.wins}-${row.losses}${row.streak?` · ${row.streak>0?'W':'L'}${Math.abs(row.streak)} streak`:''}`;
+ return `<div class="sdf299-trophy ${win?'won':'lost'}"><span class="sdf299-trophy-icon" aria-hidden="true">${icon}</span><div><span class="sdf299-kicker">Rivalry · ${opp}</span><b>${head}</b><small>${sub} ${esc(series)}.</small></div></div>`
+}
+
+// Rendering helpers.
+const arrow=d=>d>0?'↑':d<0?'↓':'→';
+const signed=d=>(d>0?'+':d<0?'−':'±')+Math.abs(Math.round(d));
+function chip(h){return `<span class="sdf299-hot ${h.cls}" title="${esc(h.reason||'')}">${esc(h.label)}</span>`}
+function trendCell(k,value,delta){return `<span class="sdf299-trend ${delta>0?'up':delta<0?'down':'flat'}"><small>${LABEL[k]}</small><b>${Math.round(value)}${k==='job'?'%':''}</b><em>${arrow(delta)}${delta?Math.abs(Math.round(delta)):''}</em></span>`}
+function paceLine(p){return p.played?`On pace for ${p.projected} wins · expected ${p.exp}`:`Expected ${p.exp} wins this season`}
+
+function renderHome(){
+ if(!state?.school)return'';prepWeek();const s=ensure(),cv=currentVerdict(),v=cv&&(cv.programId==null||Number(cv.programId)===uid())?cv:null;
+ if(v&&!ACTIVE.includes(state.phase))return `<div class="sdf299-pulse ${v.tone}"><div class="sdf299-pulse-head"><b>Program pulse</b><span class="sdf299-hot ${v.tone==='crisis'?'final':v.tone==='warn'?'hot':'secure'}">${esc(v.title)}</span></div><p>${esc(v.headline)}</p><small>${esc(v.consequences[0]||v.rewards[0]||'')}</small></div>`;
+ if(!ACTIVE.includes(state.phase))return'';
+ const h=hotSeat(),p=pace(),last=s.ledger.at(-1),pre=last?s.pregame[last.week]:null,now=snapshot();
+ const delta=k=>last?(pre?now[k]-n(pre[k]):n(last.d?.[k])):0;
+ const g=state.phase==='REGULAR'?(state.schedule||[])[n(state.week)-1]:null,row=g&&!g.result?rivalryRow(g):null;
+ const note=h.key==='FINAL'?`<p class="sdf299-ad">AD: “${esc(h.reason)} Win now.”</p>`:h.key==='HOT'?`<p class="sdf299-ad">AD is watching: ${esc(h.reason)}</p>`:'';
+ return `<div class="sdf299-pulse"><div class="sdf299-pulse-head"><b>Program pulse</b>${chip(h)}</div><p class="sdf299-pace">${esc(paceLine(p))}</p><div class="sdf299-trends">${trendCell('fan',now.fan,delta('fan'))}${trendCell('booster',now.booster,delta('booster'))}${trendCell('job',now.job,delta('job'))}</div>${note}${row?`<p class="sdf299-rival-note">⚔ Rivalry week vs ${esc(row.name)} · ${esc(row.trophy)} on the line</p>`:''}</div>`
+}
+function gameFromCtx(ctx){return ctx?.game||window.SDF299?.lastFinishedGame?.()||null}
+function storyLine(e){
+ if(!e)return'';const p=Math.round(e.p*100);
+ if(e.rivalry)return e.win?(e.upset?'Rivalry upset: boosters ↑ and the fan base is buzzing':'Rivalry win: fans and boosters ↑'):'Rivalry loss: fans and boosters ↓';
+ if(e.upset)return`Boosters ↑ after the upset (${p}% pregame win chance)`;
+ if(e.badLoss)return`Fans sour on a loss you were favored to win (${p}% pregame)`;
+ if(e.win&&Math.abs(e.margin)>=21)return'Fans ↑ after a statement win';
+ if(e.win)return p>=50?`Took care of business as a ${p}% favorite`:`Fans ↑ after a win as a ${p}% underdog`;
+ if(e.margin<=-21)return'A blowout loss stings the fan base';
+ if(p>=50)return`Fans grumble after losing a game you were expected to win (${p}% pregame)`;
+ return`Loss as an underdog (${p}% pregame): the base mostly holds`
+}
+function renderPostPulse(ctx){
+ if(!state?.school||ctx?.postseason)return'';const g=gameFromCtx(ctx);if(!g||g.bye||!g.result)return'';
+ sync();const s=ensure(),e=s?.ledger.find(x=>x.week===n(g.week)&&x.opp===g.opponent);if(!e)return'';
+ const pre=s.pregame[g.week],now=snapshot(),d=k=>pre?now[k]-n(pre[k]):n(e.d[k]),h=hotSeat(),p=pace();
+ const bi=hotIndex(e.hotBefore),ai=hotIndex(h.key),hotLine=ai>bi?`Hot seat warming: ${HOT[bi].label} → ${HOT[ai].label}`:ai<bi?`Seat cooling: ${HOT[bi].label} → ${HOT[ai].label}`:`Seat status: ${h.label}`;
+ const cells=Object.keys(FIELD).map(k=>`<span class="sdf299-delta ${d(k)>0?'up':d(k)<0?'down':'flat'}">${LABEL[k]} ${arrow(d(k))} ${signed(d(k))}</span>`).join('');
+ return `<div class="sdf299-post"><span class="sdf299-kicker">Program stakes</span><b>${esc(storyLine(e))}</b><div class="sdf299-deltas">${cells}</div>${e.rivalry?'<small class="sdf299-hotline">Includes the rivalry swing for fans, boosters and job security.</small>':''}<small class="sdf299-hotline ${ai>bi?'warming':ai<bi?'cooling':''}">${esc(hotLine)} · ${esc(paceLine(p))}</small></div>`
+}
+function renderPostRivalry(ctx){if(!state?.school||ctx?.postseason)return'';const g=gameFromCtx(ctx);return g?trophyMoment(g):''}
+
+function verdictHtml(v,{compact=false}={}){
+ if(!v)return'';const keys=Object.keys(FIELD).concat('admin'),names={...LABEL,admin:'Administration'};
+ const rows=keys.map(k=>{const a=n(v.start?.[k]),b=n(v.end?.[k]),d=b-a;return `<div class="sdf299-vrow ${d>0?'up':d<0?'down':'flat'}"><small>${names[k]}</small><b>${Math.round(a)} → ${Math.round(b)}</b><em>${arrow(d)} ${signed(d)}</em></div>`}).join('');
+ const list=v.consequences.concat(v.rewards).map(x=>`<li>${esc(x)}</li>`).join('');
+ return `<div class="sdf299-verdict ${v.tone}${compact?' compact':''}"><span class="sdf299-kicker">Season stakes · Year ${esc(v.year)}</span><div class="sdf299-verdict-head"><b>${esc(v.headline)}</b><span class="sdf299-hot ${v.tone==='crisis'?'final':v.tone==='warn'?'hot':'secure'}">${esc(v.title)}</span></div>${v.why?`<p class="sdf299-why">${esc(v.why)}</p>`:''}<div class="sdf299-vgrid">${rows}</div>${list?`<ul>${list}</ul>`:''}</div>`
+}
+function renderSeasonSummary(){
+ const v=currentVerdict();let host=document.getElementById('sdf299StakesSeason');
+ if(!v||ACTIVE.includes(state.phase)){host?.remove();return}
+ const anchor=document.getElementById('seasonWrap239'),tab=document.getElementById('postseasonTab');
+ if(!host){host=document.createElement('section');host.id='sdf299StakesSeason';host.className='sdf299-stakes-season'}
+ if(anchor){if(anchor.nextElementSibling!==host)anchor.after(host)}else if(tab&&host.parentElement!==tab)tab.prepend(host);
+ const html=verdictHtml(v);if(host.dataset.content!==html){host.innerHTML=html;host.dataset.content=html}
+}
+function renderGameDay(){
+ const old=document.getElementById('sdf299RivalryGameDay'),g=state.phase==='REGULAR'?(state.schedule||[])[n(state.week)-1]:null,html=g&&!g.result&&!g.bye?rivalryHeader(g):'';
+ if(!html){old?.remove();return}
+ const matchup=document.getElementById('gameDayMatchup'),tab=document.getElementById('gamedayTab');if(!matchup&&!tab)return;
+ let host=old;if(!host){host=document.createElement('div');host.id='sdf299RivalryGameDay'}
+ if(matchup){if(matchup.previousElementSibling!==host)matchup.before(host)}else if(host.parentElement!==tab)tab.prepend(host);
+ if(host.dataset.content!==html){host.innerHTML=html;host.dataset.content=html}
+}
+function liveGame(){const lg=state?.liveGame;if(!lg||(lg.contextType&&lg.contextType!=='REGULAR'))return null;const sch=state.schedule||[],i=n(lg.scheduleIndex,-1);return sch[i]&&Number(sch[i].oppId)===Number(lg.oppId)?sch[i]:sch.find(g=>Number(g.week)===Number(lg.week)&&Number(g.oppId)===Number(lg.oppId))||null}
+// Live Game Center: one slim line that takes the place of the "Home game · Weather" text in the existing meta row,
+// so the scoreboard, field and play-by-play keep exactly the same position as before.
+function liveLine(g){const row=rivalryRow(g);if(!row)return'';const held=row.ownerId===uid()?'defend the':row.ownerId==null?'':'take back the';return `⚔ Rivalry · ${held?held+' ':''}${esc(row.trophy)}${held?'':' on the line'}`}
+function renderLive(){
+ const body=document.getElementById('gameSimBody'),meta=body?.querySelector('.gc-match-meta');if(!meta||!state?.school)return;
+ const g=liveGame(),html=g&&!state.liveGame?.complete?liveLine(g):'';let host=meta.querySelector('#sdf299RivalryLive');
+ if(!html){host?.remove();meta.classList.remove('sdf299-has-rivalry');return}
+ if(!host){host=document.createElement('span');host.id='sdf299RivalryLive';host.className='sdf299-live-line'}
+ const other=[...meta.children].filter(c=>c!==host).at(-1);if(other&&!host.title)host.title=other.textContent||'';
+ if(host.parentElement!==meta)meta.append(host);meta.classList.add('sdf299-has-rivalry');if(host.dataset.content!==html){host.innerHTML=html;host.dataset.content=html}
+}
+function carouselBlock(){
+ const body=document.getElementById('modalBody'),v=currentVerdict();if(!body||!v||body.querySelector('.sdf299-verdict'))return;
+ const h2=body.querySelector('h2');if(!h2||!/Staff & Job Market/i.test(h2.textContent))return;h2.insertAdjacentHTML('afterend',verdictHtml(v,{compact:true}))
+}
+function forceStaffChange(){
+ const s=ensure(),f=s?.forcedStaff;if(!f||f.done||Number(f.year)!==Number(state.year))return false;
+ const offers=state.jobOffers||(state.jobOffers=[]),keys=['oc','dc'].filter(k=>state.staff?.[k]);if(!keys.length){f.done=true;return false}
+ const rating=c=>n(c?.game,60)+n(c?.development,60)+n(c?.recruiting,60),free=keys.filter(k=>!offers.some(o=>o.type==='STAFF_DEPARTURE'&&o.key===k&&Number(o.carouselYear)===Number(state.year))).sort((a,b)=>rating(state.staff[a])-rating(state.staff[b]));
+ if(free.length){const key=free[0],c=state.staff[key];let candidates=[];try{candidates=window.carouselCoordinatorCandidates?.(key,c)||[]}catch(e){}offers.push({type:'STAFF_DEPARTURE',carouselYear:state.year,key,coach:{...c},destination:'Administration mandate',retainCost:0,status:'SEARCH',candidates,forcedV299:true,impact:'The administration ordered a coordinator change after the season.'})}
+ else{const o=offers.find(o=>o.type==='STAFF_DEPARTURE'&&o.status==='PENDING'&&Number(o.carouselYear)===Number(state.year));if(o){o.status='SEARCH';o.forcedV299=true;try{o.candidates=window.carouselCoordinatorCandidates?.(o.key,o.coach)||o.candidates||[]}catch(e){}}}
+ f.done=true;state.news??=[];state.news.push(`Administration mandate: ${state.school.name} must replace a coordinator before next season.`);return true
+}
+function injectCss(){
+ if(document.getElementById('sdf299StakesCss'))return;const st=document.createElement('style');st.id='sdf299StakesCss';st.textContent=`
+.sdf299-pulse,.sdf299-post,.sdf299-verdict,.sdf299-rivalry-head,.sdf299-trophy{box-sizing:border-box;max-width:100%;min-width:0;overflow-wrap:anywhere}
+.sdf299-pulse-head,.sdf299-verdict-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.sdf299-pulse p,.sdf299-pulse small{margin:4px 0 0;color:var(--muted,#9fb0c0)}
+.sdf299-pulse .sdf299-pace{color:var(--text,#e8eef5);font-weight:600}
+.sdf299-hot{display:inline-flex;align-items:center;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;border:1px solid currentColor;white-space:nowrap}
+.sdf299-hot.secure{color:var(--green,#3ddc84)}.sdf299-hot.warm{color:var(--yellow,#f5c542)}.sdf299-hot.hot{color:var(--orange,#ff9a3c)}.sdf299-hot.final{color:var(--red,#ff5d5d);background:rgba(255,93,93,.12)}
+.sdf299-trends{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:8px}
+.sdf299-trend{display:flex;flex-direction:column;padding:6px 8px;border-radius:10px;background:var(--surface2,rgba(255,255,255,.05));min-width:0}
+.sdf299-trend small{font-size:11px;color:var(--muted,#9fb0c0);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sdf299-trend b{font-size:17px}
+.sdf299-trend em,.sdf299-delta,.sdf299-vrow em{font-style:normal;font-weight:700}
+.sdf299-trend.up em,.sdf299-delta.up,.sdf299-vrow.up em{color:var(--green,#3ddc84)}.sdf299-trend.down em,.sdf299-delta.down,.sdf299-vrow.down em{color:var(--red,#ff5d5d)}.sdf299-trend.flat em,.sdf299-delta.flat,.sdf299-vrow.flat em{color:var(--muted,#9fb0c0)}
+.sdf299-ad{margin:8px 0 0!important;padding:6px 8px;border-left:3px solid var(--red,#ff5d5d);background:rgba(255,93,93,.08);border-radius:6px;color:var(--text,#e8eef5)!important}
+.sdf299-rival-note{margin:8px 0 0!important;color:var(--yellow,#f5c542)!important;font-weight:700}
+.sdf299-kicker{display:block;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted,#9fb0c0)}
+.sdf299-post b{display:block;margin:2px 0 6px}.sdf299-deltas{display:flex;flex-wrap:wrap;gap:6px}
+.sdf299-delta{padding:3px 8px;border-radius:999px;background:var(--surface2,rgba(255,255,255,.06));font-size:13px}
+.sdf299-hotline{display:block;margin-top:6px;color:var(--muted,#9fb0c0)}.sdf299-hotline.warming{color:var(--orange,#ff9a3c)}.sdf299-hotline.cooling{color:var(--green,#3ddc84)}
+.sdf299-rivalry-head{margin:0 0 12px;padding:12px 14px;border-radius:14px;border:1px solid rgba(245,197,66,.55);background:linear-gradient(135deg,rgba(245,197,66,.16),rgba(255,93,93,.10));color:var(--text,#e8eef5)}
+.sdf299-rivalry-head.compact{margin:8px 0;padding:8px 12px}
+.gc-match-meta.sdf299-has-rivalry>span:not(:first-child):not(#sdf299RivalryLive){display:none}
+.sdf299-live-line{min-width:0;max-width:62%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--yellow,#f5c542);font-weight:700}
+.sdf299-rivalry-kicker{display:block;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--yellow,#f5c542)}
+.sdf299-rivalry-title{display:block;font-size:18px;margin:2px 0}.compact .sdf299-rivalry-title{font-size:15px}
+.sdf299-rivalry-trophy{font-weight:700;font-size:14px}.sdf299-rivalry-facts{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:13px;color:var(--muted,#9fb0c0);margin-top:4px}
+.sdf299-rivalry-stakes{margin-top:6px;font-size:12px;color:var(--muted,#9fb0c0)}
+.sdf299-trophy{display:flex;gap:12px;align-items:center;padding:12px 12px 12px 14px;overflow:hidden;border-radius:14px;border:1px solid rgba(245,197,66,.5);background:rgba(245,197,66,.10)}
+.sdf299-trophy.lost{border-color:rgba(255,93,93,.45);background:rgba(255,93,93,.08)}
+.sdf299-trophy-icon{flex:0 0 auto;font-size:30px;line-height:1;padding:4px}.sdf299-post{margin-top:10px}.sdf299-trophy b{display:block;font-size:16px}.sdf299-trophy small{display:block;color:var(--muted,#9fb0c0)}
+.sdf299-trophy.won .sdf299-trophy-icon{animation:sdf299TrophyIn .7s ease-out}
+@keyframes sdf299TrophyIn{0%{transform:scale(.3) rotate(-20deg);opacity:0}70%{transform:scale(1.2)}100%{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.sdf299-trophy.won .sdf299-trophy-icon{animation:none}}
+.sdf299-verdict{padding:14px;border-radius:14px;border:1px solid var(--border,rgba(255,255,255,.12));background:var(--surface2,rgba(255,255,255,.04))}
+.sdf299-stakes-season{margin:0 0 14px}.sdf299-why{margin:6px 0 0;font-size:13px;color:var(--muted,#9fb0c0)}
+.sdf299-verdict.crisis{border-color:rgba(255,93,93,.55);background:rgba(255,93,93,.08)}
+.sdf299-verdict.good{border-color:rgba(61,220,132,.55);background:rgba(61,220,132,.08)}
+.sdf299-verdict.warn{border-color:rgba(255,154,60,.5)}
+.sdf299-verdict.compact{margin:8px 0 12px;padding:10px}
+.sdf299-verdict-head b{font-size:17px}.compact .sdf299-verdict-head b{font-size:15px}
+.sdf299-vgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:6px;margin-top:8px}
+.sdf299-vrow{padding:6px 8px;border-radius:10px;background:rgba(0,0,0,.18);display:flex;flex-direction:column;min-width:0}
+.sdf299-vrow small{font-size:11px;color:var(--muted,#9fb0c0)}
+.sdf299-verdict ul{margin:8px 0 0;padding-left:18px}.sdf299-verdict li{margin:3px 0}
+`;document.head.appendChild(st)}
+
+// Wiring: wrappers only, so no existing module needs editing.
+function afterRender(){if(!state?.school)return;injectCss();prepWeek();renderGameDay();renderSeasonSummary()}
+const baseRender=window.renderAll;
+if(typeof baseRender==='function')window.renderAll=function(...args){const out=baseRender.apply(this,args);safe(afterRender);return out};
+const baseFinish=window.finishSeason;
+if(typeof baseFinish==='function')window.finishSeason=function(...args){
+ // The existing season-end reviews already price in the whole season vs expectations. Undo this season's weekly
+ // preview first so nothing is counted twice; final values then match the established season-end balance.
+ let pre=null,s=null;
+ if(state?.school&&!state.stakesV299?.verdicts?.[state.year]){s=ensure();safe(sync);pre={ult:Number(admin()?.ultimatumYear)===Number(state.year),weekly:{...s.net}};if(!s.reverted)revert(s)}
+ const out=baseFinish.apply(this,args);
+ if(pre){if(out===false||!state.seasonDone){if(s.reverted)reapply(s)}else{safe(verdict,pre);safe(renderSeasonSummary)}}
+ return out
+};
+const baseCarousel=window.coordinatorCarousel;
+function carouselMessage(){const v=currentVerdict();if(!v||v.key==='FIRED'||!/^The market was quiet/.test(String(state.carouselMessage||'')))return false;if(v.tone==='crisis'||v.tone==='warn'){state.carouselMessage=`No programs called after a ${v.w}-${v.l} season. You keep the ${state.school.name} job${v.key==='STAFF'?', but the administration is forcing a staff change':v.tone==='crisis'?', on a final warning':', on the hot seat'}.`;return true}if(v.tone==='good'){state.carouselMessage=`${state.school.name} rewarded a ${v.w}-${v.l} season. No head-coaching offers this year, and your job is secure.`;return true}return false}
+if(typeof baseCarousel==='function')window.coordinatorCarousel=function(...args){const out=baseCarousel.apply(this,args);const forced=safe(forceStaffChange),msg=safe(carouselMessage);if(forced||msg)window.renderCarouselModal?.();else safe(carouselBlock);return out};
+const baseCarouselModal=window.renderCarouselModal;
+if(typeof baseCarouselModal==='function')window.renderCarouselModal=function(...args){const out=baseCarouselModal.apply(this,args);safe(carouselBlock);return out};
+window.SDF299?.registerHomeSection?.({id:'stakes-pulse',order:30,render:renderHome});
+window.SDF299?.registerPostGameSection?.({id:'stakes-rivalry',order:30,render:renderPostRivalry});
+window.SDF299?.registerPostGameSection?.({id:'stakes-pulse',order:40,render:renderPostPulse});
+window.SDF299?.onGameFinished?.(()=>sync());
+window.SDF299?.onWeekChanged?.(()=>prepWeek());
+function observeLive(){const modal=document.getElementById('gameSimModal');if(!modal||modal.dataset.sdf299Stakes)return;modal.dataset.sdf299Stakes='1';let queued=false;new MutationObserver(()=>{if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;safe(renderLive)})}).observe(modal,{childList:true,subtree:true})}
+if(typeof document!=='undefined'){if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',observeLive);else observeLive()}
+window.SDF_STAKES299={version:BUILD,ensure,sync,prepWeek,pace,hotSeat,verdict,currentVerdict,rivalryHeader,trophyMoment,renderHome,renderPostPulse,renderPostRivalry,verdictHtml,forceStaffChange,revert,reapply,renderLive,renderSeasonSummary,renderGameDay};
+})();
+
+// Build 299 module: competitive transfer portal.
+// Each portal week AI programs pursue entrants (need, prestige, NIL), races narrow from Open to a Top 3 and
+// players commit across the four weeks. Your own departures are pursued the same way. A compact weekly
+// "portal wire" digest replaces the per-week popup, and roster sizes are kept sane at the end of the offseason.
+(()=>{
+'use strict';
+const V=299,TOP3_AT=60,EARLY_TOP3_AT=70,COMMIT_AT=76,FINAL_COMMIT_AT=50,SCHOLARSHIP_CAP=85,USER_FLOOR=60,AI_FLOOR=64,AI_CAP=85;
+const HIDDEN_SHARE={1:.22,2:.48,3:.72};
+const n=(v,d=0)=>Number.isFinite(Number(v))?Number(v):d,clip=(v,a,b)=>Math.max(a,Math.min(b,n(v)));
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function hash(t){let h=2166136261;for(const ch of String(t||'')){h^=ch.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
+const roll=seed=>(hash(seed)%100000)/100000;
+const v198=()=>window.SDF_V198||{},v11=()=>window.SDF_V11_TEST||{};
+const uid=()=>Number(state?.school?.id);
+const byName=name=>schools.find(s=>s.name===name)||null;
+const program=s=>(window.SDF_V197?.programForTeam?.(s.id))||s;
+const shortInfo=p=>({id:p.id,name:p.name,pos:p.pos,ovr:n(p.ovr),stars:n(p.transferStars)||(v198().transferStars?.(p)??0),from:p.sourceTeamName||null});
+let ticking=false;
+
+function race(){
+ if(!state?.school)return null;
+ const r=state.portalRace299??={};
+ if(Number(r.year)!==Number(state.year)){r.year=Number(state.year);r.digests=[];r.pending=[];r.closed=false;r.announced=0}
+ r.digests=Array.isArray(r.digests)?r.digests:[];r.pending=Array.isArray(r.pending)?r.pending:[];return r
+}
+function scholarshipCount(){return(state.roster||[]).filter(p=>!p.walkOn).length}
+function rosterFull(){return scholarshipCount()>=SCHOLARSHIP_CAP}
+function open(){return state?.phase==='PORTAL'&&state.offseasonFlow217?.stage!=='PREP'&&!state.offseasonFlow217?.portalClosed}
+function resolved(p){return!!(p.portalCommitted||p.portalLost||p.portalResolved)}
+function invested(p){return n(p.portalContact)>0||!!p.portalNILOffered}
+
+// ---- the race ----------------------------------------------------------------
+function needBonus(p,school){
+ const roster=v198().aiRoster?.(school.id)||[],same=roster.filter(x=>x.pos===p.pos),target=n(typeof DEPTH!=='undefined'?DEPTH[p.pos]:3,3)+1;
+ const better=same.filter(x=>n(x.ovr)>=n(p.ovr)).length,starters=n(typeof STARTERS!=='undefined'?STARTERS[p.pos]:1,1);
+ return clip((target-same.length)*1.2+(better<starters?2.5:better>starters+1?-2:0),-3,5)
+}
+function pursuit(p,school,week){
+ const pr=program(school);
+ return clip(Math.round(2+(n(pr.prestige,55)-55)/12+(n(pr.nil,50)-50)/25+needBonus(p,school)+roll(`v299-push-${state.year}-${week}-${p.id}-${school.id}`)*5),1,12)
+}
+function standings(p){
+ const scores=p.portalRivalScores||{},rows=(p.portalRivals||[]).map(name=>({name,score:Math.round(n(scores[name],20))}));
+ if(!p.portalUserOut&&!p.portalOwnDeparture&&p.portalInterest!=null)rows.push({name:state.school.name,score:Math.round(n(p.portalInterest)),user:true});
+ return rows.sort((a,b)=>b.score-a.score||(a.user?-1:b.user?1:0))
+}
+function stageOf(p){return resolved(p)?'COMMITTED':p.portalStage==='TOP3'?'TOP3':'OPEN'}
+function dropRival(p,name){p.portalRivals=(p.portalRivals||[]).filter(x=>x!==name);(p.portalDroppedRivals??=[]).push(name)}
+function seedRivals(p,count){
+ const pool=v198().contenders?.(p,10,true)||[],out=[];
+ for(let i=0;i<pool.length&&out.length<count;i++)if(roll(`v299-seed-${state.year}-${p.id}-${pool[i].school.id}`)<.6||pool.length-i<=count-out.length)out.push(pool[i]);
+ p.portalRivals=out.map(x=>x.school.name);p.portalRivalScores={};
+ out.forEach((x,i)=>p.portalRivalScores[x.school.name]=clip(Math.round(14+x.score*.45-i*2+roll(`v299-seed-score-${state.year}-${p.id}-${x.school.id}`)*8),24,70))
+}
+function commitToAi(p,name,dig,own){
+ const school=byName(name);if(!school||!v198().hasRoom?.(school.id))return false;
+ const subject=own?{...p,_v198RealTransfer:true,sourceTeamId:uid(),sourceTeamName:state.school.name}:p;
+ if(!v198().commitPortalPlayer?.(subject,school.id))return false;
+ p.portalLost=school.name;p.taken=true;p.portalResolved=true;p.portalStage='COMMITTED';p.portalCommitWeek=n(state.portalWeek,1);
+ const info={...shortInfo(subject),to:school.name};
+ if(own){dig.departed.push({...info,from:null});state.news.push(`${p.name} transferred from ${state.school.name} to ${school.name}.`)}
+ else{dig.ai.push(info);state.news.push(`${p.name} committed to ${school.name} from the transfer portal.`);if(invested(p))dig.missed.push({...info,why:'committed elsewhere'})}
+ return true
+}
+function tick(p,week,dig,final,own){
+ if(!Array.isArray(p.portalRivals)||!p.portalRivals.length)seedRivals(p,own?2+(n(p.ovr)>=78?1:0):2);
+ p.portalRivalScores??={};
+ for(const name of [...p.portalRivals]){
+  const school=byName(name);if(!school||Number(school.id)===uid()||!v198().hasRoom?.(school.id)){dropRival(p,name);continue}
+  p.portalRivalScores[name]=clip(n(p.portalRivalScores[name],20)+pursuit(p,school,week),0,100)
+ }
+ let rows=standings(p);if(!rows.length)return;
+ const wasTop3=p.portalStage==='TOP3';
+ if(!wasTop3&&rows[0].score>=(week>=2||final?TOP3_AT:EARLY_TOP3_AT)){
+  p.portalStage='TOP3';p.portalTop3Week=week;
+  for(const row of rows.slice(3)){if(row.user){p.portalUserOut=true;if(invested(p))dig.missed.push({...shortInfo(p),why:'dropped you from his top 3'})}else dropRival(p,row.name)}
+  rows=standings(p)
+ }
+ if(!(wasTop3||final))return;
+ for(let i=0;i<rows.length;i++){
+  const lead=rows[i],margin=lead.score-n(rows[i+1]?.score);
+  const ready=final?lead.score>=FINAL_COMMIT_AT:i===0&&lead.score>=COMMIT_AT&&margin>=4&&roll(`v299-commit-${state.year}-${week}-${p.id}`)<.25+(lead.score-COMMIT_AT)*.04+(week>=3?.25:0);
+  if(!ready)return;
+  if(lead.user){
+   const signed=v11().signPortal?.(p);
+   if(signed){p.portalCommitWeek=week;dig.signed.push(shortInfo(p));return}
+   p.portalUserOut=true;continue
+  }
+  if(commitToAi(p,lead.name,dig,own))return;
+  dropRival(p,lead.name)
+ }
+}
+function departureSubject(d){
+ d.race299??={};const r=d.race299,p=r.subject??={...JSON.parse(JSON.stringify(d.player)),portalOwnDeparture:true,sourceTeamId:uid(),sourceTeamName:state.school.name,reason:d.reason};
+ p.transferStars??=v198().transferStars?.(p)??0;return p
+}
+function resolveHidden(week,dig,final){
+ const market=v198().ensure?.();if(!market)return;
+ const share=final?1:HIDDEN_SHARE[week]||0;
+ for(const p of market.hiddenEntries||[]){
+  if(!p?._v198RealTransfer||resolved(p))continue;
+  if(!final&&roll(`v299-hidden-${state.year}-${p.id}`)>=share)continue;
+  const options=v198().contenders?.(p,2,true)||[];if(!options.length)continue;
+  const pick=options[Math.floor(roll(`v299-hidden-dest-${state.year}-${p.id}`)*options.length)]||options[0];
+  if(v198().commitPortalPlayer?.(p,pick.school.id)){p.portalStage='COMMITTED';dig.ai.push({...shortInfo(p),to:pick.school.name,hidden:true})}
+ }
+}
+function runWeek(final=false){
+ const r=race();if(!r||state.phase!=='PORTAL')return null;
+ const week=n(state.portalWeek,1),dig={week,final,signed:r.pending.splice(0),missed:[],departed:[],ai:[]};
+ ticking=true;
+ try{
+  for(const p of state.portal||[]){if(resolved(p)||p.portalOwnDeparture)continue;tick(p,week,dig,final,false)}
+  for(const d of state.portalDepartures||[]){if(!d?.player||d.retained||d.resolved)continue;const p=departureSubject(d);tick(p,week,dig,final,true);if(p.portalResolved){d.resolved=true;d.resolvedTo=p.portalLost}}
+  resolveHidden(week,dig,final)
+ }finally{ticking=false}
+ dig.remaining=(state.portal||[]).filter(p=>!resolved(p)).length;dig.aiCount=dig.ai.length;dig.ai=dig.ai.sort((a,b)=>b.ovr-a.ovr).slice(0,8);dig.roster=state.roster.length;dig.scholarships=scholarshipCount();
+ r.digests=r.digests.filter(x=>x.week!==week).concat(dig);return dig
+}
+function advanceWeek(){return runWeek(false)}
+function closeWindow(){const r=race();if(!r||r.closed||state.phase!=='PORTAL')return null;const dig=runWeek(true);r.closed=true;state.rosterHealth299={portalYear:Number(state.year),applied:false};announce(dig,true);return dig}
+function announce(dig,final){
+ const r=race();if(!dig||!r)return;r.announced=dig.week;
+ const parts=[];if(dig.signed.length)parts.push(`signed ${dig.signed.length}`);if(dig.departed.length)parts.push(`lost ${dig.departed.length}`);parts.push(`${dig.aiCount} AI commitment${dig.aiCount===1?'':'s'}`);
+ const msg=`${final?'Portal closed':`Portal week ${dig.week} wrap`}: ${parts.join(' · ')}. Details are in the Portal Wire.`;setTimeout(()=>window.toast?.(msg,'success'),60)
+}
+function announceWeek(){const r=race();announce(r?.digests.find(x=>x.week===n(state.portalWeek,2)-1),false)}
+
+// ---- events from v11 -------------------------------------------------------------
+function onUserSigned(p){p.portalStage='COMMITTED';p.portalCommitWeek??=n(state.portalWeek,1);if(!ticking)race()?.pending.push(shortInfo(p))}
+function onUserPeak(p){window.toast?.(`${p.name} has you at the top of his list. He decides when the portal week advances.`,'success')}
+function onRetained(id){const d=(state.portalDepartures||[]).find(x=>String(x.player?.id)===String(id));if(d?.race299)d.race299.withdrawn=true}
+
+// ---- rendering -------------------------------------------------------------------
+const STAGE={OPEN:['Open','open'],TOP3:['Top 3','top3'],COMMITTED:['Committed','done']};
+function stars(k){k=n(k);return k?`<span class="p299-stars" aria-label="${k}-star transfer">${'★'.repeat(k)}</span>`:''}
+function chips(rows){return rows.slice(0,4).map((row,i)=>`<span class="p299-chip${row.user?' you':''}${i===0?' lead':''}">${esc(row.user?'You':row.name)} <b>${row.score}</b></span>`).join('')}
+function cardExtras(p){
+ const st=stageOf(p),[label,cls]=STAGE[st],rows=standings(p);
+ let note;
+ if(st==='COMMITTED')note=p.portalCommitted?'Signed with you':`Committed to ${esc(p.portalLost)}${p.portalCommitWeek?` · week ${p.portalCommitWeek}`:''}`;
+ else if(p.portalUserOut)note='You are out of his top 3';
+ else note=`${rows.length} program${rows.length===1?'':'s'} in${st==='TOP3'?' · decision close':''}`;
+ return`<div class="p299-race" data-stage="${cls}"><div class="p299-race-head"><span class="p299-stage ${cls}">${label}</span>${stars(p.transferStars)}<small>${note}</small></div>${st==='COMMITTED'?'':`<div class="p299-chips">${chips(rows)}</div>`}</div>`
+}
+function departureExtras(d){
+ if(d.resolved)return`<div class="p299-race" data-stage="done"><div class="p299-race-head"><span class="p299-stage done">Committed</span><small>Transferred to ${esc(d.resolvedTo||'another program')}</small></div></div>`;
+ if(d.retained||!d.player||!open())return'';const p=departureSubject(d);
+ if(!p.portalRivals?.length)seedRivals(p,2+(n(p.ovr)>=78?1:0));
+ const st=stageOf(p);return`<div class="p299-race"><div class="p299-race-head"><span class="p299-stage ${st==='TOP3'?'top3':'open'}">${st==='TOP3'?'Top 3':'Open'}</span><small>Suitors</small></div><div class="p299-chips">${chips(standings(p))}</div></div>`
+}
+function overviewMetrics(){return typeof metric==='function'?metric('Scholarships',`${scholarshipCount()}/${SCHOLARSHIP_CAP}`)+metric('Roster',state.roster?.length||0):''}
+function suggestions(){
+ if(!open())return[];let nd={};try{nd=typeof window.needs==='function'?window.needs()||{}:{}}catch{}
+ return(state.portal||[]).filter(p=>!resolved(p)&&!p.portalUserOut&&!p.portalOwnDeparture&&window.SDF_SCENARIOS?.allowed?.(p)!==false).map(p=>{const rows=standings(p),you=rows.find(x=>x.user),gap=n(rows[0]?.score)-n(you?.score),fit=n(v11().portalFit?.(p)?.overall,60),sev=n(nd?.[p.pos]?.sev,1);return{p,gap,score:fit+sev*6-Math.max(0,gap)*1.5+(n(p.ovr)-70)*.4}}).filter(x=>x.gap<=15).sort((a,b)=>b.score-a.score).slice(0,4)
+}
+function infoLine(x,extra=''){return`<li><b>${esc(x.name)}</b> <span>${esc(x.pos)} · ${x.ovr} OVR${x.from?` · ${esc(x.from)}`:''}${extra}</span></li>`}
+function digestHtml(dig,compact=false){
+ if(!dig)return'';
+ const sec=(title,list,fmt)=>list?.length?`<div class="p299-dsec"><h5>${title}</h5><ul>${list.map(fmt).join('')}</ul></div>`:'';
+ const body=sec('You signed',dig.signed,x=>infoLine(x))+sec('Your players who left',dig.departed,x=>infoLine(x,` → ${esc(x.to)}`))+sec('Missed out',dig.missed,x=>infoLine(x,` · ${esc(x.why)}${x.to?` (${esc(x.to)})`:''}`))+(compact?'':sec('Notable AI signings',dig.ai.slice(0,5),x=>infoLine(x,` → ${esc(x.to)}`)));
+ return`<div class="p299-dhead"><b>${dig.final?'Final week':`Week ${dig.week}`}</b><span>${dig.signed.length} signed · ${dig.departed.length} lost · ${dig.aiCount} AI commitments · ${dig.remaining} still open</span></div>${body||'<p class="muted">No commitments involving your program this week.</p>'}`
+}
+function wireHtml(){
+ const r=race();if(!r)return'';const digs=r.digests.slice().sort((a,b)=>b.week-a.week),latest=digs[0],sugg=suggestions();
+ let html=`<div class="p299-wire-head"><span class="eyebrow">PORTAL WIRE</span><small>${open()?`Week ${n(state.portalWeek,1)} of 4 · races tighten from Open to Top 3 to Committed`:state.phase==='PORTAL'?'Window closed':'Last window'}</small></div>`;
+ if(sugg.length)html+=`<div class="p299-dsec"><h5>Suggested targets</h5><ul>${sugg.map(({p,gap})=>infoLine({name:p.name,pos:p.pos,ovr:p.ovr,from:p.sourceTeamName},` · ${gap>0?`${gap} behind the leader`:'you lead'}`)).join('')}</ul></div>`;
+ html+=latest?`<div class="p299-digest">${digestHtml(latest)}</div>`:(open()?'<p class="muted p299-empty">No commitments yet. Other programs make their moves each time the portal week advances.</p>':'');
+ if(digs.length>1)html+=`<details class="p299-older"><summary>Earlier weeks (${digs.length-1})</summary>${digs.slice(1).map(d=>`<div class="p299-digest">${digestHtml(d)}</div>`).join('')}</details>`;
+ return html
+}
+function afterRender(){
+ const dir=document.getElementById('portalDirectionV11');if(!dir)return;
+ let host=document.getElementById('portalWire299');
+ if(!host){host=document.createElement('section');host.id='portalWire299';host.className='p299-wire';host.setAttribute('aria-label','Portal wire');dir.insertAdjacentElement('afterend',host)}
+ const show=state?.phase==='PORTAL'&&state.offseasonFlow217?.stage!=='PREP';host.hidden=!show;host.innerHTML=show?wireHtml():''
+}
+function homeSection(){
+ if(state?.phase!=='PORTAL'||state.offseasonFlow217?.stage==='PREP')return'';
+ const r=race(),latest=r?.digests.slice().sort((a,b)=>b.week-a.week)[0],avail=(state.portal||[]).filter(p=>!resolved(p)).length;
+ return`<div class="p299-home"><b>Transfer portal · ${open()?`Week ${n(state.portalWeek,1)} of 4`:'closed'}</b><span class="sub">${avail} available · roster ${state.roster.length} · ${scholarshipCount()}/${SCHOLARSHIP_CAP} scholarships</span>${latest?digestHtml(latest,true):''}<button type="button" class="btn neutral" onclick="window.showTab?.('recruiting');window.setRecruitingMode?.('portal')">Open portal</button></div>`
+}
+
+// ---- roster health ---------------------------------------------------------------
+function userFloor(){
+ const create=window.SDF_V106_TEST?.createWalkOn,targets=window.SDF_V106_TEST?.WALK_ON_TARGETS||{};if(typeof create!=='function')return[];
+ const added=[];
+ while(state.roster.length<USER_FLOOR&&added.length<40){
+  const pos=POSITIONS.map(p=>({p,ratio:state.roster.filter(x=>x.pos===p).length/Math.max(1,n(targets[p],2)*1.4)})).sort((a,b)=>a.ratio-b.ratio)[0].p;
+  const w=create(pos);window.SDF_SCENARIOS?.prepareWalkOn?.(w);state.roster.push(w);added.push(w)
+ }
+ if(added.length){state.news.push(`Walk-on tryouts added ${added.length} more players to bring the roster to ${state.roster.length}.`);state.lastWalkOnClass=(state.lastWalkOnClass||[]).concat(added.map(p=>({name:p.name,pos:p.pos,ovr:p.ovr})))}
+ return added
+}
+function aiWalkOn(school,pos,i){
+ const pr=program(school),seed=`v299-aiwalk-${state.year}-${school.id}-${pos}-${i}`,ovr=clip(Math.round((n(pr.prestige,50)+n(pr.recent,50))/2)-16+Math.floor(roll(seed)*10),45,74),loc=(typeof LOC!=='undefined'&&LOC.length)?LOC[hash(seed+'l')%LOC.length]:['Hometown','ST'];
+ return{id:`ai-walkon299-${school.id}-${state.year}-${pos}-${i}-${hash(seed)%1e8}`,name:typeof pname==='function'?pname():`Walk-on ${i+1}`,pos,arch:(typeof ARCH!=='undefined'&&ARCH[pos]?.[0])||'Balanced',hometown:`${loc[0]}, ${loc[1]}`,year:1,ovr,pot:clip(ovr+3+Math.floor(roll(seed+'p')*6),ovr,82),dev:'Normal',personality:'Team-first',morale:72,redshirt:false,redshirtUsed:false,starter:false,walkOn:true,depthIndex:99,signedYear:state.year,stars:0,progressionHistory:[]}
+}
+function aiHealth(){
+ const set=window.SDF_AI_ROSTERS?.set;if(typeof set!=='function')return 0;let added=0;
+ for(const school of schools){if(Number(school.id)===uid())continue;let roster=(v198().aiRoster?.(school.id)||[]).slice();
+  if(roster.length>AI_CAP){roster.sort((a,b)=>(a.walkOn?0:1)-(b.walkOn?0:1)||(!!a.starter-!!b.starter)||n(a.ovr)-n(b.ovr));set(school.id,roster.slice(roster.length-AI_CAP));continue}
+  if(roster.length>=AI_FLOOR)continue;let i=0;
+  while(roster.length<AI_FLOOR){const pos=POSITIONS.map(p=>({p,c:roster.filter(x=>x.pos===p).length/Math.max(1,n(typeof DEPTH!=='undefined'?DEPTH[p]:3,3))})).sort((a,b)=>a.c-b.c)[0].p;roster.push(aiWalkOn(school,pos,i++));added++}
+  try{window.SDF_AI_ROSTERS?.assignDepth?.(roster)}catch{}set(school.id,roster)}
+ return added
+}
+
+// Runs once after the portal offseason rolls into the new season (the finish can complete asynchronously).
+function rosterHealth(){const h=state?.rosterHealth299;if(!h||h.applied||state.phase!=='REGULAR'||Number(state.year)<=Number(h.portalYear))return false;h.applied=true;userFloor();aiHealth();return true}
+// ---- wiring ----------------------------------------------------------------------
+const baseFinish=window.finishOffseason;
+if(typeof baseFinish==='function')window.finishOffseason=function(...args){
+ if(state?.phase==='PORTAL'&&n(state.portalWeek)>=4)closeWindow();
+ const before=Number(state?.year),out=baseFinish.apply(this,args);
+ const done=v=>{rosterHealth();return v};
+ return out&&typeof out.then==='function'?out.then(done):done(out)
+};
+const css=`.p299-race{margin:8px 0 4px;display:grid;gap:6px;min-width:0}.p299-race-head{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.p299-race-head small{color:var(--muted,#9fb0c3)}
+.p299-stage{font-size:.7rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;border-radius:999px;padding:2px 8px;background:rgba(148,163,184,.18)}.p299-stage.top3{background:rgba(250,204,21,.18);color:#facc15}.p299-stage.done{background:rgba(74,222,128,.16);color:#4ade80}
+.p299-stars{color:#facc15;font-size:.8rem;letter-spacing:1px}.p299-chips{display:flex;flex-wrap:wrap;gap:5px;min-width:0}.p299-chip{font-size:.75rem;border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:2px 7px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.p299-chip.lead{border-color:rgba(250,204,21,.55)}.p299-chip.you{background:rgba(56,189,248,.16);border-color:rgba(56,189,248,.5)}
+.p299-wire{margin:10px 0;padding:12px;border:1px solid rgba(255,255,255,.1);border-radius:14px;background:rgba(15,30,45,.55);min-width:0}.p299-wire[hidden]{display:none}.p299-wire-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px;align-items:baseline}.p299-wire-head small{color:var(--muted,#9fb0c3)}
+.p299-dhead{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;margin:8px 0 4px}.p299-dhead span{font-size:.8rem;color:var(--muted,#9fb0c3)}.p299-dsec h5{margin:8px 0 3px;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted,#9fb0c3)}
+.p299-dsec ul{list-style:none;margin:0;padding:0;display:grid;gap:3px}.p299-dsec li{font-size:.85rem;overflow-wrap:anywhere}.p299-dsec li span{color:var(--muted,#9fb0c3)}.p299-older summary{cursor:pointer;margin-top:8px;font-size:.85rem}
+.p299-home{display:grid;gap:6px;min-width:0}.p299-home .btn{justify-self:start}`;
+if(!document.getElementById('sdf299PortalCss')){const st=document.createElement('style');st.id='sdf299PortalCss';st.textContent=css;document.head.appendChild(st)}
+window.SDF299?.registerHomeSection?.({id:'portal-wire',order:30,render:homeSection});
+window.SDF299?.onWeekChanged?.(()=>{if(rosterHealth())window.SDF_RELEASE_TEST?.scheduleSave?.('Roster health after portal',400,false)});
+window.SDF299_PORTAL={version:V,SCHOLARSHIP_CAP,USER_FLOOR,AI_FLOOR,AI_CAP,race,advanceWeek,announceWeek,closeWindow,runWeek,standings,stageOf,rosterFull,scholarshipCount,onUserSigned,onUserPeak,onRetained,cardExtras,departureExtras,overviewMetrics,afterRender,wireHtml,suggestions,userFloor,aiHealth,rosterHealth};
+})();
+
+// Build 299 module: layout. Slim phone chrome, one primary "play this week" action per screen, a cleaner Home,
+// compact recruit cards and a team list that opens on teams. Everything is moved, grouped or restyled; nothing is removed.
+(()=>{
+'use strict';
+const $=id=>document.getElementById(id);
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const root=document.documentElement;root.classList.add('sdf299-layout');
+const phone=()=>innerWidth<=760||(innerWidth<=1000&&innerHeight<=500);
+const has=()=>typeof state!=='undefined'&&!!state?.school;
+const open={tiles:false,brief:false,community:false},expanded=new Set();
+let queued=false,heroObserver=null,heroTarget=null;
+function schedule(){if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;refresh()})}
+function activeTab(){return document.querySelector('#gameScreen .tab-page:not(.hidden)')?.id?.replace(/Tab$/,'')||''}
+function details(id,cls,key){const d=document.createElement('details');d.id=id;d.className='sdf299-group '+cls;d.open=!!open[key];d.innerHTML='<summary></summary>';d.addEventListener('toggle',()=>{open[key]=d.open});return d}
+function setText(node,text){if(node&&node.textContent!==text)node.textContent=text}
+
+// ---- 1. Slim phone chrome: one sticky bar (team, year/week/record line, save/sign-in chip, play button) ----
+function shortLabel(){const label=window.SDF_CALENDAR243?.label?.()||`Year ${state.year} · Week ${state.week}`;return label.replace(/^Year (\d+)/,'Y$1').replace(/Week (\d+) of (\d+)/,'Wk $1 of $2')}
+function chrome(){
+ const bar=$('mobileStatus');if(!bar||!has())return;
+ let line=bar.querySelector('.sdf299-bar-line');
+ if(!line){line=document.createElement('span');line.className='sdf299-bar-line';line.innerHTML='<b class="sdf299-bar-team"></b><span class="sdf299-bar-week"></span>';const logo=$('mobileTeamLogo');if(logo&&logo.parentElement===bar)logo.after(line);else bar.prepend(line)}
+ setText(line.querySelector('.sdf299-bar-team'),state.school.name||'');
+ setText(line.querySelector('.sdf299-bar-week'),`${shortLabel()} · ${state.record?.w||0}-${state.record?.l||0}`);
+ let chip=$('sdf299SaveChip');
+ if(!chip){chip=document.createElement('button');chip.id='sdf299SaveChip';chip.type='button';chip.className='sdf299-save-chip';chip.innerHTML='<i aria-hidden="true">☁</i><small></small>';chip.onclick=()=>{const action=$('webCloudAction');if(action)action.click();else window.save?.()}}
+ const advance=$('mobileAdvance');if(advance&&advance.parentElement===bar&&chip.nextElementSibling!==advance)bar.insertBefore(chip,advance);else if(!chip.isConnected)bar.append(chip);
+ const action=$('webCloudAction'),cloud=$('webCloudStatus')?.textContent?.trim()||'',save=$('autosaveStatus');
+ const saveText=save?.textContent?.trim()||'Autosave ready',saveError=!!save?.classList.contains('error');
+ let caption,mode;
+ if(action){const signedOut=/sign in/i.test(action.textContent||'');mode=/offline|attention|pending/i.test(cloud)?'warn':signedOut?'local':'synced';caption=signedOut?'Sign in':mode==='warn'?'Offline':'Synced'}
+ else{mode='saved';caption='Saved'}
+ if(saveError){mode='warn';caption='Save!'}
+ if(chip.dataset.state!==mode)chip.dataset.state=mode;setText(chip.querySelector('small'),caption);
+ const label=((action?`${cloud||'Cloud save'}. ${action.textContent.trim()}.`:'')+` ${saveText}.`+(action?'':' Tap to save now.')).trim();
+ if(chip.getAttribute('aria-label')!==label){chip.setAttribute('aria-label',label);chip.title=label}
+}
+
+// ---- 2. One primary play action per screen ----
+function mirrorPlay(button){const source=$('mobileAdvance');if(!button||!source)return;
+ // Offseason: the bar keeps its terse label ("Staff Handle"), the full-width hero button uses the descriptive one.
+ const full=state?.phase==='PORTAL'?String($('advanceWeekBtn')?.textContent||'').trim():'';setText(button,full||source.textContent.trim()||'Play this week');const off=!!source.disabled||!!source.hidden;if(button.disabled!==off)button.disabled=off}
+function playActions(){
+ const tab=activeTab();if(root.dataset.sdf299Tab!==tab)root.dataset.sdf299Tab=tab;
+ const quick=$('quickSimGameBtn'),live=$('watchLiveGameBtn');
+ if(quick&&!quick.classList.contains('sdf299-secondary')){quick.classList.remove('success','primary');quick.classList.add('neutral','sdf299-secondary')}
+ if(live&&!live.classList.contains('sdf299-primary'))live.classList.add('sdf299-primary');
+ if(tab!=='dashboard')root.classList.remove('sdf299-hero-play-visible');
+}
+function watchHero(button){
+ if(typeof IntersectionObserver==='undefined')return;
+ if(!heroObserver)heroObserver=new IntersectionObserver(entries=>{for(const e of entries)if(e.target===heroTarget)root.classList.toggle('sdf299-hero-play-visible',e.isIntersecting&&activeTab()==='dashboard')});
+ if(heroTarget===button)return;if(heroTarget)heroObserver.unobserve(heroTarget);heroTarget=button;if(button)heroObserver.observe(button);else root.classList.remove('sdf299-hero-play-visible')
+}
+
+// ---- 3. Cleaner Home: hero, This Week, three key tiles, then collapsible groups ----
+function lastResultHtml(s=state){
+ const done=(s?.schedule||[]).filter(g=>g&&g.result&&!g.bye),g=done[done.length-1];if(!g)return '';
+ const won=/^w/i.test(String(g.result)),score=String(g.score||'').replace('-','–');
+ return `<p class="sdf299-last ${won?'win':'loss'}"><small>LAST WEEK</small> <b>${won?'W':'L'} ${esc(score)}</b> ${g.home?'vs':'at'} ${esc(g.opponent||'Opponent')}</p>`;
+}
+function home(){
+ const card=$('homeDetailsCard'),content=card?.querySelector('.home-details-content'),cc=$('gameCommandCenterV219');if(!card||!content||!cc||!has())return;
+ if(!card.classList.contains('sdf299-home'))card.classList.add('sdf299-home');
+ const week=$('sdf299ThisWeek');if(week&&week.parentElement!==content)content.append(week);
+ // Season-flow / scenario cards created outside the command center land above the hero; keep them in the ordered Home stack, under the hero (not inside the command center, which is rebuilt with innerHTML).
+ for(const id of ['seasonFlow242','scenarioTracker241']){const n=$(id);if(n&&n.parentElement!==content)content.append(n)}
+ const flowBtn=$('seasonFlow242')?.querySelector(':scope>button.btn.primary');if(flowBtn){flowBtn.classList.remove('primary');flowBtn.classList.add('neutral','sdf299-secondary')}
+ const growth=$('sdf-growth-dynasty');
+ if(growth){let box=$('sdf299Community');if(!box){box=details('sdf299Community','sdf299-community','community');content.append(box)}setText(box.querySelector('summary'),'Community · Discord, Facebook & share');if(growth.parentElement!==box)box.append(growth)}
+ // Hero: program banner, last result and next opponent with the one play button.
+ let hero=cc.querySelector(':scope>#sdf299Hero');
+ if(!hero){hero=document.createElement('div');hero.id='sdf299Hero';hero.className='sdf299-hero';cc.prepend(hero)}
+ const banner=cc.querySelector(':scope>.ui-program-hero'),stage=cc.querySelector(':scope>.ui-next-game-stage');
+ if(banner)hero.prepend(banner);
+ let last=hero.querySelector(':scope>.sdf299-last-slot');if(!last){last=document.createElement('div');last.className='sdf299-last-slot';hero.append(last)}
+ const lastHtml=lastResultHtml();if(last.dataset.html!==lastHtml){last.dataset.html=lastHtml;last.innerHTML=lastHtml}
+ if(stage)hero.append(stage);
+ const heroStage=hero.querySelector('.ui-next-game-stage'),byeButton=heroStage?.querySelector('.playbook-truth button');
+ const actions=heroStage?.querySelector('.ui-stage-actions,.ui-stage-complete');let play=hero.querySelector('.sdf299-play');
+ if(actions&&!byeButton){
+  if(!play){play=document.createElement('button');play.type='button';play.className='btn primary sdf299-primary sdf299-play';play.onclick=()=>$('mobileAdvance')?.click()}
+  if(play.parentElement!==actions)actions.prepend(play);
+  for(const b of actions.querySelectorAll('button:not(.sdf299-play)'))if(!b.classList.contains('sdf299-secondary')){b.classList.remove('primary');b.classList.add('neutral','sdf299-secondary')}
+  mirrorPlay(play);
+ }else if(play)play.remove();
+ if(byeButton&&!byeButton.classList.contains('sdf299-primary'))byeButton.classList.add('sdf299-primary');
+ watchHero(hero.querySelector('.sdf299-play')||byeButton||null);
+ // Three key tiles stay; the rest go into a collapsible group.
+ const grid=cc.querySelector(':scope>.ui-command-grid');
+ if(grid){
+  let more=cc.querySelector(':scope>#sdf299MoreTiles');
+  if(!more){more=details('sdf299MoreTiles','sdf299-more-tiles','tiles');more.insertAdjacentHTML('beforeend','<div class="ui-command-grid sdf299-more-grid"></div>');grid.after(more)}
+  const target=more.querySelector('.sdf299-more-grid');for(const t of [...grid.querySelectorAll(':scope>.ui-command-tile')].slice(3))target.append(t);
+  const tiles=[...target.querySelectorAll('.ui-command-tile')],names=tiles.map(t=>t.querySelector('small')?.textContent?.trim()).filter(Boolean),alert=tiles.filter(t=>t.classList.contains('attention')).length;
+  setText(more.querySelector('summary'),`More: ${names.map(n=>n[0]+n.slice(1).toLowerCase()).join(' · ')||'program'}${alert?` · ${alert} need${alert===1?'s':''} attention`:''}`);
+  if(more.classList.contains('attention')!==alert>0)more.classList.toggle('attention',alert>0);
+ }
+ // Coach's briefing repeats the tiles in prose: keep it, collapsed.
+ const brief=$('coachBriefV236');
+ if(brief&&cc.contains(brief)){let box=cc.querySelector(':scope>#sdf299Brief');if(!box){box=details('sdf299Brief','sdf299-brief','brief');cc.append(box)}setText(box.querySelector('summary'),'Coach’s briefing & dynasty story');if(brief.parentElement!==box)box.append(brief)}
+}
+
+// ---- Nav rows: one compact row per page; the page guide rides on the right end of that row ----
+function navRows(){
+ const tab=document.querySelector('#gameScreen .tab-page:not(.hidden)');if(!tab)return;
+ const row=tab.querySelector(':scope>.page-utilities296'),current=tab.querySelector(':scope>.sdf299-has-help');
+ const only=!!row&&row.children.length===1&&!!row.firstElementChild?.classList.contains('sdf-page-help');
+ const target=row&&phone()&&only?[...tab.querySelectorAll(':scope>.area-navigation296,:scope>.ui-section-nav-v219,:scope>.section-view-label296,:scope>#recruitingModeNav')].find(n=>!n.hidden&&n.getClientRects().length):null;
+ if(current&&current!==target)current.classList.remove('sdf299-has-help');
+ if(!row)return;
+ if(row.classList.contains('sdf299-floating')!==!!target)row.classList.toggle('sdf299-floating',!!target);
+ if(target){if(!target.classList.contains('sdf299-has-help'))target.classList.add('sdf299-has-help');const top=Math.round(target.offsetTop+Math.max(0,(target.offsetHeight-44)/2))+'px';if(row.style.top!==top)row.style.top=top}else if(row.style.top)row.style.top='';
+}
+
+// ---- 4. Compact recruit cards: key info first, every action visible in a compact grid (no extra taps) ----
+function recruitById(id){return (state?.recruits||[]).find(r=>String(r.id)===String(id))}
+const usable=b=>!!b&&!b.disabled&&b.getAttribute('aria-disabled')!=='true';
+const TILE_LABELS={'YOUR RANK':'RANK','YOUR INTEREST':'INTEREST','DECISION SCORE':'SCORE','CONTACT HRS LEFT':'HRS LEFT','PLAYING TIME':'PLAY TIME'};
+function keyActions(buttons,r){
+ const by=re=>buttons.find(b=>re.test(b.getAttribute('onclick')||'')),contact=k=>buttons.find(b=>b.dataset.recruitContact===k);
+ const profile=by(/openRecruit\(/),board=by(/toggleBoard\(/),offer=by(/^offer\(/),scout=by(/^scout\(/);
+ const order=[!r?.onBoard&&board,offer,!r?.scouted&&scout,contact('CALL'),contact('COACH_VISIT'),contact('TEXT')].filter(usable);
+ const picks=order.slice(0,2);if(profile)picks.push(profile);return picks;
+}
+function compactCard(card,r){
+ if(!card.classList.contains('sdf299-rc'))card.classList.add('sdf299-rc');
+ const isOpen=true;if(card.classList.contains('sdf299-open')!==isOpen)card.classList.toggle('sdf299-open',isOpen);
+ const head=card.querySelector('.mobile-data-head>div');let scout=card.querySelector('.sdf299-scout');
+ if(r?.scouted&&head){if(!scout){scout=document.createElement('span');scout.className='sdf299-scout';head.append(scout)}setText(scout,`OVR ${r.ovr??'—'} · POT ${r.pot??'—'}`)}else scout?.remove();
+ for(const s of card.querySelectorAll('.mobile-data-grid small')){const t=TILE_LABELS[s.textContent.trim()];if(t){s.title=s.textContent.trim();s.textContent=t}}
+ const grid=card.querySelector('.recruit-card-action-grid-v226')||card.querySelector('.mobile-actions');if(!grid)return;
+ const buttons=[...grid.querySelectorAll('button')].filter(b=>!b.classList.contains('sdf299-more-btn'));
+ const picks=new Set(keyActions(buttons,r));
+ for(const b of buttons){const on=picks.has(b);if(b.classList.contains('sdf299-key')!==on)b.classList.toggle('sdf299-key',on)}
+ grid.querySelector(':scope>.sdf299-more-btn')?.remove();
+}
+function recruitCards(){const list=$('recruitCardList');if(!list||!has())return;if(!list.classList.contains('sdf299-rc-list'))list.classList.add('sdf299-rc-list');for(const card of list.querySelectorAll(':scope>[data-recruit-id]'))compactCard(card,recruitById(card.dataset.recruitId))}
+
+// ---- 5. Team select: teams first, three recommended rebuilds, custom league collapsed below the list ----
+function candidates(){
+ if(typeof schools==='undefined')return[];
+ return schools.map(s=>window.SDF_LEAGUE292?.creationTeam?.(s)||s).filter(s=>window.SDF_DYNASTY_STORY?.schoolEligible?.(s)!==false);
+}
+function recommended(list=candidates()){
+ const score=s=>(+s.facilities||0)*.5+(+s.pro||0)*.3+(+s.prestige||0)*.2-(+s.recent||0)*.6;
+ const pool=list.filter(s=>s.prestige>=55&&s.prestige<=68).sort((a,b)=>score(b)-score(a)||a.id-b.id),picks=[],confs=new Set();
+ for(const s of pool){if(confs.has(s.conference))continue;confs.add(s.conference);picks.push(s);if(picks.length===3)break}
+ return picks;
+}
+function brand(s){try{const base=(typeof TEAM_BRANDING!=='undefined'&&TEAM_BRANDING?.[s?.id])||{};return window.SDF_LEAGUE292?.creationBrand?.(s,base)||base||{}}catch{return{}}}
+function teamSelect(){
+ const grid=$('schoolGrid');if(!grid)return;
+ const league=$('creationLeague293');
+ if(league){let box=$('sdf299CustomLeague');if(!box){box=document.createElement('details');box.id='sdf299CustomLeague';box.className='sdf299-group sdf299-custom-league';box.innerHTML='<summary></summary>'}
+  if(grid.nextElementSibling!==box)grid.after(box);if(league.parentElement!==box)box.append(league);
+  const status=$('creationStatus293')?.textContent?.trim()||'',custom=!!status&&!/^Default/i.test(status);
+  setText(box.querySelector('summary'),custom?`Custom league · ${status}`:'Advanced: custom league (optional) · import a shared league');
+  if(custom&&!box.dataset.autoOpened){box.dataset.autoOpened='1';box.open=true}else if(!custom&&box.dataset.autoOpened)delete box.dataset.autoOpened}
+ const picks=recommended(),sig=picks.map(s=>s.id+':'+s.name).join('|');let rec=$('sdf299Recommended');
+ if(!picks.length){rec?.remove();return}
+ if(!rec){rec=document.createElement('section');rec.id='sdf299Recommended';rec.className='panel sdf299-recommended';rec.setAttribute('aria-label','Recommended rebuilds')}
+ const anchor=grid.parentElement?.querySelector(':scope>.team-count-banner')||grid;if(rec.nextElementSibling!==anchor)anchor.before(rec);
+ if(rec.dataset.sig===sig)return;rec.dataset.sig=sig;
+ rec.innerHTML=`<header><small>NEW COACH? START HERE</small><h3>Recommended rebuilds</h3><p>Room to climb, solid facilities and a fair first season.</p></header><div class="sdf299-rec-list">${picks.map(s=>{const b=brand(s),tier=typeof schoolTier==='function'?schoolTier(s):null,conf=window.SDF_CONFERENCES?.name?.(s.conference,state)||s.conference||'';return`<article class="sdf299-rec" style="--card-primary:${esc(b.primary||'#2b5876')}"><img src="${esc(b.logo||'icon-192.png')}" alt="" loading="lazy"><div><b>${esc(s.name)}</b><small>${esc([tier?.label,conf].filter(Boolean).join(' · '))}</small><span>Prestige ${esc(s.prestige)} · Facilities ${esc(s.facilities)} · Recent ${esc(s.recent)}</span></div><button type="button" class="btn primary" data-sdf299-team="${esc(s.id)}">Take over</button></article>`}).join('')}</div>`;
+ rec.querySelectorAll('[data-sdf299-team]').forEach(b=>b.onclick=()=>{const id=+b.dataset.sdf299Team;if(typeof openCoachCreation==='function')openCoachCreation(id);else grid.querySelector(`.choose[data-id="${id}"]`)?.click()});
+}
+
+function versionLine(){const note=document.querySelector('#appSettingsModal .settings-save-note');const label=String($('releaseLabel')?.textContent||'').trim();if(!note||!label)return;let line=$('settingsVersion299');if(!line){line=document.createElement('p');line.id='settingsVersion299';line.className='muted settings-version299';note.after(line)}setText(line,label.replace(/^Android\s+V/i,'Version '))}
+function refresh(){
+ watch();try{versionLine()}catch(e){}const p=phone();if(root.classList.contains('sdf299-phone')!==p)root.classList.toggle('sdf299-phone',p);
+ try{teamSelect()}catch(e){window.SDF_RUNTIME_ERRORS?.capture?.(e,{operation:'v299-layout-teams'})}
+ if(!has())return;
+ for(const step of [chrome,playActions,home,navRows,recruitCards])try{step()}catch(e){window.SDF_RUNTIME_ERRORS?.capture?.(e,{operation:'v299-layout'})}
+}
+for(const name of ['renderAll','showTab','renderSchools','renderRecruiting']){const base=window[name];if(typeof base==='function')window[name]=function(...args){const out=base.apply(this,args);schedule();return out}}
+const watched=new WeakSet(),observer=typeof MutationObserver!=='undefined'?new MutationObserver(schedule):null;
+function watch(){if(!observer)return;for(const id of ['dashboardTab','recruitCardList','newDynastyTeamPickerV221','mobileStatus','webCloudBar','autosaveStatus','gamedayTab','seasonProgress243']){const n=$(id);if(n&&!watched.has(n)){watched.add(n);observer.observe(n,{childList:true,subtree:true,characterData:true})}}}
+if(observer&&document.body)new MutationObserver(watch).observe(document.body,{childList:true});
+if(typeof addEventListener==='function')addEventListener('resize',schedule);
+document.addEventListener('click',()=>setTimeout(schedule,0),true);
+watch();schedule();
+window.SDF299_LAYOUT={refresh,recommended,keyActions,compactCard,lastResultHtml,shortLabel,expanded};
 })();

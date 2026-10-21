@@ -39,10 +39,12 @@
 <link rel="stylesheet" href="dynasty-story.css?v=258">
 <link rel="stylesheet" href="profile-viewport277.css?v=277">
 <link rel="stylesheet" href="mobile-usability296.css?v=296">
+<link rel="stylesheet" href="v299-fixes.css?v=299">
+<link rel="stylesheet" href="v299-layout.css?v=299">
 </head>
 <body class="ui221-startup-mode">
 <header class="topbar">
-  <div class="brand"><img id="appTeamLogo" class="logo-img" src="icon-192.png" alt="Saturday Dynasty Football"><div><h1>Saturday Dynasty Football</h1><p id="releaseLabel">Android V27.4.97 · Build 298 · Layout & Community Update</p></div></div>
+  <div class="brand"><img id="appTeamLogo" class="logo-img" src="icon-192.png" alt="Saturday Dynasty Football"><div><h1>Saturday Dynasty Football</h1><p id="releaseLabel">Android V27.4.98 · Build 299 · Season Stakes Update</p></div></div>
   <div class="broadcast-context"><small id="activeSectionKicker">DYNASTY FOOTBALL</small><strong id="activeSectionTitle">Select a Program</strong></div>
   <div class="top-status">
     <span>YEAR <b id="yearLabel">1</b></span>
@@ -223,8 +225,8 @@
         <select id="recruitRegionFilter"><option value="ALL">All regions</option></select>
         <select id="interestFilter" aria-label="Minimum prospect interest"><option value="ALL">Any interest</option><option value="HIGH">High interest · 70+</option><option value="WARM">Warm interest · 45+</option><option value="LOW">Low interest · under 45</option></select>
         <select id="scoutFilter" aria-label="Scouting status"><option value="ALL">Any scouting status</option><option value="SCOUTED">Scouted ratings</option><option value="UNSCOUTED">Needs scouting</option></select>
-        <select id="statusFilter"><option value="AVAILABLE">Available prospects</option><option value="RECRUITABLE">Recruitable now</option><option value="UNCONTACTED">Uncontacted prospects</option><option value="LATE">Late opportunities</option><option value="BOARD">My board</option><option value="OFFERED">Scholarship offered</option><option value="SOFT">Other schools’ soft commits</option><option value="COMMITTED">Committed</option></select>
-        <select id="sortFilter"><option value="RANK">National rank</option><option value="INTEREST">My interest</option><option value="NEED">Team need</option><option value="DISTANCE">Distance</option><option value="FIT">Program fit</option><option value="OVR">Scouted overall</option><option value="POTENTIAL">Scouted potential</option></select>
+        <select id="statusFilter"><option value="AVAILABLE">Available prospects</option><option value="RECRUITABLE" selected>Recruitable now</option><option value="UNCONTACTED">Uncontacted prospects</option><option value="LATE">Late opportunities</option><option value="BOARD">My board</option><option value="OFFERED">Scholarship offered</option><option value="SOFT">Other schools’ soft commits</option><option value="COMMITTED">Committed</option></select>
+        <select id="sortFilter"><option value="RANK">National rank</option><option value="INTEREST">My interest</option><option value="NEED">Team need</option><option value="DISTANCE">Distance</option><option value="FIT" selected>Program fit</option><option value="OVR">Scouted overall</option><option value="POTENTIAL">Scouted potential</option></select>
         <button id="autoBoardBtn" class="btn neutral">Auto-fill Board</button>
       </div>
 

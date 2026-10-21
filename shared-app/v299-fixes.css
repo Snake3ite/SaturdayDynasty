@@ -1,0 +1,39 @@
+/* Build 299 bug fixes: phone clipping, tap targets, navigation and browser-only reward controls. */
+
+/* One Home navigation at a time: when the Navigation select is showing, the chip grid stays hidden. */
+@media(max-width:760px),(max-width:1000px) and (max-height:500px){
+ #homeDetailsCard:has(.section-view-label296:not([hidden])) #dashboardSectionNavV219,
+ .tab-page:has(>.section-view-label296:not([hidden]))>.ui-section-nav-v219{display:none!important}
+}
+
+/* Browser build: rewarded videos only work in the Android app, so their controls are hidden. */
+html.sdf-browser-no-rewards299 #sponsorCenter,
+html.sdf-browser-no-rewards299 #openSponsorDashboardBtn,
+html.sdf-browser-no-rewards299 #openSponsorRecruitingBtn,
+html.sdf-browser-no-rewards299 #openSponsorMobileBtn,
+html.sdf-browser-no-rewards299 .recruit-inline-ad-buttons,
+html.sdf-browser-no-rewards299 #recruitRewardHoursAdBtn,
+html.sdf-browser-no-rewards299 #recruitRewardNilAdBtn,
+html.sdf-browser-no-rewards299 [data-budget-reward]{display:none!important}
+
+/* Recruit card stat tiles: labels wrap instead of clipping ("YOUR INTERES", "DECISION SCO"). */
+#recruitCardList .mobile-data-grid>div{min-width:0}
+#recruitCardList .mobile-data-grid small{display:block;white-space:normal!important;overflow:visible!important;text-overflow:clip!important;overflow-wrap:break-word;word-break:normal;line-height:1.2;letter-spacing:.02em}
+
+/* Discipline holds listed apart from injuries. */
+.discipline-unavailable299{display:grid;gap:6px;margin:10px 0;padding:10px 12px;border:1px solid #6b5a2c;border-radius:12px;background:#221d10;color:#f1e3b8}
+.discipline-unavailable299>small{color:#e5c76b;font-weight:750;letter-spacing:.05em}
+.discipline-row299{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 10px;font-size:.85rem}
+.discipline-row299 span{color:#d9caa0}
+
+/* Tap targets of at least 40px. */
+#webCloudAction{min-height:44px!important;min-width:44px!important;padding-top:8px!important;padding-bottom:8px!important}
+#sdfPlayShop .sdf-premium-close,.sdf-premium-close{min-width:44px!important;min-height:44px!important}
+.home-details-help{min-width:44px!important;min-height:44px!important}
+#appSettingsModal input[type=checkbox]{width:24px!important;height:24px!important;min-width:24px;flex:0 0 auto;margin:0 10px 0 0!important}
+#appSettingsModal label:has(>input[type=checkbox]){display:flex!important;align-items:center;min-height:44px;cursor:pointer}
+
+@media(max-width:760px),(max-width:1000px) and (max-height:500px){
+ /* "Any scouting status" gets a full row instead of clipping to "Any scouting statu". */
+ #highSchoolRecruitingBoard .recruit-toolbar #scoutFilter{grid-column:1/-1}
+}
