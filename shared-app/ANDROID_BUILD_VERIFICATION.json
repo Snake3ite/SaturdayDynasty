@@ -1,7 +1,7 @@
 {
-  "version": "27.5.2",
-  "release": "Android V27.5.2 · Build 303 · Custom Scenarios Update",
-  "versionCode": 303,
+  "version": "27.5.3",
+  "release": "Android V27.5.3 · Build 304 · Custom Scenarios Update",
+  "versionCode": 304,
   "fileCount": 177,
   "files": [
     {
@@ -11,8 +11,8 @@
     },
     {
       "path": "app-bundle.js",
-      "sha256": "222566f11a648d9cf17bdb0bcceb860c1ae1b4a577d3636778cac4afc7635301",
-      "bytes": 1953796
+      "sha256": "854183a82b5015956d3e8869bfb3da5c4df0e3b15285667ad655aefe4dfd83ed",
+      "bytes": 1976818
     },
     {
       "path": "app-shell.css",
@@ -716,7 +716,7 @@
     },
     {
       "path": "index.html",
-      "sha256": "0e556723b3913352ea0b801d0a31d2857989352ce5dacc4bdb6e4b937bc514dd",
+      "sha256": "fb78c077be50d413d1d4d7822440adc1518787e2e3ec2e2649e56c4897c0e727",
       "bytes": 47823
     },
     {

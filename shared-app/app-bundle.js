@@ -1508,7 +1508,7 @@ window.SDF_BROWSER_SAVES={enabled,ready,get pending(){return pending},get settle
 
 (()=>{
 'use strict';
-const RELEASE='Android V27.5.2 · Build 303 · Custom Scenarios Update';
+const RELEASE='Android V27.5.3 · Build 304 · Custom Scenarios Update';
 const SAVE_PREFIX='SaturdayDynastyFootballAndroidV1';
 const LEGACY_PREFIXES=['SaturdayArchitectAndroidV1','SaturdayArchitectCompleteV9','SaturdayArchitectStatsV82','SaturdayArchitectDynastyV81','SaturdayArchitectRealignmentV74','SaturdayArchitectRecruitingV73','SaturdayArchitect128V72','SaturdayArchitectMobileV71'];
 const ui={activeTab:'dashboard',recruitPage:1,recruitPageSize:window.innerWidth<=760?30:75,rosterQuery:'',recruitQuery:''};
@@ -4250,7 +4250,11 @@ const native=()=>!!(window.Capacitor?.isNativePlatform?.()||window.Capacitor?.ge
 const plugin=()=>window.Capacitor?.Plugins?.AdMob||null;
 let initialized=false,canRequestAds=false,consentChecked=false,busy=false,interstitialPrepared=false,interstitialShowing=false,initializingPromise=null,lastInitError=null,lastConsentError=null,lastConsentStatus='UNKNOWN';
 let rewardListenersInstalled=false,rewardAttemptSequence=0,activeRewardAttempt=null;
-let activeInterstitialAttempt=null,pendingSeason=null,seasonRetryTimer=null;
+let activeInterstitialAttempt=null,pendingSeason=null,seasonRetryTimer=null,lastRewardedAdAt=0;
+// Build 304: the same season interstitial unit can also show once at midseason. Each slot keeps
+// its own once-per-year list so the midseason ad never blocks or consumes the season-end ad.
+const INTERSTITIAL_SLOTS={season_end:'seasonInterstitialYears',midseason:'midseasonInterstitialYears'};
+const slotKey=slot=>INTERSTITIAL_SLOTS[slot]||INTERSTITIAL_SLOTS.season_end;
 const auditKey='SDF_AD_AUDIT_V272';
 let adAudit=[];
 try{const stored=JSON.parse(localStorage.getItem(auditKey)||'[]');if(Array.isArray(stored))adAudit=stored.slice(-200)}catch{}
@@ -4275,7 +4279,7 @@ function drainSeason(){
  clearTimeout(seasonRetryTimer);seasonRetryTimer=null;
  if(!pendingSeason||busy||!foreground())return;
  const next=pendingSeason;pendingSeason=null;
- seasonRetryTimer=setTimeout(()=>{seasonRetryTimer=null;if(state===next.owner&&Number(state.year)===next.year)showSeasonInterstitial(next.owner,next.year)},700);
+ seasonRetryTimer=setTimeout(()=>{seasonRetryTimer=null;if(state===next.owner&&Number(state.year)===next.year)showSeasonInterstitial(next.owner,next.year,next.slot)},700);
 }
 function adFailure(error,attempt=currentAttempt()){
  audit('failed',attempt,error);
@@ -4291,6 +4295,7 @@ function ensureState(){
  state.monetization??={};
  state.monetization.weeklyClaims??={};
  state.monetization.seasonInterstitialYears??=[];
+ state.monetization.midseasonInterstitialYears??=[];
  state.monetization.edition='ADS_READY';
 }
 function weekKey(kind){return `${state?.year||0}-${state?.week||0}-${kind}`}
@@ -4442,7 +4447,8 @@ async function installRewardListeners(){
    if(!a||a.shown)return;
    a.shown=true;audit('shown',a);
    if(!cfg().useTestAds)window.SDF_USAGE?.record('interstitial_shown',undefined,'season_end');
-   if(state===a.owner&&Number(state.year)===a.year&&!state.monetization.seasonInterstitialYears.includes(a.year))state.monetization.seasonInterstitialYears.push(a.year);
+   const shownYears=state.monetization[slotKey(a.slot)]??=[];
+   if(state===a.owner&&Number(state.year)===a.year&&!shownYears.includes(a.year))shownYears.push(a.year);
    persistReward('Season sponsor shown');
   });
    await add('interstitialAdImpression',()=>{
@@ -4656,6 +4662,7 @@ async function showReward(kind,source='sponsor_center',target){
  }finally{
   if(attempt)attempt.finished=true;
   if(attempt&&activeRewardAttempt===attempt)activeRewardAttempt=null;
+  if(attempt?.shown)lastRewardedAdAt=Date.now();
   busy=false;try{render()}finally{if(musicSuspended)resumeMusicAfterAd();drainSeason()}
  }
 }
@@ -4664,15 +4671,16 @@ async function prepareSeasonInterstitial(){
  if(!initialized||!canRequestAds||!cfg().seasonInterstitialEnabled||interstitialPrepared)return;
  try{await plugin().prepareInterstitial({adId:cfg().seasonInterstitialId,isTesting:!!cfg().useTestAds,immersiveMode:false});interstitialPrepared=true}catch(err){console.warn('Season interstitial preload failed',err)}
 }
-async function showSeasonInterstitial(owner=state,y=Number(owner?.year||0)){
+async function showSeasonInterstitial(owner=state,y=Number(owner?.year||0),slot='season_end'){
+ slot=INTERSTITIAL_SLOTS[slot]?slot:'season_end';
  ensureState();const AdMob=plugin();
  if(!owner?.school||state!==owner||Number(state.year)!==y)return false;
  if(window.SDF_AD_POLICY?.shouldShowForcedAds?.()===false)return false;
- if(!cfg().seasonInterstitialEnabled||state.monetization.seasonInterstitialYears.includes(y)||interstitialShowing)return false;
+ if(!cfg().seasonInterstitialEnabled||(state.monetization[slotKey(slot)]??=[]).includes(y)||interstitialShowing)return false;
  if(!native()||!AdMob)return false;
- if(busy||!foreground()){pendingSeason={owner,year:y};audit('deferred',{year:y},busy?'another ad active':'app in background');return false}
+ if(busy||!foreground()){pendingSeason={owner,year:y,slot};audit('deferred',{year:y},busy?'another ad active':'app in background');return false}
  interstitialShowing=true;busy=true;render();
- let musicSuspended=false;const telemetryAttempt={year:y,source:'season_end',startedAt:Date.now(),loaded:false};
+ let musicSuspended=false;const telemetryAttempt={year:y,source:'season_end',slot,startedAt:Date.now(),loaded:false};
  try{
   // Rewarded ads already recover from a stale init/consent flag. The season
   // interstitial must do the same instead of silently returning forever.
@@ -4684,13 +4692,13 @@ async function showSeasonInterstitial(owner=state,y=Number(owner?.year||0)){
   if(!interstitialPrepared){audit('load_failed',telemetryAttempt,'Interstitial load did not complete');return false}
   telemetryAttempt.loaded=true;audit('loaded',telemetryAttempt);
   if(state!==owner||Number(state.year)!==y||window.SDF_AD_POLICY?.shouldShowForcedAds?.()===false){interstitialPrepared=false;return false}
-  if(!foreground()){interstitialPrepared=false;pendingSeason={owner,year:y};return false}
+  if(!foreground()){interstitialPrepared=false;pendingSeason={owner,year:y,slot};return false}
   // Request only when the player actually reaches season end. Startup and
   // next-season preloads created requests that could never become impressions
   // when players left the app before the season ended (and could expire after
   // an hour). Keep menu music playing while this on-demand request loads.
   await suspendMusicForAd();musicSuspended=true;
-  if(!foreground()){interstitialPrepared=false;pendingSeason={owner,year:y};return false}
+  if(!foreground()){interstitialPrepared=false;pendingSeason={owner,year:y,slot};return false}
   const lifecycle=new Promise(resolve=>{activeInterstitialAttempt={...telemetryAttempt,owner,year:y,shown:false,error:null,resolve}});
   await AdMob.showInterstitial();
   interstitialPrepared=false;
@@ -4714,7 +4722,7 @@ window.finishSeason=function(...args){const owner=state,year=Number(state?.year|
 window.openSponsorCenter=openSponsorCenter;
 document.addEventListener('visibilitychange',()=>{if(foreground())drainSeason()});
  window.addEventListener?.('focus',()=>setTimeout(drainSeason,600));
-window.SDF_MONETIZATION={hideBrowserRewards,registerReward:(kind,definition)=>{if(['HOURS','NIL','BUDGET'].includes(kind)||customRewards.has(kind))throw new Error('Reward kind already registered');customRewards.set(kind,definition)},initializeAds,showReward,showSeasonInterstitial,privacyOptions,render,openSponsorCenter,getAdAudit:()=>adAudit.map(e=>({...e})),getRewardDebug:()=>({status:lastRewardStatus,busy,initialized,canRequestAds,consentChecked,lastConsentStatus,lastConsentError,interstitialPrepared,interstitialShowing,lastInitError:lastInitError?.message||null,active:activeRewardAttempt?{...activeRewardAttempt,owner:undefined,customContext:undefined,resolveLifecycle:undefined}:null})};
+window.SDF_MONETIZATION={hideBrowserRewards,registerReward:(kind,definition)=>{if(['HOURS','NIL','BUDGET'].includes(kind)||customRewards.has(kind))throw new Error('Reward kind already registered');customRewards.set(kind,definition)},initializeAds,showReward,showSeasonInterstitial,lastRewardedAdAt:()=>lastRewardedAdAt,privacyOptions,render,openSponsorCenter,getAdAudit:()=>adAudit.map(e=>({...e})),getRewardDebug:()=>({status:lastRewardStatus,busy,initialized,canRequestAds,consentChecked,lastConsentStatus,lastConsentError,interstitialPrepared,interstitialShowing,lastInitError:lastInitError?.message||null,active:activeRewardAttempt?{...activeRewardAttempt,owner:undefined,customContext:undefined,resolveLifecycle:undefined}:null})};
 
 document.addEventListener('DOMContentLoaded',()=>{
  $m('rewardHoursAdBtn')?.addEventListener('click',()=>showReward('HOURS'));
@@ -10700,22 +10708,25 @@ async function readPack(entry){const r=await request('?id='+encodeURIComponent(e
 async function authenticate(email,password,signup=false){if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||password.length<8)throw Error('Enter an email and a password of at least 8 characters.');const r=await fetch(AUTH+(signup?'/signup':'/token?grant_type=password'),{method:'POST',credentials:'omit',headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify({email,password})});let data;try{data=await r.json()}catch{throw Error('Account service unavailable. Please try again.')}if(!r.ok)throw Error(data.msg||data.error_description||'Could not sign in.');if(!data.access_token)throw Error('Account created. Complete any required email confirmation, then sign in.');saveSession(data);return data}
 async function upload(meta,pack){const checked=window.SDF_LEAGUE292.validate(pack),body=JSON.stringify({title:meta.title,author_name:meta.author_name,description:meta.description,league:checked});if(new TextEncoder().encode(body).length>MAX)throw Error('This league exceeds the 8 MB community file limit.');const r=await request('',{method:'POST',headers:{'Content-Type':'application/json'},body},true);return JSON.parse(await boundedText(r,16384))}
 async function rate(league_id,rating){if(!Number.isInteger(rating)||rating<1||rating>5)throw Error('Choose a rating from 1 to 5.');const r=await request('?action=rate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({league_id,rating})},true);return JSON.parse(await boundedText(r,16384))}
+const REPORT_REASONS=[['offensive','Offensive or inappropriate content'],['broken','Broken or not what it says'],['copyright','Copied without permission'],['spam','Spam or duplicate upload'],['other','Something else']];
+async function report(league_id,reason){if(!REPORT_REASONS.some(r=>r[0]===reason))throw Error('Choose a reason for this report.');const r=await request('?action=report',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({league_id,reason})},true);return JSON.parse(await boundedText(r,16384))}
+function reportScreen(entry){selection++;generation++;uploadSelection++;let reason='';const signed=!!loadSession()?.access_token;$('libraryMain294').innerHTML='<div class="league-report304" role="alertdialog" aria-labelledby="libraryReportTitle304" aria-describedby="libraryReportInfo304"><h3 id="libraryReportTitle304">Report This League?</h3><p id="libraryReportInfo304"><b>'+esc(entry.title)+'</b> by '+esc(entry.author_name)+'. Community leagues go live right away; leagues reported by several players are hidden until reviewed.</p>'+(!signed?'<fieldset><legend>Sign In to Report</legend><label>Email<input id="libraryReportEmail304" type="email" autocomplete="username"></label><label>Password<input id="libraryReportPassword304" type="password" autocomplete="current-password" minlength="8"></label></fieldset>':'')+'<fieldset class="league-reasons304"><legend>Why are you reporting it?</legend>'+REPORT_REASONS.map(([value,label])=>'<label><input type="radio" name="libraryReportReason304" value="'+value+'"> '+esc(label)+'</label>').join('')+'</fieldset><div class="league-report-actions304"><button id="libraryReportCancel304" class="btn neutral">Cancel</button> <button id="libraryReportSend304" class="btn danger">Report League</button></div></div>';for(const input of dialog.querySelectorAll('[name=libraryReportReason304]'))input.onchange=()=>{reason=input.value};$('libraryReportCancel304').onclick=()=>setTab('community');$('libraryReportSend304').onclick=async()=>{const button=$('libraryReportSend304');if(button.disabled)return;try{if(!reason)throw Error('Choose a reason for this report.');button.disabled=true;status('Sending report…');if(!loadSession()?.access_token){await authenticate($('libraryReportEmail304').value.trim(),$('libraryReportPassword304').value,false)}const result=await report(entry.id,reason);status(result.message||'Thanks, reported.');button.textContent='Reported';button.disabled=true;$('libraryReportCancel304').textContent='← Community Downloads';return}catch(error){status('Report not sent: '+error.message);button.disabled=false}};status(signed?'Choose a reason, then confirm.':'Sign in is required to report, so each account counts once.')}
 function ratingLabel(entry){const count=Number(entry.rating_count)||0,average=Number(entry.rating_average);return count>0&&Number.isFinite(average)?'★ '+average.toFixed(1)+' / 5 · '+count+' '+(count===1?'rating':'ratings'):'No ratings yet'}
 function ratingScreen(entry){selection++;generation++;uploadSelection++;let selected=0;const signed=!!loadSession()?.access_token;$('libraryMain294').innerHTML='<button id="libraryRateBack294" class="btn neutral">← Community Downloads</button><h3>'+esc(entry.title)+'</h3><p>By '+esc(entry.author_name)+' · '+esc(ratingLabel(entry))+'</p><p>Rate the quality and accuracy of this custom league. One rating per account; saving again updates your rating.</p>'+(!signed?'<fieldset><legend>Sign In to Rate</legend><label>Email<input id="libraryRateEmail294" type="email" autocomplete="username"></label><label>Password<input id="libraryRatePassword294" type="password" autocomplete="current-password" minlength="8"></label><p>Use your browser or community-sharing account.</p></fieldset>':'')+'<div class="league-stars294" role="group" aria-label="Choose a star rating">'+[1,2,3,4,5].map(n=>'<button type="button" data-rating294="'+n+'" aria-pressed="false" aria-label="'+n+' '+(n===1?'star':'stars')+'">'+n+' ★</button>').join('')+'</div><button id="libraryRateSave294" class="btn primary">Save Rating</button>';$('libraryRateBack294').onclick=()=>setTab('community');for(const button of dialog.querySelectorAll('[data-rating294]'))button.onclick=()=>{selected=Number(button.dataset.rating294);for(const other of dialog.querySelectorAll('[data-rating294]')){const active=other===button;other.classList.toggle('selected',active);other.setAttribute('aria-pressed',String(active))}status(selected+' '+(selected===1?'star':'stars')+' selected.')};$('libraryRateSave294').onclick=async()=>{const button=$('libraryRateSave294');if(button.disabled)return;try{if(!selected)throw Error('Choose a star rating first.');button.disabled=true;if(!loadSession()?.access_token){await authenticate($('libraryRateEmail294').value.trim(),$('libraryRatePassword294').value,false)}const result=await rate(entry.id,selected);status(result.message||'Your rating is saved.')}catch(error){status(error.message)}finally{button.disabled=false}};status(signed?'One rating per account. You can update it later.':'Sign in is required to rate. Downloading does not require an account.')}
 function status(message){if($('libraryStatus294'))$('libraryStatus294').textContent=message}
 function blocked(){return mode==='existing'&&!window.SDF_COMMISSIONER?.hasCommissioner?.()}
 async function choose(entry,builtin){if(blocked())return status('Existing-dynasty imports require Commissioner Mode or All Access.');const ticket=++selection;status('Checking '+entry.title+'…');try{const pack=await readPack(entry,builtin);if(ticket!==selection||!dialog?.open)return;await onSelect(pack,entry.title);dialog.close();selection++}catch(e){if(ticket===selection)status(e.message)}}
-function cards(entries,builtin){const host=$('libraryList294');host.innerHTML=entries.length?entries.map((e,i)=>`<article class="league-card294"><span class="league-kicker294">CUSTOM LEAGUE DOWNLOAD · ${e.has_rosters?'TEAMS + PLAYERS':'TEAMS + LOGOS'}</span><h3>${esc(e.title)}</h3><small>By ${esc(e.author_name)}</small><p class="league-rating294">${esc(ratingLabel(e))}</p><p>${esc(e.description)}</p><button class="btn primary" data-league294="${i}">Import This League</button> <button class="btn neutral" data-rate-league294="${i}">Rate League</button></article>`).join(''):'<p>No community leagues found. Try another search or import a file from your device.</p>';host.querySelectorAll('[data-league294]').forEach(b=>b.onclick=()=>choose(entries[Number(b.dataset.league294)],builtin));host.querySelectorAll('[data-rate-league294]').forEach(b=>b.onclick=()=>ratingScreen(entries[Number(b.dataset.rateLeague294)]))}
+function cards(entries,builtin){const host=$('libraryList294');host.innerHTML=entries.length?entries.map((e,i)=>`<article class="league-card294"><span class="league-kicker294">CUSTOM LEAGUE DOWNLOAD · ${e.has_rosters?'TEAMS + PLAYERS':'TEAMS + LOGOS'}</span><h3>${esc(e.title)}</h3><small>By ${esc(e.author_name)}</small><p class="league-rating294">${esc(ratingLabel(e))}</p><p>${esc(e.description)}</p><button class="btn primary" data-league294="${i}">Import This League</button> <button class="btn neutral" data-rate-league294="${i}">Rate League</button> <button class="btn neutral league-report-btn304" data-report-league304="${i}" aria-label="Report ${esc(e.title)}">⚑ Report</button></article>`).join(''):'<p>No community leagues found. Try another search or import a file from your device.</p>';host.querySelectorAll('[data-league294]').forEach(b=>b.onclick=()=>choose(entries[Number(b.dataset.league294)],builtin));host.querySelectorAll('[data-rate-league294]').forEach(b=>b.onclick=()=>ratingScreen(entries[Number(b.dataset.rateLeague294)]));host.querySelectorAll('[data-report-league304]').forEach(b=>b.onclick=()=>reportScreen(entries[Number(b.dataset.reportLeague304)]))}
 async function community(){const ticket=++generation;uploadPack=null;$('libraryMain294').innerHTML='<label>Find a league<input id="librarySearch294" maxlength="80" placeholder="Search titles or creators"></label><label>Sort leagues<select id="librarySort294"><option value="top">Top Rated</option><option value="newest">Newest</option></select></label><button id="librarySearchGo294" class="btn neutral">Search</button><div id="libraryList294"></div>';const search=async()=>{const ticket=++generation;const q=$('librarySearch294')?.value||'';status('Loading community leagues…');try{const entries=await list(q,$('librarySort294')?.value||'top');if(ticket!==generation||!dialog.open)return;cards(entries,false);status('Optional downloads, credited to their creators. Not affiliated with or endorsed by the NCAA, schools, conferences or athletes.')}catch(e){if(ticket===generation)status(e.message+' You can still import a file from your device.')}};$('librarySearchGo294').onclick=search;$('librarySort294').onchange=search;$('librarySearch294').onkeydown=e=>{if(e.key==='Enter')search()};await search()}
 function device(){generation++;uploadPack=null;$('libraryMain294').innerHTML='<h3>Import From Your Device</h3><p>Choose a Saturday Dynasty league JSON file shared by another player or exported from Export & Share League.</p><label>League file<input id="libraryDevice294" type="file" accept=".json,application/json"></label>';$('libraryDevice294').onchange=async e=>{const file=e.target.files?.[0];if(!file)return;const ticket=++selection;status('Checking file…');try{if(blocked())throw Error('Existing-dynasty imports require Commissioner Mode or All Access.');if(file.size>32*1024*1024)throw Error('League file exceeds 32 MB.');const pack=window.SDF_LEAGUE292.validate(JSON.parse(await file.text()));if(ticket!==selection||!dialog.open)return;await onSelect(pack,file.name);dialog.close();selection++}catch(error){if(ticket===selection)status(error.message)}};status('Your file is checked before any dynasty changes.')}
-async function share(){generation++;uploadPack=null;const signed=!!loadSession()?.access_token;$('libraryMain294').innerHTML=`<h3>Share a Custom League</h3><p>Upload only the league file you intend to share. Accounts are used for community sharing; Android dynasty saves remain local. Submissions are reviewed before they appear publicly.</p><p id="libraryUploadInfo294">No file selected.</p>${signed?'<p>Signed in for community sharing.</p><button id="librarySignOut294" class="btn neutral">Sign Out of Sharing</button>':'<fieldset><legend>Sign In to Share</legend><label>Email<input id="libraryEmail294" type="email" autocomplete="username"></label><label>Password<input id="libraryPassword294" type="password" autocomplete="current-password" minlength="8"></label><button id="librarySignIn294" class="btn neutral">Sign In</button> <button id="librarySignUp294" class="btn neutral">Create Account</button></fieldset>'}<label>League title<input id="libraryTitle294" maxlength="70" placeholder="My Custom College League"></label><label>Public creator name<input id="libraryAuthor294" maxlength="32" placeholder="Your display name"></label><label>What’s included?<textarea id="libraryDescription294" maxlength="500" rows="3" placeholder="Describe the teams, conferences and any edited players."></textarea></label><details><summary>Choose a different league file (optional)</summary><label>Choose the league file to share<input id="libraryUploadFile294" type="file" accept=".json,application/json"></label></details><label class="library-confirm294"><input id="libraryPublic294" type="checkbox"> I want this league and creator name to be publicly downloadable after review.</label><button id="libraryUpload294" class="btn primary">Submit League for Review</button>`;
+async function share(){generation++;uploadPack=null;const signed=!!loadSession()?.access_token;$('libraryMain294').innerHTML=`<h3>Share a Custom League</h3><p>Upload only the league file you intend to share. Accounts are used for community sharing; Android dynasty saves remain local. Leagues that pass the automatic file check go live in Community Downloads right away; players can report a league that breaks the rules.</p><p id="libraryUploadInfo294">No file selected.</p>${signed?'<p>Signed in for community sharing.</p><button id="librarySignOut294" class="btn neutral">Sign Out of Sharing</button>':'<fieldset><legend>Sign In to Share</legend><label>Email<input id="libraryEmail294" type="email" autocomplete="username"></label><label>Password<input id="libraryPassword294" type="password" autocomplete="current-password" minlength="8"></label><button id="librarySignIn294" class="btn neutral">Sign In</button> <button id="librarySignUp294" class="btn neutral">Create Account</button></fieldset>'}<label>League title<input id="libraryTitle294" maxlength="70" placeholder="My Custom College League"></label><label>Public creator name<input id="libraryAuthor294" maxlength="32" placeholder="Your display name"></label><label>What’s included?<textarea id="libraryDescription294" maxlength="500" rows="3" placeholder="Describe the teams, conferences and any edited players."></textarea></label><details><summary>Choose a different league file (optional)</summary><label>Choose the league file to share<input id="libraryUploadFile294" type="file" accept=".json,application/json"></label></details><label class="library-confirm294"><input id="libraryPublic294" type="checkbox"> I want this league and creator name to be publicly downloadable right away.</label><button id="libraryUpload294" class="btn primary">Publish League</button>`;
  if(signed)$('librarySignOut294').onclick=()=>{saveSession(null);share();status('Signed out of community sharing.')};else for(const [id,signup] of [['librarySignIn294',false],['librarySignUp294',true]])$(id).onclick=async()=>{status('Connecting account…');try{const draft={title:$('libraryTitle294').value,author:$('libraryAuthor294').value,description:$('libraryDescription294').value,pack:uploadPack};await authenticate($('libraryEmail294').value.trim(),$('libraryPassword294').value,signup);share();$('libraryTitle294').value=draft.title;$('libraryAuthor294').value=draft.author;$('libraryDescription294').value=draft.description;uploadPack=draft.pack;if(uploadPack)$('libraryUploadInfo294').textContent='Previously selected league is checked and ready to submit.';status(uploadPack?'Signed in. Your selected league is ready; complete the details and confirm sharing.':'Signed in. Choose a league to share.')}catch(e){status(e.message)}};
  $('libraryUploadFile294').onchange=async e=>{const uploadTicket=++uploadSelection;uploadPack=null;const file=e.target.files?.[0];if(!file)return;try{if(file.size>32*1024*1024)throw Error('League file exceeds 32 MB.');const candidate=window.SDF_LEAGUE292.validate(JSON.parse(await file.text()));if(uploadTicket!==uploadSelection||!dialog.open)return;uploadPack=candidate;$('libraryUploadInfo294').textContent='Checked: 128 teams'+(uploadPack.teams[0].roster?' and all player rosters.':'.')}catch(e){status(e.message)}};
- $('libraryUpload294').onclick=async()=>{const button=$('libraryUpload294');if(button.disabled)return;try{if(!uploadPack)throw Error('Choose and check a league file first.');if(!$('libraryPublic294').checked)throw Error('Confirm that you want this league shared publicly after review.');const meta={title:$('libraryTitle294').value.trim(),author_name:$('libraryAuthor294').value.trim(),description:$('libraryDescription294').value.trim()};if(meta.title.length<3||meta.author_name.length<2)throw Error('Enter a league title and public creator name.');button.disabled=true;status('Uploading your league…');const result=await upload(meta,uploadPack);status(result.message||'Submitted for review. It is not public yet.');uploadPack=null;$('libraryUploadFile294').value='';$('libraryPublic294').checked=false}catch(e){status(e.message)}finally{button.disabled=false}};status('Community downloads do not require sign-in.')}
+ $('libraryUpload294').onclick=async()=>{const button=$('libraryUpload294');if(button.disabled)return;try{if(!uploadPack)throw Error('Choose and check a league file first.');if(!$('libraryPublic294').checked)throw Error('Confirm that you want this league shared publicly.');const meta={title:$('libraryTitle294').value.trim(),author_name:$('libraryAuthor294').value.trim(),description:$('libraryDescription294').value.trim()};if(meta.title.length<3||meta.author_name.length<2)throw Error('Enter a league title and public creator name.');button.disabled=true;status('Uploading your league…');const result=await upload(meta,uploadPack);status(result.message||'Published! Your league is now live in Community Downloads.');uploadPack=null;$('libraryUploadFile294').value='';$('libraryPublic294').checked=false}catch(e){status(e.message)}finally{button.disabled=false}};status('Community downloads do not require sign-in.')}
 function setTab(tab){if(mode==='share'&&tab!=='share')return;selection++;generation++;uploadSelection++;for(const b of dialog.querySelectorAll('[data-library-tab294]')){b.setAttribute('aria-selected',String(b.dataset.libraryTab294===tab));b.classList.toggle('selected',b.dataset.libraryTab294===tab)}if(tab==='community')community();else if(tab==='device')device();else share()}
 function open(options={}){mode=options.mode||'creation';onSelect=options.onSelect;if(mode!=='share'&&typeof onSelect!=='function')throw Error('Missing league selection action.');if(blocked()){window.toast?.('Existing-dynasty imports require Commissioner Mode or All Access.','error');return}if(!dialog){dialog=document.createElement('dialog');dialog.id='leagueLibrary294';document.body.append(dialog);dialog.addEventListener('close',()=>{selection++;generation++;uploadSelection++;uploadPack=null})}dialog.innerHTML='<header><div><small>DYNASTY LEAGUES</small><h2>Import League</h2></div><button id="libraryClose294" aria-label="Close league library">×</button></header><nav role="tablist" aria-label="League sources"><button role="tab" data-library-tab294="community">Community Downloads</button><button role="tab" data-library-tab294="device">From Device</button><button role="tab" data-library-tab294="share">Upload to Community</button></nav><div id="libraryMain294"></div><p id="libraryStatus294" role="status" aria-live="polite"></p>';$('libraryClose294').onclick=()=>dialog.close();for(const b of dialog.querySelectorAll('[data-library-tab294]'))b.onclick=()=>setTab(b.dataset.libraryTab294);if(mode==='share')dialog.querySelector('nav').hidden=true;dialog.showModal();setTab(mode==='share'||options.initialTab==='share'?'share':'community');if(mode==='share'||options.initialTab==='share')dialog.querySelector('h2').textContent='Upload to Community';if(options.sharePack){uploadPack=window.SDF_LEAGUE292.validate(options.sharePack);if($('libraryUploadInfo294'))$('libraryUploadInfo294').textContent='Your dynasty league is selected: 128 teams'+(uploadPack.teams[0].roster?' with player rosters.':'.');if($('libraryTitle294'))$('libraryTitle294').value=String(uploadPack.name||'My Custom League').slice(0,70)}}
-window.SDF_LEAGUE294={open,featured,list,readPack,boundedText,authenticate,upload,rate,ratingLabel,loadSession,saveSession};
-if(typeof document!=='undefined'){const style=document.createElement('style');style.textContent=`#leagueLibrary294{box-sizing:border-box;width:min(720px,calc(100vw - 20px));max-height:calc(100dvh - 20px);padding:0;border:1px solid #3d5c6e;border-radius:16px;background:#0a1b27;color:#edf7ff;overflow:auto}#leagueLibrary294::backdrop{background:#020a12df}#leagueLibrary294 header{display:flex;justify-content:space-between;gap:12px;padding:16px;position:sticky;top:0;background:#0a1b27;z-index:2}#leagueLibrary294 header small{font-size:10px;letter-spacing:.12em;color:#f0c65c}#leagueLibrary294 h2{font-size:23px;margin:6px 0 0}#libraryUploadInfo294{padding:12px;border:1px solid #356553;border-radius:8px;background:#102d28;color:#bcead7!important}#leagueLibrary294 summary{min-height:44px;align-content:center;cursor:pointer}#leagueLibrary294 h3{font-size:18px;margin:8px 0}#leagueLibrary294 nav[hidden]{display:none!important}#leagueLibrary294 nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:0 16px 12px}#leagueLibrary294 nav button{font:800 12px/1.35 system-ui,sans-serif;letter-spacing:0;text-transform:none;min-height:56px;padding:8px 4px;overflow-wrap:normal;word-break:normal}#leagueLibrary294 button{min-height:44px;border:1px solid #35576b;border-radius:8px;background:#183343;color:#fff;padding:10px 12px;font-weight:800;cursor:pointer}#leagueLibrary294 .btn.primary,#leagueLibrary294 nav .selected{background:#652579;border-color:#884b9d}#libraryClose294{width:44px;height:44px;flex-shrink:0;font-size:22px}#libraryMain294,#libraryStatus294{padding:0 16px 16px;margin:0}#leagueLibrary294 p{font-size:14px;color:#bdd0da;line-height:1.5}#leagueLibrary294 .league-card294{padding:14px;border:1px solid #315268;border-radius:12px;background:#0d2533;margin:8px 0 14px}#leagueLibrary294 .league-kicker294{font-size:10px;letter-spacing:.06em;color:#f0c65c}#leagueLibrary294 small{color:#9fb7c6}#leagueLibrary294 label{display:block;margin:12px 0;font-size:14px;line-height:1.5}#leagueLibrary294 input:not([type=checkbox]),#leagueLibrary294 textarea,#leagueLibrary294 select{display:block;box-sizing:border-box;width:100%;max-width:100%;margin-top:5px;padding:10px;border:1px solid #385a70;border-radius:6px;background:#061722;color:#eff7ff;font:inherit}#leagueLibrary294 input[type=checkbox]{width:22px;height:22px;vertical-align:middle}#leagueLibrary294 .league-stars294{display:flex;gap:5px;margin:16px 0}#leagueLibrary294 .league-stars294 button{flex:1;padding:10px 2px;min-width:0}#leagueLibrary294 .league-stars294 .selected{background:#652579;border-color:#f0c65c}#leagueLibrary294 .league-rating294{color:#f0c65c}#leagueLibrary294 fieldset{border:1px solid #385a70;border-radius:10px}#libraryStatus294{color:#cfe3ed!important}#leagueLibrary294 button:disabled{opacity:.5;cursor:wait}@media(min-width:600px){#leagueLibrary294 nav{grid-template-columns:repeat(3,minmax(0,1fr))}}`;
+window.SDF_LEAGUE294={open,featured,list,readPack,boundedText,authenticate,upload,rate,report,REPORT_REASONS,ratingLabel,loadSession,saveSession};
+if(typeof document!=='undefined'){const style=document.createElement('style');style.textContent=`#leagueLibrary294{box-sizing:border-box;width:min(720px,calc(100vw - 20px));max-height:calc(100dvh - 20px);padding:0;border:1px solid #3d5c6e;border-radius:16px;background:#0a1b27;color:#edf7ff;overflow:auto}#leagueLibrary294::backdrop{background:#020a12df}#leagueLibrary294 header{display:flex;justify-content:space-between;gap:12px;padding:16px;position:sticky;top:0;background:#0a1b27;z-index:2}#leagueLibrary294 header small{font-size:10px;letter-spacing:.12em;color:#f0c65c}#leagueLibrary294 h2{font-size:23px;margin:6px 0 0}#libraryUploadInfo294{padding:12px;border:1px solid #356553;border-radius:8px;background:#102d28;color:#bcead7!important}#leagueLibrary294 summary{min-height:44px;align-content:center;cursor:pointer}#leagueLibrary294 h3{font-size:18px;margin:8px 0}#leagueLibrary294 nav[hidden]{display:none!important}#leagueLibrary294 nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:0 16px 12px}#leagueLibrary294 nav button{font:800 12px/1.35 system-ui,sans-serif;letter-spacing:0;text-transform:none;min-height:56px;padding:8px 4px;overflow-wrap:normal;word-break:normal}#leagueLibrary294 button{min-height:44px;border:1px solid #35576b;border-radius:8px;background:#183343;color:#fff;padding:10px 12px;font-weight:800;cursor:pointer}#leagueLibrary294 .btn.primary,#leagueLibrary294 nav .selected{background:#652579;border-color:#884b9d}#libraryClose294{width:44px;height:44px;flex-shrink:0;font-size:22px}#libraryMain294,#libraryStatus294{padding:0 16px 16px;margin:0}#leagueLibrary294 p{font-size:14px;color:#bdd0da;line-height:1.5}#leagueLibrary294 .league-card294{padding:14px;border:1px solid #315268;border-radius:12px;background:#0d2533;margin:8px 0 14px}#leagueLibrary294 .league-kicker294{font-size:10px;letter-spacing:.06em;color:#f0c65c}#leagueLibrary294 small{color:#9fb7c6}#leagueLibrary294 label{display:block;margin:12px 0;font-size:14px;line-height:1.5}#leagueLibrary294 input:not([type=checkbox]),#leagueLibrary294 textarea,#leagueLibrary294 select{display:block;box-sizing:border-box;width:100%;max-width:100%;margin-top:5px;padding:10px;border:1px solid #385a70;border-radius:6px;background:#061722;color:#eff7ff;font:inherit}#leagueLibrary294 input[type=checkbox]{width:22px;height:22px;vertical-align:middle}#leagueLibrary294 .league-stars294{display:flex;gap:5px;margin:16px 0}#leagueLibrary294 .league-stars294 button{flex:1;padding:10px 2px;min-width:0}#leagueLibrary294 .league-stars294 .selected{background:#652579;border-color:#f0c65c}#leagueLibrary294 .league-rating294{color:#f0c65c}#leagueLibrary294 fieldset{border:1px solid #385a70;border-radius:10px}#libraryStatus294{color:#cfe3ed!important}#leagueLibrary294 .league-reasons304 label{display:flex;align-items:center;gap:10px;margin:6px 0;min-height:40px}#leagueLibrary294 .league-reasons304 input{width:22px;height:22px;margin:0;flex-shrink:0}#leagueLibrary294 .btn.danger{background:#7a1f2b;border-color:#b23a4a}#leagueLibrary294 .league-report-btn304{color:#ffd0d6}#leagueLibrary294 .league-report-actions304{display:flex;gap:8px;flex-wrap:wrap}#leagueLibrary294 button:disabled{opacity:.5;cursor:wait}@media(min-width:600px){#leagueLibrary294 nav{grid-template-columns:repeat(3,minmax(0,1fr))}}`;
  document.head.append(style)}
 })();
 
@@ -14533,6 +14544,181 @@ const STYLE=`
 function ensureStyle(){if(typeof document==='undefined'||!document.head||$('v303PolishStyle'))return;const s=document.createElement('style');s.id='v303PolishStyle';s.textContent=STYLE;document.head.append(s)}
 window.SDF_POLISH303={ensureStyle,STYLE};
 if(typeof document!=='undefined'&&!document.head&&document.addEventListener)document.addEventListener('DOMContentLoaded',ensureStyle,{once:true});else try{ensureStyle()}catch{}
+})();
+
+(()=>{
+'use strict';
+// Build 304: starting a dynasty from a custom/downloaded league applies the whole pack after the
+// regular build loader finishes (v171 startCareer241 -> applyCreation), which can take ~30 s on a
+// phone. Without this overlay the default fictional team was visible the whole time and the app
+// looked frozen. This wraps the final window.start and covers the screen until init settles.
+const ID='leagueBuildOverlay304';
+const $=id=>document.getElementById(id);
+let active=false,observer=null,timer=null,startedAt=0;
+const currentState=()=>{try{return typeof state!=='undefined'?state:window.state}catch{return window.state}};
+function ensure(){let el=$(ID);if(el)return el;el=document.createElement('div');el.id=ID;el.className='league-build304 hidden';el.setAttribute('role','alertdialog');el.setAttribute('aria-modal','true');el.setAttribute('aria-labelledby','leagueBuildTitle304');el.setAttribute('aria-describedby','leagueBuildNote304');
+ el.innerHTML='<div class="league-build-card304"><div id="leagueBuildSpinner304" class="league-build-spinner304" aria-hidden="true"></div><span class="league-build-eyebrow304">CUSTOM LEAGUE</span><h2 id="leagueBuildTitle304">Building your league…</h2><p id="leagueBuildNote304" class="league-build-note304">This can take up to 30 seconds. Please keep the app open.</p><p id="leagueBuildMessage304" class="league-build-message304" role="status" aria-live="polite">Loading custom teams, logos and rosters…</p><p id="leagueBuildElapsed304" class="league-build-elapsed304"></p><p id="leagueBuildError304" class="league-build-error304 hidden" role="alert"></p><button id="leagueBuildClose304" class="btn neutral hidden" type="button">Return to Team Selection</button></div>';
+ document.body.append(el);$('leagueBuildClose304').onclick=closeAfterFailure;return el}
+function tick(){const el=$('leagueBuildElapsed304');if(el&&active)el.textContent=Math.round((Date.now()-startedAt)/1000)+' s elapsed'}
+function show(name){const el=ensure();active=true;startedAt=Date.now();$('leagueBuildTitle304').textContent='Building your league…';$('leagueBuildMessage304').textContent=name?'Setting up '+name+' with your custom teams, logos and rosters…':'Loading custom teams, logos and rosters…';$('leagueBuildError304').classList.add('hidden');$('leagueBuildError304').textContent='';$('leagueBuildClose304').classList.add('hidden');$('leagueBuildSpinner304').classList.remove('hidden');$('leagueBuildNote304').classList.remove('hidden');$('leagueBuildElapsed304').textContent='';el.classList.remove('hidden');document.body.classList.add('league-building304');
+ // Mirror the regular build loader's progress text so the player sees each stage.
+ const source=$('dynastyBuildMessage');if(source&&typeof MutationObserver==='function'){observer?.disconnect();observer=new MutationObserver(()=>{const text=source.textContent||'';if(active&&text&&!/Dynasty ready/i.test(text))$('leagueBuildMessage304').textContent=text});observer.observe(source,{childList:true,characterData:true,subtree:true})}
+ clearInterval(timer);timer=setInterval(tick,1000)}
+function hide(){active=false;clearInterval(timer);timer=null;observer?.disconnect();observer=null;$(ID)?.classList.add('hidden');document.body.classList.remove('league-building304')}
+function fail(error){console.error('Custom league dynasty failed',error);ensure();active=false;clearInterval(timer);timer=null;observer?.disconnect();observer=null;$(ID).classList.remove('hidden');$('leagueBuildTitle304').textContent='League could not be built';$('leagueBuildMessage304').textContent='Your custom league dynasty could not be started. Return to team selection and try again, or use the default league.';$('leagueBuildElapsed304').textContent='';$('leagueBuildSpinner304').classList.add('hidden');$('leagueBuildNote304').classList.add('hidden');const box=$('leagueBuildError304');box.textContent='Error: '+(error?.message||String(error||'Unknown error'));box.classList.remove('hidden');$('leagueBuildClose304').classList.remove('hidden')}
+function closeAfterFailure(){hide();const close=$('dynastyBuildClose');if(close){close.click();return}const s=currentState();if(s)s.school=null;$('schoolScreen')?.classList.remove('hidden');$('gameScreen')?.classList.add('hidden');window.renderSchools?.()}
+// Success, a cancelled start, or a failure the regular build loader already reports (its own error box
+// and Return button) all just remove this overlay.
+function finish(){hide()}
+const prior=window.start;
+if(typeof prior==='function')window.start=function(...args){
+ if(!window.SDF_LEAGUE292?.hasCreationPack?.())return prior.apply(this,args);
+ let name='';try{const s=(typeof schools!=='undefined'?schools:window.schools)?.find?.(x=>Number(x.id)===Number(args[0]));name=window.SDF_LEAGUE292?.creationTeam?.(s)?.name||s?.name||''}catch{}
+ show(name);
+ let result;try{result=prior.apply(this,args)}catch(error){fail(error);return false}
+ if(result&&typeof result.then==='function')return result.then(value=>{finish(value);return value},error=>{fail(error);return false});
+ finish(result);return result};
+window.SDF_LEAGUE_LOADING304={show,hide,fail,finish,isActive:()=>active,wrapped:typeof prior==='function'};
+if(typeof document!=='undefined'&&document.head){const style=document.createElement('style');style.id='leagueBuildStyle304';style.textContent='.league-build304{position:fixed;inset:0;z-index:6000;display:grid;place-items:center;padding:max(18px,env(safe-area-inset-top)) 18px max(18px,env(safe-area-inset-bottom));background:#06111b;color:#edf7ff}.league-build304.hidden,.league-build304 .hidden{display:none!important}body.league-building304{overflow:hidden}.league-build-card304{width:min(440px,100%);text-align:center;background:linear-gradient(155deg,#17344a,#091722);border:1px solid rgba(240,198,92,.4);border-radius:22px;padding:28px 22px;box-shadow:0 28px 70px rgba(0,0,0,.5)}.league-build-spinner304{width:64px;height:64px;margin:0 auto 18px;border-radius:50%;border:6px solid rgba(240,198,92,.2);border-top-color:#f0c65c;animation:leagueSpin304 .9s linear infinite;will-change:transform}@keyframes leagueSpin304{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.league-build-spinner304{animation-duration:2.4s}}.league-build-eyebrow304{display:block;font-size:11px;letter-spacing:.14em;color:#f0c65c;font-weight:800}.league-build304 h2{font-size:24px;margin:8px 0 10px}.league-build-note304{font-size:15px;color:#edf7ff;margin:0 0 12px;font-weight:700}.league-build-message304{font-size:14px;color:#bdd0da;line-height:1.5;margin:0 0 6px;min-height:42px}.league-build-elapsed304{font-size:12px;color:#8fa8b8;margin:0;min-height:18px}.league-build-error304{margin:14px 0;padding:12px;border-radius:10px;background:#3a1219;border:1px solid #b23a4a;color:#ffd0d6;font-size:14px;text-align:left;overflow-wrap:anywhere}.league-build304 button{min-height:44px;margin-top:8px}';document.head.append(style)}
+})();
+
+(()=>{
+'use strict';
+// Build 304: Midseason Report. Once per regular season, after the game that reaches the halfway mark of the
+// user's schedule (games played >= min(6, half the scheduled games)), a report opens through the Build 299
+// week-flow queue so it never stacks on the result, recap, event or consent windows. Continue may show the
+// SAME season interstitial as season end (SDF_MONETIZATION.showSeasonInterstitial, slot 'midseason'), never in
+// the first season, never for ad-free players, never twice in a season and never right after a rewarded video.
+// On the web build there are no ads: the report simply closes. Removing this module restores Build 304 as shipped.
+const $=id=>document.getElementById(id);
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num=(v,d=0)=>v!==null&&v!==''&&Number.isFinite(Number(v))?Number(v):d;
+const S=()=>{try{return typeof state!=='undefined'?state:window.state}catch{return window.state}};
+const KEY='midseason304';
+const REWARD_COOLDOWN_MS=120000;
+const native=()=>!!(window.Capacitor?.isNativePlatform?.()||window.Capacitor?.getPlatform?.()==='android');
+const adFree=()=>window.SDF_AD_POLICY?.shouldShowForcedAds?.()===false;
+let queued=false;
+
+function games(s=S()){return(s?.schedule||[]).filter(g=>g&&!g.bye)}
+function threshold(s=S()){const total=games(s).length;return total?Math.min(6,Math.ceil(total/2)):0}
+function shownYears(s=S()){const o=s.midseasonReport304;return o&&typeof o==='object'?o:(s.midseasonReport304={})}
+function reportShown(s=S()){return !!s?.midseasonReport304?.[num(s.year)]}
+// Trigger: the first render where the user has played at least min(6, half) regular-season games. Byes don't count,
+// so the report follows the 6th game result regardless of where the bye weeks fall. A save that installs this build
+// late in a season (more than two games past the mark) does not get a stale "midseason" report.
+function due(s=S()){
+ if(!s?.school||s.phase!=='REGULAR'||s.seasonDone||reportShown(s))return false;
+ const all=games(s),played=all.filter(g=>g.result).length,t=threshold(s);
+ return t>0&&played>=t&&played<all.length&&played<=t+2
+}
+function firstSeason(s=S()){return num(s?.year,1)<=1||!(s?.history||[]).length}
+function recentReward(now=Date.now()){const at=num(window.SDF_MONETIZATION?.lastRewardedAdAt?.(),0);return at>0&&now-at<REWARD_COOLDOWN_MS}
+function adYears(s=S()){return s?.monetization?.midseasonInterstitialYears||[]}
+// Every reason the Continue button would only close the report. Same checks as season end (native, ad policy,
+// ad config) plus the midseason-only rules.
+function adBlockReason(s=S()){
+ if(!native())return 'web';
+ if(adFree())return 'ad_free';
+ if(firstSeason(s))return 'first_season';
+ if(adYears(s).includes(num(s.year)))return 'already_shown';
+ if(recentReward())return 'recent_reward';
+ if(typeof window.SDF_MONETIZATION?.showSeasonInterstitial!=='function')return 'unavailable';
+ return null
+}
+
+// ---------- Report data (read-only; reuses the stakes, rankings and recruiting data already in the save) ----------
+function record(s){const st=window.SDF_STAKES299;try{const p=st?.pace?.();if(p)return{w:p.w,l:p.l,exp:p.exp,projected:p.projected,gap:p.gap}}catch{}
+ const done=games(s).filter(g=>g.result),w=done.filter(g=>g.result==='W').length,exp=num(s.seasonExpectations?.expectedWins,num(s.school?.expectation,6)),projected=done.length?Math.round(w/done.length*games(s).length):exp;
+ return{w,l:done.length-w,exp,projected,gap:projected-exp}}
+function rank(s){const r=(s.rankings||[]).find(x=>Number(x.id)===Number(s.school.id));return r?num(r.rank,0):0}
+function job(s){try{const h=window.SDF_STAKES299?.hotSeat?.();if(h)return{label:h.label,cls:h.cls||'secure',reason:h.reason||''}}catch{}
+ return s.jobSecurity!=null?{label:`Job security ${Math.round(num(s.jobSecurity))}%`,cls:'secure',reason:''}:null}
+function impact(x){return x.passYds/25+x.passTD*4-x.passINT*2+x.rushYds/10+x.rushTD*6+x.recYds/10+x.recTD*6+x.tackles+x.tfl*2+x.sacks*4+x.defINT*5+x.ff*3+x.fgm*3}
+function line(x){const out=[];
+ if(x.passYds)out.push(`${x.passYds} pass yds, ${x.passTD} TD`);if(x.rushYds)out.push(`${x.rushYds} rush yds${x.rushTD?`, ${x.rushTD} TD`:''}`);if(x.recYds)out.push(`${x.rec} rec, ${x.recYds} yds${x.recTD?`, ${x.recTD} TD`:''}`);
+ if(x.tackles)out.push(`${x.tackles} tackles`);if(x.sacks)out.push(`${x.sacks} sack${x.sacks===1?"":"s"}`);if(x.defINT)out.push(`${x.defINT} INT`);if(x.fgm)out.push(`${x.fgm}/${x.fga} FG`);
+ return out.slice(0,2).join(' · ')}
+const FIELDS=['passYds','passTD','passINT','rushYds','rushTD','rec','recYds','recTD','tackles','tfl','sacks','defINT','ff','fgm','fga'];
+function performers(s,limit=3){
+ return(s.roster||[]).map(p=>{const raw=p?.seasonStats||{},x={};for(const k of FIELDS)x[k]=num(raw[k]);return{p,x,score:impact(x)}}).filter(r=>r.score>0).sort((a,b)=>b.score-a.score).slice(0,limit)
+  .map(r=>({name:r.p.name||`${r.p.first||''} ${r.p.last||''}`.trim()||'Player',pos:r.p.pos||'',line:line(r.x)}))}
+function classRank(s){
+ const commits=(s.commits||[]).length;if(!commits)return{rank:0,commits};
+ const row=(s.classRankings||[]).find(r=>Number(r.id)===Number(s.school.id));return{rank:row?num(row.rank,0):0,commits}}
+function oppRank(s,g){const r=(s.rankings||[]).find(t=>Number(t.id)===Number(g.oppId));return r?num(r.rank,0):0}
+function rival(g){if(!g)return false;if(g.rivalry)return true;try{return !!window.SDF_V191?.rivalryForGame?.(g)}catch{return false}}
+function nextBig(s){
+ const left=games(s).filter(g=>!g.result);
+ for(const g of left){const r=oppRank(s,g),rv=rival(g);if(rv||(r&&r<=25))return{g,rank:r,rivalry:rv}}
+ return null}
+function report(s=S()){return{year:num(s.year),record:record(s),rank:rank(s),job:job(s),performers:performers(s),recruiting:classRank(s),next:nextBig(s)}}
+
+// ---------- Window ----------
+const STYLE=`
+.midseason304 h2{margin:2px 0 4px}
+.midseason304 .ms-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0}
+.midseason304 .ms-tile{padding:9px 10px;border:1px solid #2e4859;border-radius:10px;background:#0b1924}
+.midseason304 .ms-tile small{display:block;font-size:11px;letter-spacing:.06em;color:#9fb6c4;font-weight:750}
+.midseason304 .ms-tile b{display:block;font-size:18px;margin-top:2px;color:#eff7fc}
+.midseason304 .ms-tile span{display:block;font-size:12px;color:#a9bfcc;margin-top:2px;line-height:1.35}
+.midseason304 .ms-tile.hot b,.midseason304 .ms-tile.final b{color:#ff9b8a}.midseason304 .ms-tile.warm b{color:#f4d780}.midseason304 .ms-tile.secure b{color:#7fe0bd}
+.midseason304 h3{font-size:12px;letter-spacing:.08em;color:#9fb6c4;margin:12px 0 6px}
+.midseason304 ol{margin:0;padding-left:20px;display:grid;gap:5px;font-size:14px}
+.midseason304 ol span{display:block;font-size:12px;color:#a9bfcc}
+.midseason304 .ms-next{margin:6px 0 0;font-size:14px}
+.midseason304 .ms-actions{display:grid;gap:8px;margin-top:14px}
+.midseason304 .ms-actions .btn{min-height:46px;width:100%}
+.midseason304 .ms-links{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:4px;font-size:13px}
+.midseason304 .ms-link{background:none;border:0;padding:6px 0;min-height:36px;color:#f4d780;text-decoration:underline;font:inherit;cursor:pointer}
+@media(max-width:420px){.midseason304 .ms-tile b{font-size:16px}}`;
+function ensureStyle(){if(!document.head||$('midseason304Style'))return;const st=document.createElement('style');st.id='midseason304Style';st.textContent=STYLE;document.head.append(st)}
+function ordinal(n){const v=n%100;return n+(v>=11&&v<=13?'th':({1:'st',2:'nd',3:'rd'}[n%10]||'th'))}
+function html(r,s){
+ const rec=r.record,gap=rec.projected-rec.exp,pace=gap>=1?`On pace for ${rec.projected}: ahead of target`:gap<=-1?`On pace for ${rec.projected}: behind target`:`On pace for ${rec.projected}: on target`;
+ const showOffers=native()&&!adFree();
+ const perf=r.performers.length?`<ol>${r.performers.map(p=>`<li><b>${esc(p.name)}</b> ${esc(p.pos)}<span>${esc(p.line)}</span></li>`).join('')}</ol>`:'<p>No standout stat lines yet.</p>';
+ const next=r.next?`<p class="ms-next"><b>Week ${esc(r.next.g.week)}: ${r.next.rank&&r.next.rank<=25?`#${r.next.rank} `:''}${esc(r.next.g.opponent||'Opponent')}</b>${r.next.rivalry?' · Rivalry':''}${r.next.g.home===false?' · Away':r.next.g.home?' · Home':''}</p>`:'<p class="ms-next">No ranked or rivalry opponents left on the schedule.</p>';
+ const rec2=r.recruiting.commits?(r.recruiting.rank?`#${r.recruiting.rank}`:'Unranked'):'—';
+ return `<section id="midseason304" class="journey-card midseason304" role="dialog" aria-labelledby="midseason304Title"><span class="eyebrow">YEAR ${esc(r.year)} · HALFWAY</span><h2 id="midseason304Title">Midseason Report</h2>
+<div class="ms-grid">
+<div class="ms-tile"><small>RECORD</small><b>${rec.w}-${rec.l}</b><span>Board target: ${rec.exp} wins. ${esc(pace)}</span></div>
+<div class="ms-tile"><small>RANKING</small><b>${r.rank&&r.rank<=25?`#${r.rank}`:'Unranked'}</b><span>${r.rank>25?`${ordinal(r.rank)} in the computer rankings`:r.rank?'Top 25':'Not in the poll'}</span></div>
+${r.job?`<div class="ms-tile ${esc(r.job.cls)}"><small>JOB STATUS</small><b>${esc(r.job.label)}</b><span>${esc(r.job.reason)}</span></div>`:''}
+<div class="ms-tile"><small>RECRUITING CLASS</small><b>${rec2}</b><span>${r.recruiting.commits} commit${r.recruiting.commits===1?'':'s'} so far</span></div>
+</div>
+<h3>TOP PERFORMERS</h3>${perf}
+<h3>NEXT BIG GAME</h3>${next}
+<div class="ms-actions"><button type="button" class="btn primary" data-ms-continue>Continue</button>
+${showOffers?`<div class="ms-links"><button type="button" class="ms-link" data-ms-shop>Go ad-free: Remove Ads</button>${typeof window.openSponsorCenter==='function'?'<button type="button" class="ms-link" data-ms-sponsor>Recruiting boost: Sponsor Center</button>':''}</div>`:''}</div></section>`}
+
+function openReport(){
+ queued=false;const s=S(),modal=$('modal'),body=$('modalBody');
+ if(!modal||!body||!due(s))return false;
+ const year=num(s.year);shownYears(s)[year]=true;
+ try{window.SDF_RELEASE_TEST?.saveNow?.('Midseason report',false,false)}catch{}
+ ensureStyle();const r=report(s);body.innerHTML=html(r,s);
+ const close=()=>{if(body.querySelector('#midseason304'))modal.classList.add('hidden')};
+ body.querySelector('[data-ms-continue]').onclick=()=>{close();continueReport(s,year)};
+ const shop=body.querySelector('[data-ms-shop]');if(shop)shop.onclick=()=>{close();window.SDF_ANDROID_COMMERCE?.openShop?.('remove_ads')};
+ const sponsor=body.querySelector('[data-ms-sponsor]');if(sponsor)sponsor.onclick=()=>{close();window.openSponsorCenter?.()};
+ modal.classList.remove('hidden');return true
+}
+// Continue: close, then (only when every rule allows it) request the season interstitial in its midseason slot.
+// showSeasonInterstitial re-checks the ad policy, config, consent and foreground state itself.
+function continueReport(owner=S(),year=num(owner?.year)){
+ const why=adBlockReason(owner);if(why)return Promise.resolve({shown:false,reason:why});
+ return Promise.resolve(window.SDF_MONETIZATION.showSeasonInterstitial(owner,year,'midseason')).then(shown=>({shown:!!shown,reason:shown?null:'not_shown'}),()=>({shown:false,reason:'error'}))
+}
+function queueReport(){
+ if(queued||!due())return;const flow=window.SDF_WEEKFLOW299;
+ if(flow?.enqueue){queued=true;flow.enqueue({key:KEY,priority:70,open:openReport});return}
+ const busy=['gameSimModal','gameResultModal','recruitRecap280','modal'].some(id=>{const n=$(id);return n&&!n.hidden&&!n.classList.contains('hidden')});
+ if(!busy)openReport()
+}
+const baseRender=window.renderAll;
+window.renderAll=function(...a){const out=baseRender?.apply(this,a);try{queueReport()}catch(error){window.SDF_RUNTIME_ERRORS?.capture?.(error,{operation:'v304-midseason-report'})}return out};
+window.SDF_MIDSEASON304={due,threshold,firstSeason,recentReward,adBlockReason,report,openReport,continueReport,queueReport,REWARD_COOLDOWN_MS};
 })();
 
 // Build 299 module: layout. Slim phone chrome, one primary "play this week" action per screen, a cleaner Home,
