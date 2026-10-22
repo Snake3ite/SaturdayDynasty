@@ -1,7 +1,7 @@
 {
-  "version": "27.4.99",
-  "release": "Android V27.4.99 · Build 300 · Season Stakes Update",
-  "versionCode": 300,
+  "version": "27.5.1",
+  "release": "Android V27.5.1 · Build 302 · Custom Scenarios Update",
+  "versionCode": 302,
   "fileCount": 177,
   "files": [
     {
@@ -11,8 +11,8 @@
     },
     {
       "path": "app-bundle.js",
-      "sha256": "9fc2602ad3853839ffb74a031f86f82286b7e601bb5f9144a7e7e8e5707a3a3f",
-      "bytes": 1833437
+      "sha256": "22bd934d75ede59a38dec9a1920afec7ecb12685ac60cd75aeaa083f0d47d861",
+      "bytes": 1881045
     },
     {
       "path": "app-shell.css",
@@ -716,8 +716,8 @@
     },
     {
       "path": "index.html",
-      "sha256": "6c3a13e08fcdb09d0a1abecaed5005a37280cec1ea6cef2f6a94c5e22d6a11e4",
-      "bytes": 47821
+      "sha256": "b62dffc83979eb17849d8509e73b8216d1dd0b5d53f218fd1255dc93c731b06a",
+      "bytes": 47823
     },
     {
       "path": "live-game.css",
