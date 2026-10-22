@@ -1,0 +1,30 @@
+<!-- Generates s/og-*.jpg (1200x630 link previews). Serve this folder with icon-512.png beside it; each image is POSTed to /save. -->
+<!doctype html><meta charset="utf-8"><title>OG generator</title><body style="margin:0;background:#000">
+<script>
+// Link-preview images for the share page (1200x630), matching the Build 303 in-app share card.
+const KINDS={award:['NATIONAL AWARD','🏅'],class:['TOP-10 CLASS','📈'],conference:['CONFERENCE CHAMPIONS','🏆'],custom:['CAN YOU BEAT MY SCENARIO?','🎯'],dynasty:['MY DYNASTY','🏟️'],milestone:['COACHING MILESTONE','🎖️'],perfect:['PERFECT SEASON','💯'],recruit:['5-STAR COMMIT','⭐'],rivalry:['RIVALRY WIN','⚔️'],scenario:['SCENARIO COMPLETE','✅'],score:['FINAL SCORE','🏈'],title:['NATIONAL CHAMPIONS','🏆'],upset:['RANKED UPSET','💥']};
+const W=1200,H=630,GOLD='#f3d36d',font=(w,s)=>`${w} ${s}px "Segoe UI", system-ui, sans-serif`;
+const load=src=>new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.src=src});
+async function draw(kind,icon){
+ const [label,emoji]=KINDS[kind],c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
+ const sky=x.createLinearGradient(0,0,W*.5,H);sky.addColorStop(0,'#123a52');sky.addColorStop(.62,'#081521');sky.addColorStop(1,'#03080e');x.fillStyle=sky;x.fillRect(0,0,W,H);
+ x.save();x.globalAlpha=.16;x.fillStyle=GOLD;x.beginPath();x.moveTo(W*.62,0);x.lineTo(W,0);x.lineTo(W,H*.62);x.closePath();x.fill();x.restore();
+ x.save();x.globalAlpha=.08;x.strokeStyle='#fff';x.lineWidth=3;for(let y=360;y<470;y+=48){x.beginPath();x.moveTo(0,y);x.lineTo(W,y);x.stroke()}x.restore();
+ const t=(v,X,Y,s,col='#fff',w=900,a='left')=>{x.font=font(w,s);x.fillStyle=col;x.textAlign=a;x.fillText(v,X,Y)};
+ const fit=(v,s,max,w=900)=>{x.font=font(w,s);while(x.measureText(v).width>max&&s>30){s-=4;x.font=font(w,s)}return s};
+ x.save();x.beginPath();x.roundRect(70,48,124,124,28);x.clip();x.drawImage(icon,70,48,124,124);x.restore();
+ t('SATURDAY DYNASTY FOOTBALL',220,104,46);t('Free college football dynasty game',220,150,32,GOLD,800);
+ t(emoji,W-80,380,170,'#fff',400,'right');
+ t(label,70,330,fit(label,86,W-70-300),'#fff',900);
+ t('Build your program · Recruit 5-stars · Win titles',70,394,34,'rgba(255,255,255,.74)',700);
+ x.fillStyle='rgba(3,8,14,.92)';x.fillRect(0,470,W,160);x.fillStyle=GOLD;x.fillRect(0,470,W,7);
+ x.font=font(900,48);const a='Play free on Android ',aw=x.measureText(a).width;t(a,70,550,48);t('or in your browser',70+aw,550,48,GOLD);
+ t('saturdaydynasty.ctoolis.workers.dev',70,598,28,'rgba(255,255,255,.8)',700);
+ return c;
+}
+(async()=>{const icon=await load('icon-512.png'),done=[];
+ for(const k of Object.keys(KINDS)){const c=await draw(k,icon),data=c.toDataURL('image/jpeg',.9);
+  const img=new Image();img.src=data;img.style.width='400px';document.body.append(img);
+  await fetch('/save',{method:'POST',body:JSON.stringify({name:`og-${k}.jpg`,data})});done.push(k)}
+ window.__done=done})();
+</script>

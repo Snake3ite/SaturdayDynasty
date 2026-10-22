@@ -11,7 +11,7 @@ export default{
   const title=clean(q.get('t'),140)||'Saturday Dynasty Football';
   const detail=[clean(q.get('b'),24),clean(q.get('d'),120)].filter(x=>x&&!/^[^\w]+$/.test(x)).join(' · ');
   const code=clean(q.get('c'),110);
-  const description=(code?`Can you beat it? Scenario code ${code}. `:'')+(detail?detail+'. ':'')+'Build your own college football dynasty. Free on Google Play.';
+  const description=(code?`Can you beat it? Scenario code ${code}. `:'')+(detail?detail+'. ':'')+'Saturday Dynasty Football is a free college football dynasty game. Play free on Android or in your browser.';
   const image=`${url.origin}/s/og-${kind}.jpg`,set=value=>({element(e){e.setAttribute('content',value)}});
   return new HTMLRewriter()
    .on('title',{element(e){e.setInnerContent(`${title} · Saturday Dynasty Football`)}})
