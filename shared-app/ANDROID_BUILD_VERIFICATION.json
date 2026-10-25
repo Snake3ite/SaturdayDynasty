@@ -1,7 +1,7 @@
 {
-  "version": "27.5.3",
-  "release": "Android V27.5.3 · Build 304 · Custom Scenarios Update",
-  "versionCode": 304,
+  "version": "27.6.2",
+  "release": "Android V27.6.2 · Build 307 · Big Moments Update",
+  "versionCode": 307,
   "fileCount": 177,
   "files": [
     {
@@ -11,8 +11,8 @@
     },
     {
       "path": "app-bundle.js",
-      "sha256": "854183a82b5015956d3e8869bfb3da5c4df0e3b15285667ad655aefe4dfd83ed",
-      "bytes": 1976818
+      "sha256": "55e286fdca4c7e443a194f3260e8e49407dc5ecac98edb351363522611172d3d",
+      "bytes": 2200444
     },
     {
       "path": "app-shell.css",
@@ -701,23 +701,23 @@
     },
     {
       "path": "icon-1024.png",
-      "sha256": "8ad6c5e779b23a3da8c141e0a8632326e6b6548e97e6584c2d1227233e745b29",
-      "bytes": 2085569
+      "sha256": "95b1f17e053422526a405e81341597ba5098afa5f03e45e34c3076aafdb1ac16",
+      "bytes": 387725
     },
     {
       "path": "icon-192.png",
-      "sha256": "cc1c575e4a5489c575eda0508bb07cad53fafa98741b8f8a9e64666631525bae",
-      "bytes": 94489
+      "sha256": "0c2f466f2b249f1f20166de91783c7c7c0ec0cd994fc65dde4347205d2a84478",
+      "bytes": 23969
     },
     {
       "path": "icon-512.png",
-      "sha256": "0ed3c076a24dd908145dfca1edf2c1abb89efefed55e290d0799c492eb1eaf03",
-      "bytes": 597883
+      "sha256": "c49f19202407943ddac713cefa32dae3852bccce8f575537c629ba1ffc98c1f6",
+      "bytes": 127940
     },
     {
       "path": "index.html",
-      "sha256": "fb78c077be50d413d1d4d7822440adc1518787e2e3ec2e2649e56c4897c0e727",
-      "bytes": 47823
+      "sha256": "dbf16ea127ad23e559ef175e135d472ef3a6cd8d6b6a4eb36b930e90f319bc81",
+      "bytes": 47818
     },
     {
       "path": "live-game.css",

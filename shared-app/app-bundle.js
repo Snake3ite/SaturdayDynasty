@@ -1501,14 +1501,17 @@ function write(key,json,{backup=false,legacyPrevious=null,legacyBackup=null,tran
  }));
 }
 function remove(keys){return enqueue(()=>new Promise((resolve,reject)=>{const tx=db.transaction('records','readwrite'),store=tx.objectStore('records');keys.forEach(key=>store.delete(key));tx.oncomplete=()=>{keys.forEach(key=>{cache.delete(key);summaries.delete(key)});resolve(true)};tx.onabort=tx.onerror=()=>reject(tx.error||new Error('Browser save deletion failed'))}))}
-function rotateRecovery(key,item,legacy){return write(key,null,{transform:previous=>{const list=JSON.parse(previous??legacy??'[]');list.unshift(item);return JSON.stringify(list.slice(0,5))}})}
+// Build 306: limit lets the pre-restore safety point join the list without pushing out the oldest point.
+function rotateRecovery(key,item,legacy,limit=5){return write(key,null,{transform:previous=>{const list=JSON.parse(previous??legacy??'[]');list.unshift(item);return JSON.stringify(list.slice(0,Math.max(5,Number(limit)||5)))}})}
 window.SDF_BROWSER_SAVES={enabled,ready,get pending(){return pending},get settled(){return settled},get:key=>cache.get(key)||null,summary:key=>summaries.get(key)||null,write,remove,rotateRecovery,flush:()=>tail};
 })();
 
-
 (()=>{
 'use strict';
-const RELEASE='Android V27.5.3 · Build 304 · Custom Scenarios Update';
+// Build 307: save-slot cards show the save's renamed conference (Commissioner / custom league), not the canonical name.
+function slotConference(school,data){const raw=school?.conference||'';if(school?.conferenceDisplay)return String(school.conferenceDisplay);try{return raw&&window.SDF_CONFERENCES?.name?window.SDF_CONFERENCES.name(school.conferenceId||raw,data)||raw:raw}catch{return raw}}
+
+const RELEASE='Android V27.6.2 · Build 307 · Big Moments Update';
 const SAVE_PREFIX='SaturdayDynastyFootballAndroidV1';
 const LEGACY_PREFIXES=['SaturdayArchitectAndroidV1','SaturdayArchitectCompleteV9','SaturdayArchitectStatsV82','SaturdayArchitectDynastyV81','SaturdayArchitectRealignmentV74','SaturdayArchitectRecruitingV73','SaturdayArchitect128V72','SaturdayArchitectMobileV71'];
 const ui={activeTab:'dashboard',recruitPage:1,recruitPageSize:window.innerWidth<=760?30:75,rosterQuery:'',recruitQuery:''};
@@ -1650,7 +1653,7 @@ const SAVE_STAT_FIELDS_V181=['games','passAtt','passComp','passYds','passTD','pa
 function packAiGameLogV181(g,year){const sparse=[];for(let i=1;i<SAVE_STAT_FIELDS_V181.length;i++){const v=Number(g?.[SAVE_STAT_FIELDS_V181[i]]||0);if(v)sparse.push(i,v)}return[Number(g?.year||year),Number(g?.week||0),String(g?.opponent||''),String(g?.result||''),String(g?.phase||'REGULAR'),sparse]}
 function unpackAiGameLogV181(row,year){if(!Array.isArray(row))return row;const g={year:Number(row[0]||year),week:Number(row[1]||0),opponent:String(row[2]||''),result:String(row[3]||''),phase:String(row[4]||'REGULAR')},sparse=Array.isArray(row[5])?row[5]:[];for(let i=0;i<sparse.length-1;i+=2){const key=SAVE_STAT_FIELDS_V181[Number(sparse[i])];if(key)g[key]=Number(sparse[i+1]||0)}return g}
 function compactState(){
- let copy;try{copy=typeof structuredClone==='function'?structuredClone(state):JSON.parse(JSON.stringify(state))}catch{copy=JSON.parse(JSON.stringify(state))};copy._release={version:2,savedAt:Date.now(),name:RELEASE};copy.news=(copy.news||[]).slice(-160);copy.nationalStats=[];copy.classRankings=[];copy.nationalGameResults=(copy.nationalGameResults||[]).filter(x=>Number(x.year)===Number(copy.year)).slice(-950).map(g=>{const out={...g};delete out.exactLines;return out});copy.nationalWorldWeeks=(copy.nationalWorldWeeks||[]).filter(k=>String(k).startsWith(`${copy.year}-`));delete copy._v175StatsReady;
+ let copy;try{copy=typeof structuredClone==='function'?structuredClone(state):JSON.parse(JSON.stringify(state))}catch{copy=JSON.parse(JSON.stringify(state))};copy._release={version:2,savedAt:Date.now(),name:RELEASE};if(copy.school&&typeof slotConference==='function'){const shown=slotConference({...state.school,conferenceDisplay:null},state);if(shown&&shown!==copy.school.conference)copy.school.conferenceDisplay=shown;else delete copy.school.conferenceDisplay}copy.news=(copy.news||[]).slice(-160);copy.nationalStats=[];copy.classRankings=[];copy.nationalGameResults=(copy.nationalGameResults||[]).filter(x=>Number(x.year)===Number(copy.year)).slice(-950).map(g=>{const out={...g};delete out.exactLines;return out});copy.nationalWorldWeeks=(copy.nationalWorldWeeks||[]).filter(k=>String(k).startsWith(`${copy.year}-`));delete copy._v175StatsReady;
  // V181: recruiting races are saved exactly as they exist. Loading a dynasty must never
  // reroll a prospect's motivations, contenders, interest, cuts, or AI recruiting board.
  copy.recruitingPersistenceVersion=181;
@@ -1751,19 +1754,19 @@ function saveCandidates(slot){
  return items;
 }
 function readSlotSummary(slot){
- const cached=window.SDF_BROWSER_SAVES?.summary(`${SAVE_PREFIX}_slot${slot}`);if(cached){const school=cached.school||{};return{slot,empty:false,current:true,schoolId:school.id,name:school.name||'Unknown Program',conference:school.conference||'',year:cached.year||1,week:cached.week||1,phase:cached.phase||'REGULAR',wins:cached.record?.w||0,losses:cached.record?.l||0,savedAt:cached._release?.savedAt||null}}
+ const cached=window.SDF_BROWSER_SAVES?.summary(`${SAVE_PREFIX}_slot${slot}`);if(cached){const school=cached.school||{};return{slot,empty:false,current:true,schoolId:school.id,name:school.name||'Unknown Program',conference:slotConference(school,cached),year:cached.year||1,week:cached.week||1,phase:cached.phase||'REGULAR',wins:cached.record?.w||0,losses:cached.record?.l||0,savedAt:cached._release?.savedAt||null}}
  try{
   const bridge=window.SDFNative;
   if(bridge&&typeof bridge.readSlotSummary==='function'){
    const raw=bridge.readSlotSummary(String(slot));
-   if(raw){const data=JSON.parse(raw),school=data.school||{},record=data.record||{};return{slot,empty:false,current:true,schoolId:school.id,name:school.name||'Unknown Program',conference:school.conference||'',year:data.year||1,week:data.week||1,phase:data.phase||'REGULAR',wins:record.w||0,losses:record.l||0,savedAt:data.savedAt||null}}
+   if(raw){const data=JSON.parse(raw),school=data.school||{},record=data.record||{};return{slot,empty:false,current:true,schoolId:school.id,name:school.name||'Unknown Program',conference:slotConference(school,data),year:data.year||1,week:data.week||1,phase:data.phase||'REGULAR',wins:record.w||0,losses:record.l||0,savedAt:data.savedAt||null}}
   }
  }catch(error){console.warn('Native save summary unavailable; using full save fallback.',error)}
  let item=saveCandidates(slot)[0];
  if(!item)return{slot,empty:true};
  try{
   let data=JSON.parse(item.raw),school=data.school||{},releaseData=data._release||{};
-  return{slot,empty:false,current:item.current,schoolId:school.id,name:school.name||'Unknown Program',conference:school.conference||'',year:data.year||1,week:data.week||1,phase:data.phase||'REGULAR',wins:data.record?.w||0,losses:data.record?.l||0,savedAt:releaseData.savedAt||null}
+  return{slot,empty:false,current:item.current,schoolId:school.id,name:school.name||'Unknown Program',conference:slotConference(school,data),year:data.year||1,week:data.week||1,phase:data.phase||'REGULAR',wins:data.record?.w||0,losses:data.record?.l||0,savedAt:releaseData.savedAt||null}
  }catch{return{slot,empty:false,corrupt:true,name:'Unreadable save'}}
 }
 function selectSaveSlot(slot){
@@ -1979,7 +1982,8 @@ function schoolById(id){
  const result=resolveRecruitSchool(key);if(schoolCache)schoolCache.set(key,result);return result
 }
 
-function hashInt(value){let h=2166136261;for(const ch of String(value)){h^=ch.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
+// Same FNV-1a as before (one step per code point, using its first UTF-16 unit), without the string iterator.
+function hashInt(value){const str=String(value);let h=2166136261;for(let i=0;i<str.length;i++){const c=str.charCodeAt(i);h^=c;h=Math.imul(h,16777619);if(c>=0xD800&&c<=0xDBFF&&i+1<str.length){const d=str.charCodeAt(i+1);if(d>=0xDC00&&d<=0xDFFF)i++}}return h>>>0}
 function seededRange(seed,min,max){return min+(hashInt(seed)%((max-min)+1))}
 function seededFloat(seed){return (hashInt(seed)%100000)/100000}
 function resolveRecruitSchool(id){id=Number(id);const base=schools.find(s=>Number(s.id)===id)||null;if(id===USER_ID())return base?{...base,...state.school,pipelines:Array.isArray(state.school?.pipelines)?state.school.pipelines:base.pipelines}:state.school||null;if(!base)return null;const shared=window.SDF_V197?.programForTeam?.(id),w=(state.world||[]).find(x=>Number(x.id)===id),merged={...base,...(w||{}),...(shared||{})};merged.lat=Number.isFinite(Number(merged.lat))?Number(merged.lat):Number(base.lat);merged.lon=Number.isFinite(Number(merged.lon))?Number(merged.lon):Number(base.lon);merged.region=merged.region||base.region;merged.pipelines=Array.isArray(merged.pipelines)?merged.pipelines:base.pipelines;merged.prestige=Number.isFinite(Number(merged.prestige))?Number(merged.prestige):Number(base.prestige);merged.recent=Number.isFinite(Number(merged.recent))?Number(merged.recent):Number(base.recent);merged.facilities=Number.isFinite(Number(merged.facilities))?Number(merged.facilities):Number(base.facilities);merged.pro=Number.isFinite(Number(merged.pro))?Number(merged.pro):Number(base.pro);merged.nil=Number.isFinite(Number(merged.nil))?Number(merged.nil):Number(base.nil);merged.academics=Number.isFinite(Number(merged.academics))?Number(merged.academics):Number(base.academics);merged.conference=merged.conference||base.conference;return merged}
@@ -2036,23 +2040,26 @@ async function initializeRecruitingModelAsync(onProgress=()=>{}){
  const savedExactly=!force&&Number(state.recruitingPersistenceVersion||0)>=RECRUITING_PERSISTENCE_VERSION&&state.aiRecruitingBoardYear===state.year&&state.aiRecruitingBoardPool===recruits.length&&state.aiRecruitingBoards&&Object.keys(state.aiRecruitingBoards).length>0;
  if(savedExactly){
   onProgress(22,'Restoring saved recruiting class…');
-  for(let i=0;i<recruits.length;i+=180){for(const r of recruits.slice(i,i+180))ensureRecruit(r,false);onProgress(22+Math.round((i/recruits.length)*68),`Restoring prospects ${Math.min(i+180,recruits.length).toLocaleString()} / ${recruits.length.toLocaleString()}…`);await recruitingYield()}
+  for(let i=0;i<recruits.length;i+=180){withRecruitSimulationFrame(()=>{for(const r of recruits.slice(i,i+180))ensureRecruit(r,false)});onProgress(22+Math.round((i/recruits.length)*68),`Restoring prospects ${Math.min(i+180,recruits.length).toLocaleString()} / ${recruits.length.toLocaleString()}…`);await recruitingYield()}
   state.recruitingInitializationPending=false;onProgress(99,'Recruiting class restored exactly as saved.');return
  }
  onProgress(12,'Creating prospect profiles…');
- for(let i=0;i<recruits.length;i+=90){for(const r of recruits.slice(i,i+90))ensureRecruit(r,force);onProgress(12+Math.round((i/recruits.length)*34),`Preparing prospects ${Math.min(i+90,recruits.length).toLocaleString()} / ${recruits.length.toLocaleString()}…`);await recruitingYield()}
+ // Build 305: each synchronous batch runs in a simulation frame, so school profiles and committed-player
+ // lists are resolved once per batch instead of once per recruit-school pair (about 90% of new-dynasty
+ // start time). Nothing else runs inside a batch, so the results are identical.
+ for(let i=0;i<recruits.length;i+=90){withRecruitSimulationFrame(()=>{for(const r of recruits.slice(i,i+90))ensureRecruit(r,force)});onProgress(12+Math.round((i/recruits.length)*34),`Preparing prospects ${Math.min(i+90,recruits.length).toLocaleString()} / ${recruits.length.toLocaleString()}…`);await recruitingYield()}
  onProgress(47,'Creating computer recruiting boards…');state.aiRecruitingBoards={};state.aiSigningCounts={};
  for(const r of recruits){const id=Number(r.committedTo);if(id&&id!==USER_ID())state.aiSigningCounts[id]=Number(state.aiSigningCounts[id]||0)+1;r.aiPursuerIds=[]}
- state.aiRecruitingBoardYear=state.year;state.aiRecruitingBoardPool=recruits.length;const recruitById=new Map(recruits.map(r=>[r.id,r])),aiSchools=schools.filter(s=>Number(s.id)!==USER_ID()).map(s=>schoolById(s.id)).filter(Boolean);
+ state.aiRecruitingBoardYear=state.year;state.aiRecruitingBoardPool=recruits.length;const recruitById=new Map(recruits.map(r=>[r.id,r])),aiSchools=withRecruitSimulationFrame(()=>schools.filter(s=>Number(s.id)!==USER_ID()).map(s=>schoolById(s.id)).filter(Boolean));
  for(let si=0;si<aiSchools.length;si++){
-  const s=aiSchools[si],maxStar=schoolTier(s).maxStar,posCounts={},ordered=recruits.filter(r=>r.stars<=maxStar).map(r=>({r,score:aiTargetScore(r,s)})).sort((a,b)=>b.score-a.score||a.r.rank-b.r.rank),chosen=[];
+  const s=aiSchools[si],maxStar=schoolTier(s).maxStar,posCounts={},ordered=withRecruitSimulationFrame(()=>recruits.filter(r=>r.stars<=maxStar).map(r=>({r,score:aiTargetScore(r,s)}))).sort((a,b)=>b.score-a.score||a.r.rank-b.r.rank),chosen=[];
   for(const item of ordered){const pos=item.r.pos;if((posCounts[pos]||0)>=4)continue;chosen.push(item.r.id);posCounts[pos]=(posCounts[pos]||0)+1;if(chosen.length>=AI_BOARD_LIMIT)break}
   if(chosen.length<AI_BOARD_LIMIT){for(const item of ordered){if(chosen.includes(item.r.id))continue;chosen.push(item.r.id);if(chosen.length>=AI_BOARD_LIMIT)break}}
   state.aiRecruitingBoards[s.id]=chosen;for(const id of chosen){const r=recruitById.get(id);if(r)r.aiPursuerIds.push(s.id)}
   if(si%3===0){onProgress(47+Math.round((si/aiSchools.length)*34),`Creating recruiting boards ${si+1} / ${aiSchools.length}…`);await recruitingYield()}
  }
  onProgress(82,'Creating recruiting races…');
- for(let i=0;i<recruits.length;i+=110){for(const r of recruits.slice(i,i+110)){establishContenders(r,false);recalculateRecruit(r,false)}onProgress(82+Math.round((i/recruits.length)*16),`Preparing recruiting races ${Math.min(i+110,recruits.length).toLocaleString()} / ${recruits.length.toLocaleString()}…`);await recruitingYield()}
+ for(let i=0;i<recruits.length;i+=110){withRecruitSimulationFrame(()=>{for(const r of recruits.slice(i,i+110)){establishContenders(r,false);recalculateRecruit(r,false)}});onProgress(82+Math.round((i/recruits.length)*16),`Preparing recruiting races ${Math.min(i+110,recruits.length).toLocaleString()} / ${recruits.length.toLocaleString()}…`);await recruitingYield()}
  state.recruitingPersistenceVersion=RECRUITING_PERSISTENCE_VERSION;state.recruitingInitializationPending=false;onProgress(99,'Recruiting class ready and locked for this season.')
 }
 
@@ -2342,7 +2349,9 @@ function filteredProspects(){
  else if(sort==='FIT')list.sort((a,b)=>weightedFit(b,state.school)-weightedFit(a,state.school));
  else if(sort==='OVR')list.sort((a,b)=>(b.scouted?Number(b.ovr||0):-1)-(a.scouted?Number(a.ovr||0):-1)||a.rank-b.rank);
  else if(sort==='POTENTIAL')list.sort((a,b)=>(b.scouted?Number(b.pot||0):-1)-(a.scouted?Number(a.pot||0):-1)||a.rank-b.rank);
- else list.sort((a,b)=>a.rank-b.rank);return list
+ else list.sort((a,b)=>a.rank-b.rank);
+ // Build 305: the "Need a player at…" chips re-sort the filtered list best-available first while active.
+ const need305=window.SDF_RECRUIT_NEEDS305?.reorder;return typeof need305==='function'?need305(list)||list:list
 }
 function recruitingOverviewHtml(){const board=state.recruits.filter(r=>r.onBoard&&openRecruitingProspect(r)).length,led=state.recruits.filter(r=>r.onBoard&&openRecruitingProspect(r)&&race(r).user?.rank===1).length;return metric('Weekly Recruiting Hours',state.weeklyHours)+metric('Open Prospects',state.recruits.filter(r=>!r.committedTo).length)+metric('Recruitable Now',state.recruits.filter(recruitableNow).length)+metric('Recruiting Board',`${board}/${RECRUIT_BOARD_LIMIT}`)+metric('Board Slots',Math.max(0,RECRUIT_BOARD_LIMIT-board))+metric('Offers Left',state.scholarships)+metric('Committed Class',`${state.commits.length}/${CLASS_SIGNING_LIMIT}`)+metric('Signed Players',state.commits.filter(r=>commitmentType(r)==='SIGNED').length)+metric('Battles Led',led)+metric('Late Opportunities',state.recruits.filter(lateOpportunity).length)+metric('Recruiting NIL Pool',formatNilMoney(state.nilBudget))+metric('NIL Offered',formatNilMoney(nilCommittedTotal()))+metric('Athletics Budget',formatNilMoney(state.budget))+metric('Recruiting Phase',state.recruitingPhase)}
 function recruitTableRowHtml(r){const n=recruitRenderNeeds(),status=statusFor(r),reason=status.canRecruit?status.warning:status.activeReason;return`<tr data-recruit-id="${r.id}" class="${!status.canRecruit?'recruit-blocked':''}"><td>${r.rank}</td><td><button class="link-button" onclick="openRecruit('${r.id}')">${r.name}</button><span class="sub">${r.arch} · ${r.personality}</span><div class="motivation-inline">${r.motivations.slice(0,2).map(m=>`<span>${m.label}</span>`).join('')}</div><span class="sub recruit-contact-remaining">${contactHoursLeft(r)}/${contactCapFor(r)} hrs remaining</span></td><td>${r.pos}</td><td class="star">${star(r.stars)}${!status.access.allowed?'<span class="lock-badge">TIER</span>':status.lockedOut?'<span class="lock-badge">CUT</span>':status.eligibility.locked?'<span class="lock-badge">DEALBREAKER</span>':''}</td><td>${r.city}, ${r.home}<span class="sub">${distance(state.school,r)} mi${state.school.pipelines.includes(r.home)?' · PIPELINE':''}</span></td><td><span class="stage">${stageFor(r)}</span></td><td>${r.scouted?r.ovr:'??'}</td><td>${projectedRecruitUpside(r)}</td><td>${r.scouted?(r.scoutConfidence||0)+'%':'—'}</td><td>${n[r.pos].label}<span class="sub">PT grade ${letterGrade(playingTimeGrade(r,state.school))}</span></td><td><span class="dealbreaker-badge">${dealbreakerDisplay(r)}</span></td><td><div class="race-summary">${userRaceSummary(r)}<div class="race-compact">${raceCompact(r,3)}</div></div>${reason?`<span class="sub ineligible">${reason}</span>`:''}</td><td><div class="actions">${recruitButtons(r,status)}</div></td></tr>`}
@@ -2698,7 +2707,7 @@ function renderNextSteps(){let el=$v('nextStepsPanel');if(!el)return;ensureV103(
  el.innerHTML=`<div class="section-head"><div><span class="eyebrow">WHAT TO DO NEXT</span><h3>Coach’s Checklist</h3></div></div>${items.map(i=>`<article class="checklist-card ${i.attention?'attention':'done'}"><span class="check-icon">${i.icon}</span><h4>${i.title}</h4><p>${i.text}</p><button class="btn neutral" onclick="navigateCoachTask('${i.tab}','${i.sub||''}')">${i.label}</button></article>`).join('')}`}
 window.navigateCoachTask=function(tab,sub){window.showTab(tab);if(sub)setSubview(tab+'Tab',sub)};
 function movePostseasonPanels(){let host=$v('postseasonStageHost');['championshipPanel','bowlsPanel','postseasonPanel'].forEach(id=>{let el=$v(id);if(el&&el.parentElement!==host)host.appendChild(el)})}
-function renderPostseason(){movePostseasonPanels();let ranking=state.rankings?.find(x=>x.id===state.school.id),seed=state.playoff?.findIndex(x=>x.id===state.school.id)+1,phase=state.phase,steps=[['Regular Season',phase!=='REGULAR'],['Conference Championship',['BOWLS','POST','PORTAL'].includes(phase)],['Bowls / CFP',['POST','PORTAL'].includes(phase)],['Offseason',phase==='PORTAL']];$v('postseasonStatusCards').innerHTML=metric('Record',`${state.record.w}-${state.record.l}`)+metric('National Rank',ranking?'#'+ranking.rank:'Unranked')+metric('Projected Seed',seed?`#${seed}`:'Outside field')+metric('Current Phase',(window.sdfPhaseLabel||String)(phase));$v('postseasonGuide').innerHTML=steps.map(([label,done],i)=>`<div class="postseason-step ${done?'complete':(!done&&steps.slice(0,i).every(x=>x[1]))?'active':''}"><b>${done?'✓ ':''}${label}</b><span>${i===0?'Build the résumé':i===1?'Win the league':i===2?'Bowls and 12-team bracket':'Portal and program building'}</span></div>`).join('');let field=(state.playoff||[]).slice(0,12);$v('postseasonProjectionGrid').innerHTML=field.length?field.map((t,i)=>`<div class="playoff-card"><span class="eyebrow">${phase==='REGULAR'?'PROJECTED ':''}SEED ${i+1}</span><div class="team-mini"><img src="${teamLogo(t.id)}" alt=""><div><h3>${escapeText(t.name)}</h3><span class="sub">${t.record?.w||0}-${t.record?.l||0} · ${t.conference}</span></div></div></div>`).join(''):'<div class="postseason-empty">Playoff projections appear after rankings are generated. Continue the season to build your résumé.</div>'}
+function renderPostseason(){movePostseasonPanels();let ranking=state.rankings?.find(x=>x.id===state.school.id),seed=state.playoff?.findIndex(x=>x.id===state.school.id)+1,phase=state.phase,steps=[['Regular Season',phase!=='REGULAR'],['Conference Championship',['BOWLS','POST','PORTAL'].includes(phase)],['Bowls / CFP',['POST','PORTAL'].includes(phase)],['Offseason',phase==='PORTAL']];$v('postseasonStatusCards').innerHTML=metric('Record',`${state.record.w}-${state.record.l}`)+metric('National Rank',ranking?'#'+ranking.rank:'Unranked')+metric('Projected Seed',seed?`#${seed}`:'Outside field')+metric('Current Phase',(window.sdfPhaseLabel||String)(phase));$v('postseasonGuide').innerHTML=steps.map(([label,done],i)=>`<div class="postseason-step ${done?'complete':(!done&&steps.slice(0,i).every(x=>x[1]))?'active':''}"><b>${done?'✓ ':''}${label}</b><span>${i===0?'Build the résumé':i===1?'Win the league':i===2?`Bowls and ${Number(state.commissionerRules251?.playoffSize)||12}-team bracket`:'Portal and program building'}</span></div>`).join('');let field=(state.playoff||[]).slice(0,16);$v('postseasonProjectionGrid').innerHTML=field.length?field.map((t,i)=>`<div class="playoff-card"><span class="eyebrow">${phase==='REGULAR'?'PROJECTED ':''}SEED ${i+1}</span><div class="team-mini"><img src="${teamLogo(t.id)}" alt=""><div><h3>${escapeText(t.name)}</h3><span class="sub">${t.record?.w||0}-${t.record?.l||0} · ${t.conference}</span></div></div></div>`).join(''):'<div class="postseason-empty">Playoff projections appear after rankings are generated. Continue the season to build your résumé.</div>'}
 function setupSubview(tabId,entries,defaultKey){let tab=$v(tabId);if(!tab||tab.querySelector(':scope > .tab-section-nav'))return;let nav=document.createElement('div');nav.className='tab-section-nav';let help=document.createElement('p');help.className='tab-section-help';help.textContent='Choose a section instead of scrolling through the entire page.';tab.prepend(help);tab.prepend(nav);subviews[tabId]={entries,active:defaultKey};entries.forEach(e=>{let target=typeof e.target==='string'?document.querySelector(e.target):e.target;if(!target)return;target.dataset.subview=e.key;let b=document.createElement('button');b.className='tab-section-btn';b.textContent=e.label;b.onclick=()=>setSubview(tabId,e.key);b.dataset.key=e.key;nav.appendChild(b)});setSubview(tabId,defaultKey)}
 window.setSubview=setSubview;function setSubview(tabId,key){let cfg=subviews[tabId];if(!cfg)return;cfg.active=key;let tab=$v(tabId);tab.querySelectorAll(':scope > section[data-subview]').forEach(s=>s.classList.toggle('subview-hidden',s.dataset.subview!==key));tab.querySelectorAll(':scope > .tab-section-nav .tab-section-btn').forEach(b=>b.classList.toggle('active',b.dataset.key===key));window.scrollTo({top:0,behavior:'smooth'})}
 function installSubviewNavigation(){setupSubview('rosterTab',[{key:'depth',label:'Depth Chart',target:'#rosterTab > section:nth-of-type(1)'},{key:'injuries',label:'Injury Report',target:'#rosterTab > section:nth-of-type(2)'},{key:'players',label:'Full Roster',target:'#rosterTab > section:nth-of-type(3)'}],'depth');setupSubview('gameplanTab',[{key:'scout',label:'Opponent',target:'#gameplanTab > section:nth-of-type(1)'},{key:'practice',label:'Practice',target:'#gameplanTab > section:nth-of-type(2)'},{key:'plan',label:'Tendencies',target:'#gameplanTab > section:nth-of-type(3)'}],'scout');setupSubview('coachTab',[{key:'skills',label:'Skill Tree',target:'#coachTab > section:nth-of-type(1)'},{key:'leadership',label:'Leadership',target:'#coachTab > section:nth-of-type(2)'}],'skills');setupSubview('statsTab',[{key:'team',label:'Team Stats',target:'#statsTab > section:nth-of-type(1)'},{key:'logs',label:'Game Logs',target:'#statsTab > section:nth-of-type(2)'},{key:'awards',label:'Awards',target:'#statsTab > section:nth-of-type(3)'},{key:'archive',label:'Archive',target:'#statsTab > section:nth-of-type(4)'},{key:'national',label:'National',target:'#statsTab > section:nth-of-type(5)'},{key:'classes',label:'Classes',target:'#statsTab > section:nth-of-type(6)'}],'team');setupSubview('teamTab',[{key:'schemes',label:'Schemes',target:'#teamTab > section:nth-of-type(1)'},{key:'ratings',label:'Ratings',target:'#teamTab > section:nth-of-type(2)'},{key:'leaders',label:'Leaders',target:'#teamTab > section:nth-of-type(3)'}],'schemes');setupSubview('seasonTab',[{key:'schedule',label:'Schedule',target:'#seasonTab > section:nth-of-type(2)'},{key:'standings',label:'Standings',target:'#seasonTab > section:nth-of-type(1)'}],'schedule');setupSubview('programTab',[{key:'overview',label:'Overview',target:'#programTab > section:nth-of-type(1)'},{key:'facilities',label:'Facilities',target:'#programTab > section:nth-of-type(2)'},{key:'staff',label:'Staff',target:'#programTab > section:nth-of-type(3)'},{key:'promises',label:'Promises',target:'#programTab > section:nth-of-type(4)'}],'overview');setupSubview('dynastyTab',[{key:'achievements',label:'Achievements',target:'#dynastyTab > section:nth-of-type(1)'},{key:'career',label:'Career & Saves',target:'#dynastyTab > section:nth-of-type(2)'},{key:'sponsors',label:'Sponsor Rewards',target:'#sponsorCenter'},{key:'rivalries',label:'Rivalries',target:'#dynastyTab > section:nth-of-type(4)'},{key:'draft',label:'Draft',target:'#dynastyTab > section:nth-of-type(5)'}],'achievements');setupSubview('historyTab',[{key:'history',label:'Seasons',target:'#historyTab > section:nth-of-type(1)'},{key:'trophies',label:'Trophies',target:'#historyTab > section:nth-of-type(2)'},{key:'records',label:'Records',target:'#historyTab > section:nth-of-type(3)'}],'history')}
@@ -3368,7 +3377,7 @@ const ROLE_KEYS={
  COVER:['CB1','CB2','NCB','FS','SS','MLB','WLB'],DEF:['LE','RE','DT1','DT2','MLB','WLB','SLB','CB1','CB2','NCB','FS','SS'],K:['K'],P:['P']
 };
 const SPEEDS={0:0,.5:1800,1:900,2:450,4:220};
-let timer=null,currentSpeed=1,renderedFeedLength=0,audioCtx12=null,lastGameCenterPaint=0;
+let timer=null,currentSpeed=1,renderedFeedLength=0,audioCtx12=null,lastGameCenterPaint=0,liveTick12=false;
 function n(v,d=0){v=Number(v);return Number.isFinite(v)?v:d}
 function rnd(min,max){return Math.floor((window.SDF_SEEDS?.random()??Math.random())*(max-min+1))+min}
 function pct(v){return Math.max(0,Math.min(100,n(v)))}
@@ -3561,7 +3570,10 @@ function offenseContext(game,side=game.possession){
  const own=n(game.score?.[side]);
  if(own>=49){explosiveMultiplier*=.78;tempoAdjustment-=8;passAdjustment-=6;aggressionAdjustment-=7;turnoverMultiplier*=.94}
  if(own>=63){explosiveMultiplier*=.62;tempoAdjustment-=8;passAdjustment-=8;aggressionAdjustment-=6;turnoverMultiplier*=.92}
- return{diff,secondHalf,late,tempoAdjustment,passAdjustment,aggressionAdjustment,explosiveMultiplier,turnoverMultiplier}
+ const out={diff,secondHalf,late,tempoAdjustment,passAdjustment,aggressionAdjustment,explosiveMultiplier,turnoverMultiplier};
+ // Build 305: a big-moment drive call (Aggressive / Run clock) biases this drive's play selection.
+ if(side==='us'&&game.driveCall305)try{window.SDF_BIG_MOMENTS305?.adjust?.(game,out)}catch{}
+ return out
 }
 function startOvertime(game,first=null){
  game.quarter=Math.max(5,n(game.quarter,4)+1);game.clock=0;game.overtimePossessions=0;game.otFirst=first||(((window.SDF_SEEDS?.random()??Math.random())<.5)?'us':'them');
@@ -3589,10 +3601,17 @@ function flipPossession(game,spot=game.ball){
  if(game.quarter>4){completeOvertimePossession(game);return}
  const next=game.possession==='us'?'them':'us';resetSeries(game,next,Math.max(1,Math.min(99,spot)))
 }
+// Build 305: hooks into the big-moments module only during a live 0.5x-2x tick (never in fast sims or at 4x).
+function bigMomentHook12(name,game,data){if(!liveTick12||currentSpeed>2||game.simulatingToFinal||game.simulatingToHalf||state.liveGame!==game)return false;try{return !!window.SDF_BIG_MOMENTS305?.[name]?.(game,data)}catch(error){console.warn('Big moment skipped',error);return false}}
 function scorePoints(game,side,points,label){
+ const holdTry=points===7&&side==='us'&&bigMomentHook12('holdTry',game,{label});if(holdTry)points=6;
  game.score[side]+=points;if(game.score.us<game.score.them)game.trailed277=true;
  if(points===7){const kicker=side==='us'?selectUserSkill('K'):oppPlayer(game,'K');if(kicker){const ks=stat(game,kicker.id,kicker.name,kicker.pos);ks.xpa++;ks.xpm++;ks.points++}}
  const line=`${label} ${side==='us'?state.school.name:game.opponent}.`;addFeed(game,line,points>=6?'score':'play');game.driveSummary.push(line);if(points>=6)crowdCheer(side,game);
+ if(holdTry)return;// the try (PAT or 2) is pending; afterScore12 runs once it is called
+ afterScore12(game,side)
+}
+function afterScore12(game,side){
  if(game.quarter>4){completeOvertimePossession(game);return}
  const receiver=side==='us'?'them':'us';resetSeries(game,receiver,receiver==='us'?25:75)
 }
@@ -3703,24 +3722,32 @@ function advanceDown(game,yards){
  game.distance=Math.max(1,game.distance-yards);game.down++;
  if(game.down>4){game.lastPlay+=' Turnover on downs.';addFeed(game,'Turnover on downs.','turnover');flipPossession(game)}
 }
-function specialTeamsDecision(game){
- const side=game.possession,st=sideStats(game,side),goal=toGoal(game),us=side==='us',ctx=offenseContext(game,side),aggression=(us?n(game.cfg.plan.fourth,45):n(game.cfg.aiPlan?.fourth,43))+ctx.aggressionAdjustment,needed=Math.max(1,game.distance),edge=us?game.cfg.ourOff+bonusRating283(game)-game.cfg.oppDef:game.cfg.oppOff-game.cfg.ourDef-bonusRating283(game);
- if(game.down<4)return false;
+function fgChance12(distance,rating){return Math.max(.32,Math.min(.97,.965-Math.max(0,distance-25)*.015+(rating-70)*.006))}
+function goChance12(game,needed,aggression,edge,us){return Math.max(.08,Math.min(.88,.69-(needed-1)*.055+edge/250+(aggression-50)/450+(us?Number(window.coachEffect?.('fourthDownSuccessPct')||0):0)))}
+// Build 305: the 4th-down inputs, shared by the play and by the big-moment odds. auto is exactly today's coach call.
+function fourthPlan12(game){
+ const side=game.possession,goal=toGoal(game),us=side==='us',ctx=offenseContext(game,side),aggression=(us?n(game.cfg.plan.fourth,45):n(game.cfg.aiPlan?.fourth,43))+ctx.aggressionAdjustment,needed=Math.max(1,game.distance),edge=us?game.cfg.ourOff+bonusRating283(game)-game.cfg.oppDef:game.cfg.oppOff-game.cfg.ourDef-bonusRating283(game);
  const goFor=(needed<=2&&goal>14&&aggression>=52)||(needed<=4&&goal<=12)||(ctx.late&&ctx.diff<0&&aggression>=48);
- if(goal<=35&&!goFor){
-  const kicker=us?selectUserSkill('K'):oppPlayer(game,'K'),distance=Math.round(goal+17),rating=n(kicker?.ovr,65),chance=Math.max(.32,Math.min(.97,.965-Math.max(0,distance-25)*.015+(rating-70)*.006));
+ return{side,goal,us,ctx,aggression,needed,edge,goFor,auto:goFor?'go':goal<=35?'fg':goal>42?'punt':'go',goChance:goChance12(game,needed,aggression,edge,us),fgDistance:Math.round(goal+17)};
+}
+// forced: 'go' | 'punt' | 'fg' from a big-moment call; omitted = the coach's own call, unchanged.
+function specialTeamsDecision(game,forced=null){
+ if(game.down<4)return false;
+ const {side,goal,us,aggression,needed,edge,goFor:autoGo}=fourthPlan12(game),st=sideStats(game,side),goFor=forced?forced==='go':autoGo;
+ if(forced==='fg'||(!forced&&goal<=35&&!goFor)){
+  const kicker=us?selectUserSkill('K'):oppPlayer(game,'K'),distance=Math.round(goal+17),rating=n(kicker?.ovr,65),chance=fgChance12(distance,rating);
   snapClock(game,false,true);const ks=stat(game,kicker.id,kicker.name,kicker.pos);ks.fga++;
   if((window.SDF_SEEDS?.random()??Math.random())<chance){ks.fgm++;ks.points+=3;game.lastPlay=`${kicker.name} makes a ${distance}-yard field goal.`;scorePoints(game,side,3,game.lastPlay)}
   else{game.lastPlay=`${kicker.name} misses a ${distance}-yard field goal.`;addFeed(game,game.lastPlay,'turnover');flipPossession(game)}
   return true
  }
- if(goal>42&&!goFor){
+ if(forced==='punt'||(!forced&&goal>42&&!goFor)){
   const punter=us?selectUserSkill('P'):oppPlayer(game,'P'),rating=n(punter?.ovr,65),punt=clamp(rnd(35,47)+Math.round((rating-65)/5),29,60),newBall=Math.max(5,Math.min(95,game.ball+direction(game)*punt)),ps=stat(game,punter.id,punter.name,punter.pos);
   ps.punts++;ps.puntYds+=punt;ps.puntLong=Math.max(ps.puntLong,punt);const landing=side==='us'?100-newBall:newBall;if(landing<=20)ps.inside20++;if(landing<=0)ps.touchbacks++;
   game.lastPlay=`${punter.name} punts ${punt} yards${landing<=20?' and pins the return team inside the 20':''}.`;addFeed(game,game.lastPlay);snapClock(game,false);flipPossession(game,newBall);return true
  }
  st.fourthAtt++;
- const chance=Math.max(.08,Math.min(.88,.69-(needed-1)*.055+edge/250+(aggression-50)/450+(us?Number(window.coachEffect?.('fourthDownSuccessPct')||0):0)));
+ const chance=goChance12(game,needed,aggression,edge,us);
  if((window.SDF_SEEDS?.random()??Math.random())<chance){
   const yards=needed+rnd(0,Math.min(6,Math.max(1,goal-needed)));addYards(game,yards);st.fourthConv++;st.firstDowns++;
   if(toGoal(game)<=0){game.lastPlay=`TOUCHDOWN! ${possessionTeam(game)} converts on fourth down.`;snapClock(game,false,true);scorePoints(game,side,7,game.lastPlay)}
@@ -3804,8 +3831,15 @@ function quarterTransition(game){
  game.quarter=4;startOvertime(game);return true
 }
 function overtimeCheck(game){return game.quarter>4&&game.complete}
+// Build 305: anything still pending (sim to half/final, a stale save) is decided by the coach, exactly as before.
+function bigMomentAuto12(game){
+ const m=game.bigMoment305;if(!m)return false;
+ try{const out=window.SDF_BIG_MOMENTS305?.resolve?.(game,null,'auto');if(!game.bigMoment305)return !!out}catch(error){console.warn('Big moment auto-resolve fallback',error)}
+ game.bigMoment305=null;if(m.kind==='try'){game.score.us+=1;afterScore12(game,'us');return true}return false
+}
 function simulatePlay(game){
  if(game.complete||game.halftimePending)return;
+ if(game.bigMoment305&&bigMomentAuto12(game))return;
  if(quarterTransition(game)){if(game.complete||game.quarter>4||game.halftimePending)return}
  if(game.quarter>4&&overtimeCheck(game))return;
  const beforePoss=game.possession;
@@ -3922,11 +3956,12 @@ function renderGameCenter(){
  const event=game.feed.at(-1),type=['score','turnover','injury','penalty'].includes(event?.type)?event.type:'play',label={score:'Scoring play',turnover:'Possession change',injury:'Injury update',penalty:'Flag on the play',play:game.plays?'Latest play':'Opening kickoff'}[type];
  $12('gcLastPlay').className='gc-latest gc-event-'+type;
  update('gcLastPlay',`<div class="gc-latest-kicker"><span class="gc-status-dot ${game.paused?'is-paused':''}" aria-hidden="true"></span>${game.simulatingToFinal?'FINISHING':game.paused?'PAUSED':'LIVE'}<span>${label}</span></div>${latestPlayTeam(game)&&!['injury'].includes(type)?`<div class="gc-latest-team">${safe(latestPlayTeam(game))}</div>`:''}<p>${safe(game.lastPlay)}</p><small>${safe(possessionTeam(game))} possession · Drive ${n(game.driveNo,1)}</small>`);
- const pause=$12('livePauseBtn');pause.textContent=game.paused?'▶ Resume':'Ⅱ Pause';pause.setAttribute('aria-label',game.paused?'Resume game':'Pause game');pause.disabled=!!(game.simulatingToFinal||game.simulatingToHalf||game.halftimePending);
+ const pause=$12('livePauseBtn');pause.textContent=game.paused?'▶ Resume':'Ⅱ Pause';pause.setAttribute('aria-label',game.paused?'Resume game':'Pause game');pause.disabled=!!(game.simulatingToFinal||game.simulatingToHalf||game.halftimePending||game.bigMoment305);
  const finish=$12('liveFinalBtn');finish.innerHTML=game.simulatingToFinal?'Finishing…':'Sim to final <span aria-hidden="true">»</span>';finish.disabled=!!game.simulatingToFinal;$12('liveExitBtn').disabled=!!game.simulatingToFinal;$12('gcHelpBtn').disabled=!!game.simulatingToFinal;
  body.querySelectorAll('[data-speed]').forEach(button=>{button.setAttribute('aria-pressed',String(Number(button.dataset.speed)===currentSpeed));button.disabled=!!game.simulatingToFinal});
  const half=$12('liveHalfBtn');half.hidden=game.quarter>=3||game.complete;half.disabled=!!(game.simulatingToFinal||game.simulatingToHalf);half.textContent=game.simulatingToHalf?'Simulating to halftime…':'Sim to halftime';renderHalftime(game);
- $12('gcPlayCount').textContent=`${game.plays} plays${game.feed.length>=180?' · Recent history':''}`;if(gameCenterTab==='plays')renderFeed(game);update('gcTeamStats',renderTeamStats(game));update('gcPlayerStats',renderPlayerStats(game)+renderGameInjuries(game))
+ $12('gcPlayCount').textContent=`${game.plays} plays${game.feed.length>=180?' · Recent history':''}`;if(gameCenterTab==='plays')renderFeed(game);update('gcTeamStats',renderTeamStats(game));update('gcPlayerStats',renderPlayerStats(game)+renderGameInjuries(game));
+ try{window.SDF_BIG_MOMENTS305?.render?.(game)}catch(error){console.warn('Big moment sheet',error)}
 }
 
 function postseasonFinalCopy(game,win){
@@ -3950,8 +3985,22 @@ function renderFinal(game){
 
 function paintGameCenter(force=false){const gap=currentSpeed>=4?520:currentSpeed>=2?700:0,now=Date.now();if(force||gap===0||now-lastGameCenterPaint>=gap){lastGameCenterPaint=now;renderGameCenter();return true}return false}
 function gameTick(){
- const game=state.liveGame;if(!game||game.complete||game.paused){stopTimer();return}simulatePlay(game);if(game.complete){finalizeLiveGame(game);return}paintGameCenter();scheduleTick()
+ const game=state.liveGame;if(!game||game.complete||game.paused){stopTimer();return}
+ if(bigMomentPause12(game))return;
+ liveTick12=true;try{simulatePlay(game)}finally{liveTick12=false}
+ if(game.complete){finalizeLiveGame(game);return}
+ if(game.bigMoment305&&bigMomentPause12(game))return;
+ paintGameCenter();scheduleTick()
 }
+// Build 305: before a live snap, the big-moments module may flag a decision; the clock then waits for the call.
+function bigMomentPause12(game){
+ if(!game.bigMoment305&&!game.halftimePending){liveTick12=true;try{bigMomentHook12('beforeSnap',game)}finally{liveTick12=false}}
+ if(!game.bigMoment305)return false;
+ if(currentSpeed>2){bigMomentAuto12(game);return false}
+ game.paused=true;stopTimer();paintGameCenter(true);return true
+}
+// A user's call is played inside a live scope, so a touchdown it produces can still offer the try.
+function bigMomentLive12(game,fn){const was=liveTick12;liveTick12=true;try{return fn()}finally{liveTick12=was}}
 function scheduleTick(){stopTimer();if(!state.liveGame||state.liveGame.paused||currentSpeed===0)return;timer=setTimeout(gameTick,SPEEDS[currentSpeed]||900)}
 function startTimer(){if(!state.liveGame||state.liveGame.halftimePending)return;state.liveGame.paused=false;scheduleTick()}
 function stopTimer(){if(timer){clearTimeout(timer);timer=null}}
@@ -4031,7 +4080,7 @@ function enforceGameCenterLabels(){
 const renderBeforeRequired=window.renderAll;
 window.renderAll=function(...args){const out=renderBeforeRequired?.apply(this,args);enforceGameCenterLabels();return out};
 
-repairQuickSimInjuries();ensure12();wire12();if(state.school)window.renderAll();window.SDF_V12_TEST={settleTie:settleTie12,newLiveGame,simulatePlay,renderInjuries,recoveryTick,recordInjury,finalizeLiveGame,gameConfig,emptyTeamStats,topPlayers,playerLine,skill12,resumableLiveGame,unlockAudio:unlockGameAudio,audioContext:soundContext,requiredGameCenter:true,aiGamePlan,schemeClash,halftimeReport,enterHalftime,halftimePreset,resumeAfterHalftime,quarterTransition,simToHalftime,simToFinal};
+repairQuickSimInjuries();ensure12();wire12();if(state.school)window.renderAll();window.SDF_V12_TEST={settleTie:settleTie12,newLiveGame,simulatePlay,renderInjuries,recoveryTick,recordInjury,finalizeLiveGame,gameConfig,emptyTeamStats,topPlayers,playerLine,skill12,resumableLiveGame,unlockAudio:unlockGameAudio,audioContext:soundContext,requiredGameCenter:true,aiGamePlan,schemeClash,halftimeReport,enterHalftime,halftimePreset,resumeAfterHalftime,quarterTransition,simToHalftime,simToFinal,specialTeamsDecision,fourthPlan12,fgChance12,goChance12,afterScore12,offenseContext,selectUserSkill,stat,addFeed,clockText,fieldText,toGoal,startTimer,stopTimer,renderGameCenter,bigMomentLive:bigMomentLive12,bigMomentAuto:bigMomentAuto12,speed:()=>currentSpeed,setLiveSpeed};
 })();
 
 (()=>{
@@ -4046,7 +4095,7 @@ function activeTab(){return document.querySelector('.nav-tab.active')?.dataset.t
 function updateContext(tab=activeTab()){
  const [kicker,title]=TITLES[tab]||['SATURDAY DYNASTY FOOTBALL','Dynasty'];
  const k=document.getElementById('activeSectionKicker'),t=document.getElementById('activeSectionTitle');
- if(k)k.textContent=state?.school?`${state.school.conference||kicker} · ${kicker}`:kicker;
+ if(k)k.textContent=state?.school?`${(state.school.conference&&window.SDF_CONFERENCES?.name?window.SDF_CONFERENCES.name(state.school.conferenceId||state.school.conference,state):state.school.conference)||kicker} · ${kicker}`:kicker;
  if(t)t.textContent=state?.school?`${state.school.name} · ${title}`:'Select a Program';
  document.body.dataset.section=tab;
  document.querySelectorAll('.nav-tab').forEach(b=>b.setAttribute('aria-current',b.dataset.tab===tab?'page':'false'));
@@ -5586,13 +5635,22 @@ function renderSettings(){
 
 function saveSnapshot(){return JSON.parse(JSON.stringify(window.SDF_RELEASE_TEST?.compactState?.()||state))}
 function recoveryRaw272(key){return window.SDF_BROWSER_SAVES?.get(key)||localStorage.getItem(key)}
-function rotateRecoveryBackup(reason){
- try{const owner=state,data=saveSnapshot(),item={id:`${Date.now()}`,reason,year:state.year,week:state.week,createdAt:new Date().toISOString(),data};const key=`sdf-v170-recovery-${state.saveSlot||1}`;if(window.SDF_BROWSER_SAVES?.enabled)return window.SDF_BROWSER_SAVES.rotateRecovery(key,item,localStorage.getItem(key)).then(()=>{localStorage.removeItem(key);if(state===owner&&state.school)state.recoveryMeta.backups=JSON.parse(recoveryRaw272(key)||'[]').map(({data,...x})=>x);return true}).catch(error=>{console.warn('Recovery backup failed',error);window.toast?.('Recovery point could not be saved. Export a backup from Dynasty.','error');return false});const list=JSON.parse(recoveryRaw272(key)||'[]');list.unshift(item);localStorage.setItem(key,JSON.stringify(list.slice(0,5)));state.recoveryMeta.backups=list.slice(0,5).map(({data,...x})=>x)}catch(err){console.warn('Recovery backup failed',err)}
+function rotateRecoveryBackup(reason,limit=5){
+ try{const owner=state,data=saveSnapshot(),item={id:`${Date.now()}`,reason,year:state.year,week:state.week,school:state.school?.name||'',createdAt:new Date().toISOString(),data};const key=`sdf-v170-recovery-${state.saveSlot||1}`;if(window.SDF_BROWSER_SAVES?.enabled)return window.SDF_BROWSER_SAVES.rotateRecovery(key,item,localStorage.getItem(key),limit).then(()=>{localStorage.removeItem(key);if(state===owner&&state.school)state.recoveryMeta.backups=JSON.parse(recoveryRaw272(key)||'[]').map(({data,...x})=>x);return true}).catch(error=>{console.warn('Recovery backup failed',error);window.toast?.('Recovery point could not be saved. Export a backup from Dynasty.','error');return false});const keep=Math.max(5,Number(limit)||5),list=JSON.parse(recoveryRaw272(key)||'[]');list.unshift(item);localStorage.setItem(key,JSON.stringify(list.slice(0,keep)));state.recoveryMeta.backups=list.slice(0,keep).map(({data,...x})=>x);return true}catch(err){console.warn('Recovery backup failed',err);return false}
 }
 window.createRecoveryBackupV170=async function(){if(await rotateRecoveryBackup('Manual recovery point')===false)return;await saveNow('Recovery point created',true,true);window.renderAll()};
-window.restoreRecoveryBackupV170=async function(){
+// Build 306: restore any listed recovery point, not only the newest (index 0 = newest). The current game is kept
+// as a new recovery point first (the list grows to 6 for that write so no older point is pushed out), so a
+// restore can itself be undone from the same list.
+function recoveryLabel(x){const school=x?.school||x?.data?.school?.name||'';return`${school?school+' · ':''}Year ${x?.year??'?'}, Week ${x?.week??'?'} · ${x?.reason||'Recovery point'} · ${new Date(x?.createdAt).toLocaleString()}`}
+window.restoreRecoveryBackupV170=async function(index=0){
  await window.SDF_BROWSER_SAVES?.ready;await window.SDF_BROWSER_SAVES?.flush();
- try{const key=`sdf-v170-recovery-${state.saveSlot||1}`,list=JSON.parse(recoveryRaw272(key)||'[]');if(!list.length){alert('No recovery points are available yet.');return}if(!confirm(`Restore the backup from ${new Date(list[0].createdAt).toLocaleString()}? Current unsaved progress will be replaced.`))return;Object.keys(state).forEach(k=>delete state[k]);Object.assign(state,JSON.parse(JSON.stringify(list[0].data)));ensureState();await saveNow('Recovery backup restored',true,true);window.renderAll()}catch(err){alert(`Restore failed: ${err.message}`)}
+ try{const key=`sdf-v170-recovery-${state.saveSlot||1}`,list=JSON.parse(recoveryRaw272(key)||'[]'),i=Math.max(0,Math.floor(Number(index)||0)),pick=list[i];if(!list.length){alert('No recovery points are available yet.');return false}if(!pick?.data){alert('That recovery point is no longer available.');return false}
+  const now=state.school?`${state.school.name} · Year ${state.year}, Week ${state.week}`:'your current game';
+  if(!confirm(`Restore this recovery point?\n\n${recoveryLabel(pick)}\n\nYour current game (${now}) will be replaced, but it is saved as a new recovery point first, so you can switch back from this list.`))return false;
+  const data=JSON.parse(JSON.stringify(pick.data));
+  if(state.school&&await rotateRecoveryBackup(`Before restoring ${pick.school||pick.data?.school?.name||'a recovery point'} Year ${pick.year}, Week ${pick.week}`,6)===false){alert('Your current game could not be kept as a recovery point, so nothing was restored. Export a backup from Dynasty and try again.');return false}
+  Object.keys(state).forEach(k=>delete state[k]);Object.assign(state,data);ensureState();await saveNow('Recovery backup restored',true,true);window.renderAll();return true}catch(err){alert(`Restore failed: ${err.message}`);return false}
 };
 window.runDynastyHealthCheckV170=function(){
  ensureState();window.SDF_AI_ROSTERS?.ensureAll?.();const issues=[],ids=new Set();for(const p of state.roster||[]){if(ids.has(p.id))issues.push(`Duplicate player ID: ${p.name}`);ids.add(p.id);if(n(p.ovr)<40||n(p.ovr)>99)issues.push(`Invalid OVR for ${p.name}`);if(n(p.pot)<n(p.ovr))issues.push(`Potential below OVR for ${p.name}`)}
@@ -5619,7 +5677,7 @@ window.exportBugReportV170=async function(){
 };
 function renderRecovery(){
  const host=el('recoveryToolsV170');if(!host)return;let backups=[];try{backups=JSON.parse(recoveryRaw272(`sdf-v170-recovery-${state.saveSlot||1}`)||'[]')}catch{}
- host.innerHTML=`<div class="section-head"><div><span class="eyebrow">SAVE & TESTING TOOLS</span><h2>Recovery, Diagnostics & Long-Term Audit</h2><p class="muted">Rotating recovery points help protect a dynasty, while the audit checks upset rates and score distributions without changing your real save.</p></div></div><div class="actions wrap"><button class="btn primary" onclick="createRecoveryBackupV170()">Create Recovery Point</button><button class="btn neutral" onclick="restoreRecoveryBackupV170()" ${backups.length?'':'disabled'}>Restore Latest</button><button class="btn neutral" onclick="runDynastyHealthCheckV170()">Check Save Health</button><button class="btn neutral" onclick="runSimulationAuditV170()">Run 25K-Game Audit</button><button class="btn neutral" onclick="runTenSeasonAuditV170()">Run 10-Season Audit</button><button class="btn neutral" onclick="exportBugReportV170()">Export Bug Report</button></div><div class="v170-backup-list">${backups.slice(0,5).map(x=>`<article><b>${esc(x.reason)}</b><span>Year ${x.year}, Week ${x.week} · ${new Date(x.createdAt).toLocaleString()}</span></article>`).join('')||'<p class="muted">No recovery points yet. One is created automatically after each completed game.</p>'}</div>`;
+ host.innerHTML=`<div class="section-head"><div><span class="eyebrow">SAVE & TESTING TOOLS</span><h2>Recovery, Diagnostics & Long-Term Audit</h2><p class="muted">Rotating recovery points help protect a dynasty, while the audit checks upset rates and score distributions without changing your real save.</p></div></div><div class="actions wrap"><button class="btn primary" onclick="createRecoveryBackupV170()">Create Recovery Point</button><button class="btn neutral" onclick="restoreRecoveryBackupV170()" ${backups.length?'':'disabled'}>Restore Latest</button><button class="btn neutral" onclick="runDynastyHealthCheckV170()">Check Save Health</button><button class="btn neutral" onclick="runSimulationAuditV170()">Run 25K-Game Audit</button><button class="btn neutral" onclick="runTenSeasonAuditV170()">Run 10-Season Audit</button><button class="btn neutral" onclick="exportBugReportV170()">Export Bug Report</button></div><div class="v170-backup-list">${backups.slice(0,6).map((x,i)=>`<article><b>${esc(x.school||x.data?.school?.name||'')}${(x.school||x.data?.school?.name)?' · ':''}${esc(x.reason)}</b><span>Year ${x.year}, Week ${x.week} · ${new Date(x.createdAt).toLocaleString()}</span><button class="btn neutral" onclick="restoreRecoveryBackupV170(${i})">Restore this point</button></article>`).join('')||'<p class="muted">No recovery points yet. One is created automatically after each completed game.</p>'}</div>`;
 }
 
 function simulateWorldWeekV170(){
@@ -6247,7 +6305,7 @@ recruiting:{label:'Recruiting',icon:'★',summary:'Build a focused board, learn 
  ],tip:'Season shows the full calendar; Postseason keeps the championship picture together.'},
  offseason:{label:'Offseason roadmap',icon:'↻',summary:'Review each major stop before the transfer portal. Make the choices yourself or let your staff handle them.',sections:[
   ['Review five stops','Spring Practice → Position Battles → Player Development → Coaching Carousel → Pro Draft. The roadmap marks completed and upcoming steps.'],
-  ['Choose your control','Use the choices on a step, or Let Staff Handle & Continue. The carousel uses Let AI Handle Carousel & Continue. Viewing an optional step and advancing also lets staff resolve it.'],
+  ['Choose your control','Start Year from the Offseason Hub to accept every staff plan at once, or open a step and make your choices. Inside a step, Use Staff Plan & Continue accepts the staff’s pick (the carousel uses Use Staff Plan for the Carousel). Viewing an optional step and advancing also lets staff resolve it.'],
   ['Open the portal','After the review stops, Open Transfer Portal begins the four-week transfer market. Recruit incoming players and consider eligible retention opportunities.'],
   ['Begin the next year','Continue through the portal and use the next-season action when available. Review your new roster and depth chart before the opener.']
  ],tip:'You do not need to make every offseason choice. The roadmap tracks what comes next.'},
@@ -7046,13 +7104,16 @@ function resolvedTeam(s,id){
  const user=Number(s?.school?.id)===id?s.school:null;
  return{...baseSchool,id,name:o.name??user?.name??w.name??baseSchool.name??`Program ${id}`,abbr:o.abbr??brand.abbr??'',city:o.city??user?.city??baseSchool.city??'',state:o.state??user?.state??baseSchool.state??'',region:user?.region??w.region??baseSchool.region??'',lat:n(user?.lat??w.lat??baseSchool.lat,0),lon:n(user?.lon??w.lon??baseSchool.lon,0),pipelines:Array.isArray(o.pipelines)?[...o.pipelines]:Array.isArray(user?.pipelines)?[...user.pipelines]:Array.isArray(w.pipelines)?[...w.pipelines]:Array.isArray(baseSchool.pipelines)?[...baseSchool.pipelines]:[],conference:o.conference??user?.conference??w.conference??baseSchool.conference??'Independents',prestige:n(o.prestige,user?.prestige??w.prestige??baseSchool.prestige??50),recent:n(o.recent,user?.recent??w.recent??baseSchool.recent??50),facilities:n(o.facilities,user?.facilities??w.facilities??baseSchool.facilities??50),pro:n(o.pro,user?.pro??w.pro??baseSchool.pro??50),nil:n(o.nil,user?.nil??baseSchool.nil??50),academics:n(o.academics,user?.academics??baseSchool.academics??50),expectation:n(o.expectation,user?.expectation??w.expectation??baseSchool.expectation,6),offense:o.offense??user?.offense??w.offense??'Spread',defense:o.defense??user?.defense??w.defense??'4-2-5',hours:n(user?.hours??w.hours??baseSchool.hours,500),tag:user?.tag??w.tag??baseSchool.tag??'',primary:o.primary??brand.primary??'#2563eb',secondary:o.secondary??brand.secondary??'#22d3ee',accent:o.accent??brand.accent??'#ffffff',logo:o.logoData??brand.logo??`assets/logos/team-${id}.svg`,stadium:{name:o.stadiumName??(user?s?.stadium?.name:null)??'Memorial Stadium',capacity:n(o.stadiumCapacity,(user?s?.stadium?.capacity:null)??55000)}}
 }
+// Build 307: league-file and editor ratings are starting values. Each one is applied once (and again only when it is edited),
+// so season-end prestige, recent success and facility changes are no longer reset on every render.
+const STARTING_VALUES307=new Set(['prestige','recent','facilities','pro','nil','academics','expectation']);
 function applyIdentityOverrides(s=state){
  resetGlobalIdentity();
  for(const g of s?.schedule||[]){const o=overrideBy(s,g.oppId);if(o?.name)g.opponent=o.name}
  for(const w of s?.world||[]){const school=schools.find(x=>Number(x.id)===Number(w.id));if(school&&w.conference)school.conference=w.conference}
  if(s?.school){const school=schools.find(x=>Number(x.id)===Number(s.school.id));if(school&&s.school.conference)school.conference=s.school.conference}
  for(const school of schools){const id=Number(school.id),o=overrideBy(s,id);if(!o)continue;for(const k of ['name','city','state','conference','prestige','recent','facilities','pro','nil','academics','expectation','offense','defense'])if(o[k]!=null)school[k]=o[k];if(Array.isArray(o.pipelines))school.pipelines=[...o.pipelines];const w=worldBy(s,id);if(w){for(const k of ['expectation','offense','defense'])if(o[k]!=null)w[k]=o[k];if(Array.isArray(o.pipelines))w.pipelines=[...o.pipelines]}const b=TEAM_BRANDING[id]||(TEAM_BRANDING[id]={});if(o.primary)b.primary=o.primary;if(o.secondary)b.secondary=o.secondary;if(o.accent)b.accent=o.accent;if(o.abbr)b.abbr=o.abbr;if(o.logoData)b.logo=o.logoData}
- if(s?.school){const o=overrideBy(s,s.school.id);if(o){for(const k of ['name','city','state','conference','prestige','recent','facilities','pro','nil','academics','expectation'])if(o[k]!=null)s.school[k]=o[k];if(Array.isArray(o.pipelines))s.school.pipelines=[...o.pipelines];if(o.offense)s.offense=o.offense;if(o.defense)s.defense=o.defense;if(o.stadiumName||o.stadiumCapacity){s.stadium??={};if(o.stadiumName)s.stadium.name=o.stadiumName;if(o.stadiumCapacity)s.stadium.capacity=o.stadiumCapacity}}}
+ if(s?.school){const o=overrideBy(s,s.school.id);if(o){const applied=((s.identityApplied307??={})[String(s.school.id)]??={});for(const k of ['name','city','state','conference','prestige','recent','facilities','pro','nil','academics','expectation']){if(o[k]==null)continue;if(STARTING_VALUES307.has(k)){if(applied[k]===o[k])continue;applied[k]=o[k]}s.school[k]=o[k]}if(Array.isArray(o.pipelines))s.school.pipelines=[...o.pipelines];if(o.offense)s.offense=o.offense;if(o.defense)s.defense=o.defense;if(o.stadiumName||o.stadiumCapacity){s.stadium??={};if(o.stadiumName)s.stadium.name=o.stadiumName;if(o.stadiumCapacity)s.stadium.capacity=o.stadiumCapacity}}}
 }
 function syncTeamRows(s,id,values){
  if(values.conference&&window.SDF_CONFERENCES?.id)values={...values,conferenceId:window.SDF_CONFERENCES.id(values.conference,s)};
@@ -7549,7 +7610,8 @@ window.SDF_MUSIC={sync,duck,suspend,resume,tracks:TRACKS,getState:()=>({enabled:
 // Build 217: guided offseason flow. Optional development and staff stops come
 // before the transfer portal; starter battles follow portal close.
 // A coach can make choices, close the screen and press Advance to let the staff
-// handle the step automatically, or use the Let Staff Handle control directly.
+// handle the step automatically, or tap Use Staff Plan directly.
+// Build 305: the Offseason Hub (v305-offseason-hub.js) is the default entry; this step-by-step path still works.
 const VERSION='27.4.16',BUILD=217;
 const $217=id=>document.getElementById(id);
 const baseOffseason=window.offseason;
@@ -7582,6 +7644,18 @@ function popup(title,message){
  try{alert(`${title}\n\n${message}`)}catch{}
 }
 function nextStep(){return missing()[0]||null}
+// Build 306: a dismissed coach always chooses the next job himself. No staff-plan shortcut (the carousel button,
+// header Advance on an already-seen step, v242 "Let staff handle remaining preparation", the hub) may accept a
+// head-coaching offer; each of them now opens the carousel on the offers instead.
+function dismissed(){try{return!!window.SDF_V193?.mustLeaveCurrentJob?.()}catch{return false}}
+function showDismissedCarousel(){
+ const f=ensureFlow();if(f)f.presented.staff=true;
+ state.carouselMessage='You were dismissed. Your staff will not pick your next job for you: review the offers below and accept the one you want.';
+ window.showTab?.('dashboard');
+ const btn=document.querySelector('[data-offseason-action="staff"]');if(btn)btn.click();
+ window.toast?.('You were dismissed. Choose your next job in the Coaching Carousel.','warning');
+ renderGuide();return false
+}
 function chooseSpringFocus(){
  const roster=state.roster||[],young=roster.filter(p=>Number(p.year||1)<=2).length,def=roster.filter(p=>['EDGE','DL','LB','CB','S'].includes(p.pos)),ol=roster.filter(p=>['OT','IOL'].includes(p.pos));
  const qb=roster.filter(p=>p.pos==='QB').sort((a,b)=>Number(b.pot||b.ovr)-Number(a.pot||a.ovr))[0];
@@ -7597,11 +7671,8 @@ function autoStaff(){
  let guard=0;
  while(guard++<20){
   const offers=state.jobOffers||[];
-  const forced=!!window.SDF_V193?.mustLeaveCurrentJob?.();
-  if(forced){
-   const choices=offers.map((o,i)=>({o,i})).filter(x=>x.o.type==='HEAD_JOB'&&x.o.status==='PENDING').sort((a,b)=>Number(b.o.programPower||0)-Number(a.o.programPower||0));
-   if(choices[0]){window.acceptJob?.(choices[0].i);return true}
-  }
+  // Build 306: never accept a head job for the coach (this used to take the highest-power offer after a firing).
+  if(dismissed())return false;
   const dep=offers.map((o,i)=>({o,i})).find(x=>x.o.type==='STAFF_DEPARTURE'&&!['RETAINED','HIRED'].includes(x.o.status));
   if(!dep)break;
   if(dep.o.status==='PENDING'&&Number(state.budget||0)>=Number(dep.o.retainCost||Infinity)){window.retainCoordinator?.(dep.i);continue}
@@ -7636,6 +7707,7 @@ function autoResolve(key){
  }else if(key==='progression'){
   window.finishProgression?.();f.autoHandled.progression=true;state.news?.push?.('Staff handled individual offseason development focuses.')
  }else if(key==='staff'){
+  if(dismissed())return showDismissedCarousel();
   autoStaff();f.autoHandled.staff=true;state.news?.push?.('The AI staff handled the coaching carousel and job-market decisions.')
  }else if(key==='draft'){
   const btn=document.querySelector('[data-offseason-action="draft"]');if(btn)btn.click();f.autoHandled.draft=true
@@ -7644,9 +7716,10 @@ function autoResolve(key){
 }
 function addStaffButton(key){
  if(!['spring','battles','progression','staff'].includes(key))return;
+ if(key==='staff'&&dismissed())return;
  const body=$217('modalBody');if(!body||body.querySelector('[data-offseason-auto]'))return;
- const b=document.createElement('button');b.className='btn neutral full';b.dataset.offseasonAuto=key;b.textContent=key==='staff'?'Let AI Handle Carousel & Continue':'Let Staff Handle & Continue';
- b.onclick=()=>{autoResolve(key);$217('modal')?.classList.add('hidden');setTimeout(()=>presentNext(),90)};
+ const b=document.createElement('button');b.className='btn neutral full';b.dataset.offseasonAuto=key;b.textContent=key==='staff'?'Use Staff Plan for the Carousel':'Use Staff Plan & Continue';
+ b.onclick=()=>{autoResolve(key);$217('modal')?.classList.add('hidden');if(window.SDF_OFFSEASON_HUB305?.returnFromStep?.(key))return;setTimeout(()=>presentNext(),90)};
  body.appendChild(b)
 }
 function presentStep(key){
@@ -7671,7 +7744,8 @@ function openPortal(){
  const f=ensureFlow(),left=missing();if(state.phase!=='PORTAL')return false;
  if(f?.portalClosed){if(!f.postPortalBattleComplete)window.SDF_POST_PORTAL_V269?.openBattles?.();return false}
  if(left.length){
-  popup('One quick offseason stop first',`${left[0].label} is next. You do not have to make any choices — use Let Staff Handle or press Advance after viewing it.`);
+  if(left[0].key==='staff'&&dismissed()){popup('Choose your next job','You were dismissed. Accept one of the head-coaching offers in the Coaching Carousel before the transfer portal opens.');return presentStep('staff')}
+  popup('One quick offseason stop first',`${left[0].label} is next. You do not have to make any choices — tap Use Staff Plan or press Advance after viewing it.`);
   return presentStep(left[0].key)
  }
  if(f)f.stage='PORTAL';
@@ -7686,6 +7760,7 @@ function runNext(){
  if(f.portalClosed&&f.postPortalBattleComplete)return baseAdvance?.apply(window,arguments);
  const n=nextStep();
  if(n){
+  if(n.key==='staff'&&dismissed())return presentStep('staff');
   if(f.presented[n.key]){autoResolve(n.key);const after=nextStep();if(after)return presentStep(after.key);f.stage='PORTAL_READY';renderGuide();return true}
   return presentStep(n.key)
  }
@@ -7696,13 +7771,14 @@ function renderGuide(){
  if(!state?.school||state.phase!=='PORTAL')return;
  const f=ensureFlow(),n=nextStep(),host=$217('nextStepsPanel'),t=tasks();
  if(host){
-  const cards=PREP.map((x,i)=>{const done=!!t[x.key],auto=!!f.autoHandled[x.key],seen=!!f.presented[x.key],active=!done&&n?.key===x.key;return `<article class="checklist-card ${done?'done':active?'attention':''}"><span class="check-icon">${done?'✓':i+1}</span><h4>${x.label}</h4><p>${x.desc}</p>${done?`<b>${auto?'Staff Handled':'Complete'}</b>`:active?`<button class="btn primary" onclick="SDF_V217_OFFSEASON.runTask('${x.key}')">${seen?'Return to':'View'} ${x.label}</button><span class="sub">Optional: make your choices or let the staff handle it.</span>`:'<span class="muted">Coming up next in the offseason flow.</span>'}</article>`}).join('');
+  const cards=PREP.map((x,i)=>{const done=!!t[x.key],auto=!!f.autoHandled[x.key],seen=!!f.presented[x.key],active=!done&&n?.key===x.key;return `<article class="checklist-card ${done?'done':active?'attention':''}"><span class="check-icon">${done?'✓':i+1}</span><h4>${x.label}</h4><p>${x.desc}</p>${done?`<b>${auto?'Staff plan used':'Complete'}</b>`:active?`<button class="btn primary" onclick="SDF_V217_OFFSEASON.runTask('${x.key}')">${seen?'Return to':'View'} ${x.label}</button><span class="sub">Optional: make your choices or let the staff handle it.</span>`:'<span class="muted">Coming up next in the offseason flow.</span>'}</article>`}).join('');
   const ready=!n,portalOpen=f.stage==='PORTAL';
   const portalClosed=!!f.portalClosed,postBattles=f.stage==='POST_PORTAL_BATTLES',battleDone=!!f.postPortalBattleComplete;
   host.innerHTML=`<div class="section-head"><div><span class="eyebrow">OFFSEASON ROADMAP</span><h3>Offseason Checklist</h3><p class="muted">Review development and staff decisions, work the transfer portal, then confirm the best starters after the roster is complete.</p></div></div>${cards}<article class="checklist-card ${portalOpen?'attention':portalClosed||battleDone?'done':''}"><span class="check-icon">${portalClosed||battleDone?'✓':'5'}</span><h4>Transfer Portal</h4><p>${portalClosed||battleDone?'The transfer window is closed.':portalOpen?`Portal Week ${Number(state.portalWeek||1)} of 4 is active.`:ready?'Your offseason review is complete. Open the transfer portal when ready.':'The portal comes after the guided offseason screens above.'}</p>${ready&&!portalOpen&&!portalClosed?'<button class="btn primary" onclick="SDF_V217_OFFSEASON.openPortal()">Open Transfer Portal</button>':''}</article>${portalClosed||battleDone?`<article class="checklist-card ${battleDone?'done':'attention'}"><span class="check-icon">${battleDone?'✓':'6'}</span><h4>Position Battles</h4><p>${battleDone?'Your post-portal starters are confirmed.':`Portal closed. The depth chart is set to each position’s best eligible OVR; review close calls and choose a different starter if you prefer.`}</p>${postBattles&&!battleDone?'<button class="btn primary" onclick="SDF_POST_PORTAL_V269.openBattles()">Review Position Battles</button>':''}${battleDone?'<b>Complete</b>':''}</article>`:''}`
  }
- const label=n?(f.presented[n.key]?`Let Staff Handle ${n.label} →`:`View ${n.label} →`):f.portalClosed&&!f.postPortalBattleComplete?'Review Position Battles →':f.stage==='PORTAL'?state.portalWeek>=4?'Close Portal & Review Starters →':`Advance to Portal Week ${Number(state.portalWeek||1)+1}`:f.postPortalBattleComplete?`Begin Year ${Number(state.year)+1} →`:'Open Transfer Portal →';
- ['advanceWeekBtn','recruitAdvanceBtn','mobileAdvance'].forEach(id=>{const b=$217(id);if(b){b.disabled=false;b.textContent=id==='mobileAdvance'?(n?(f.presented[n.key]?'Staff Handle':'View '+n.label):f.portalClosed&&!f.postPortalBattleComplete?'Review Starters':f.stage==='PORTAL'?(state.portalWeek>=4?'Close Portal':'Advance Portal'):f.postPortalBattleComplete?'Begin Next Year':'Open Portal'):label}});
+ const pickJob=n?.key==='staff'&&dismissed();
+ const label=pickJob?'Choose Your Next Job →':n?(f.presented[n.key]?`Use Staff Plan: ${n.label} →`:`View ${n.label} →`):f.portalClosed&&!f.postPortalBattleComplete?'Review Position Battles →':f.stage==='PORTAL'?state.portalWeek>=4?'Close Portal & Review Starters →':`Advance to Portal Week ${Number(state.portalWeek||1)+1}`:f.postPortalBattleComplete?`Begin Year ${Number(state.year)+1} →`:'Open Transfer Portal →';
+ ['advanceWeekBtn','recruitAdvanceBtn','mobileAdvance'].forEach(id=>{const b=$217(id);if(b){b.disabled=false;b.textContent=id==='mobileAdvance'?(pickJob?'Choose Job':n?(f.presented[n.key]?'Use Staff Plan':'View '+n.label):f.portalClosed&&!f.postPortalBattleComplete?'Review Starters':f.stage==='PORTAL'?(state.portalWeek>=4?'Close Portal':'Advance Portal'):f.postPortalBattleComplete?'Begin Next Year':'Open Portal'):label}});
  const mode=$217('transferPortalRecruitingBtn');if(mode){mode.disabled=false;mode.textContent=n?`Transfer Portal · ${missing().length} Stop${missing().length===1?'':'s'} First`:'Transfer Portal'};
  const portalAdvance=$217('portalAdvanceWeekBtn');if(portalAdvance)portalAdvance.disabled=f.stage!=='PORTAL'||f.portalClosed
 }
@@ -7718,13 +7794,13 @@ window.offseason=function(...args){
  if(state?.phase==='PORTAL'){
   state.offseasonFlow217={year:Number(state.year||1),stage:'PREP',presented:{},autoHandled:{},portalClosed:false,postPortalBattleComplete:false};
   state.recruitingView='highschool';if(typeof baseSetRecruitingMode==='function')baseSetRecruitingMode.call(window,'highschool');
-  window.showTab?.('dashboard');renderGuide();setTimeout(()=>presentNext(),120);window.SDF_RELEASE_TEST?.saveNow?.('Guided offseason opened',false,true)
+  window.showTab?.('dashboard');renderGuide();setTimeout(()=>{if(window.SDF_OFFSEASON_HUB305?.claimEntry?.())return;presentNext()},120);window.SDF_RELEASE_TEST?.saveNow?.('Guided offseason opened',false,true)
  }
  return out
 };
 window.advanceWeek=function(...args){if(state?.phase==='PORTAL')return runNext(...args);return baseAdvance?.apply(this,args)};
 window.renderAll=function(...args){const out=baseRenderAll?.apply(this,args);renderGuide();return out};
-window.SDF_V217_OFFSEASON={VERSION,BUILD,PREP,addStaffButton,missing,runTask,presentStep,presentNext,autoResolve,runNext,openPortal,renderGuide,ensureFlow};
+window.SDF_V217_OFFSEASON={VERSION,BUILD,PREP,chooseSpringFocus,addStaffButton,missing,runTask,presentStep,presentNext,autoResolve,autoStaff,dismissed,runNext,openPortal,renderGuide,ensureFlow};
 })();
 
 (()=>{
@@ -9640,8 +9716,8 @@ const $=id=>document.getElementById(id);
 function repairRecord(s){if(!s?.school||!['CHAMP','BOWLS'].includes(s.phase)||Number(s.record?.w)+Number(s.record?.l)<=17)return false;const regular=(s.schedule||[]).filter(g=>['W','L'].includes(g.result));if(regular.length!==12)return false;const d=s.postseasonData||{},games=[...(d.conferenceResults||[]),...(d.bowlResults||[]),...(d.playoffRounds||[]).flatMap(r=>r?.games||[])],seen=new Set();let wins=regular.filter(g=>g.result==='W').length,losses=regular.length-wins;for(const g of games){if(![g.a?.id,g.b?.id].some(id=>Number(id)===Number(s.school.id))||!g.winner)continue;const key=[g.label,...[g.a.id,g.b.id].sort((a,b)=>a-b)].join(':');if(seen.has(key))continue;seen.add(key);Number(g.winner.id)===Number(s.school.id)?wins++:losses++}if(!seen.size||wins+losses>17)return false;const old={...s.record};s.record={w:wins,l:losses};if(s.coachCareer){s.coachCareer.careerWins=Math.max(0,Number(s.coachCareer.careerWins||0)-Math.max(0,old.w-wins));s.coachCareer.careerLosses=Math.max(0,Number(s.coachCareer.careerLosses||0)-Math.max(0,old.l-losses))}s.postseasonRepair242={year:s.year,previous:old,restored:{...s.record}};s.news??=[];s.news.push(`Postseason recovery: restored the season record from ${old.w}-${old.l} to ${wins}-${losses} using saved game results. Continue the existing bracket.`);window.SDF_RELEASE_TEST?.scheduleSave?.('Recovered repeated postseason record',100,true);return true}
 // Build 299: only promise "your next matchup" when the user's team actually has a postseason game.
 function userInPostseason(s){const d=s?.postseasonData,id=Number(s?.school?.id);if(!d||!Number.isFinite(id))return true;const ours=t=>Number(t?.id??t)===id,game=g=>ours(g?.a)||ours(g?.b);if(s.liveGameContext)return true;if(s.phase==='CHAMP')return !Array.isArray(d.conferenceGames)||d.conferenceGames.some(game);if(!Array.isArray(d.bowls)&&!Array.isArray(d.playoffField))return true;return (d.playoffField||[]).some(ours)||(d.bowls||[]).some(game)}
-function phaseText(s){if(s.phase==='PORTAL'){const left=window.SDF_V217_OFFSEASON?.missing?.()||[];return left.length?`Offseason · ${5-left.length} of 5 preparation steps complete. Next: ${left[0].label}.`:`Offseason · Transfer portal week ${s.portalWeek||1} of 4. ${s.portalWeek>=4?'Ready to begin Year '+(Number(s.year)+1)+'.':'Advance the portal when your transfer decisions are done.'}`}if(s.phase==='AWARDS')return`Year ${s.year} is complete. Review your awards, then enter the offseason.`;if((s.phase==='CHAMP'||s.phase==='BOWLS')&&!userInPostseason(s))return'Postseason · Your season is over. Advance to follow the championships, bowls and playoff.';if(s.phase==='CHAMP'||s.phase==='BOWLS')return`Postseason · ${s.liveGameContext?.label||(s.postseasonFlow?.stageComplete?'Continue the saved postseason round.':'Your next matchup is ready.')}`;return''}
-function render(){if(!state?.school)return;const host=$('homeHub232')||$('gameCommandCenterV219')||$('dashboardTab');if(!host)return;let card=$('seasonFlow242');const text=phaseText(state);if(!text){card?.remove();return}if(!card){card=document.createElement('section');card.id='seasonFlow242';card.className='journey-card';host.prepend(card)}card.replaceChildren();const title=document.createElement('h3');title.textContent='Where you are in the season';const p=document.createElement('p');p.textContent=text;card.append(title,p);const b=document.createElement('button');b.className='btn primary';b.textContent=state.phase==='PORTAL'&&state.portalWeek>=4?'Finish portal & begin next season':state.phase==='AWARDS'?'Review awards & enter offseason':'Continue';b.onclick=async()=>{if(b.disabled)return;b.disabled=true;try{await window.advanceWeek()}finally{b.disabled=false}};card.append(b);if(state.phase==='PORTAL'&&window.SDF_V217_OFFSEASON.missing().length){const auto=document.createElement('button');auto.className='btn neutral';auto.textContent='Let staff handle remaining preparation';auto.onclick=()=>{for(const task of window.SDF_V217_OFFSEASON.missing())window.SDF_V217_OFFSEASON.autoResolve(task.key);$('modal')?.classList.add('hidden');window.renderAll()};card.append(auto)}}
+function phaseText(s){if(s.phase==='PORTAL'){const left=window.SDF_V217_OFFSEASON?.missing?.()||[];return left.length?`Offseason · ${4-left.length} of 4 preparation steps complete. Next: ${left[0].label}.`:`Offseason · Transfer portal week ${s.portalWeek||1} of 4. ${s.portalWeek>=4?'Ready to begin Year '+(Number(s.year)+1)+'.':'Advance the portal when your transfer decisions are done.'}`}if(s.phase==='AWARDS')return`Year ${s.year} is complete. Review your awards, then enter the offseason.`;if((s.phase==='CHAMP'||s.phase==='BOWLS')&&!userInPostseason(s))return'Postseason · Your season is over. Advance to follow the championships, bowls and playoff.';if(s.phase==='CHAMP'||s.phase==='BOWLS')return`Postseason · ${s.liveGameContext?.label||(s.postseasonFlow?.stageComplete?'Continue the saved postseason round.':'Your next matchup is ready.')}`;return''}
+function render(){if(!state?.school)return;const host=$('homeHub232')||$('gameCommandCenterV219')||$('dashboardTab');if(!host)return;let card=$('seasonFlow242');const text=phaseText(state);if(!text){card?.remove();return}if(!card){card=document.createElement('section');card.id='seasonFlow242';card.className='journey-card';host.prepend(card)}card.replaceChildren();const title=document.createElement('h3');title.textContent='Where you are in the season';const p=document.createElement('p');p.textContent=text;card.append(title,p);const b=document.createElement('button');b.className='btn primary';b.textContent=state.phase==='PORTAL'&&state.portalWeek>=4?'Finish portal & begin next season':state.phase==='AWARDS'?'Review awards & enter offseason':'Continue';b.onclick=async()=>{if(b.disabled)return;b.disabled=true;try{await window.advanceWeek()}finally{b.disabled=false}};card.append(b);if(state.phase==='PORTAL'&&window.SDF_V217_OFFSEASON.missing().length){const auto=document.createElement('button');auto.className='btn neutral';auto.textContent='Let staff handle remaining preparation';auto.onclick=()=>{const F=window.SDF_V217_OFFSEASON,fired=!!F.dismissed?.();for(const task of F.missing())if(!(fired&&task.key==='staff'))F.autoResolve(task.key);if(fired&&F.missing().some(t=>t.key==='staff')){window.renderAll();F.autoResolve('staff');return}$('modal')?.classList.add('hidden');window.renderAll()};card.append(auto)}}
 function resetPageScroll(){window.scrollTo({top:0,left:0,behavior:'instant'});for(const page of document.querySelectorAll('.tab-page:not(.hidden)'))resetScrollTree(page)}
 function resetScrollTree(root){if(!root)return;root.scrollTop=0;for(const node of root.querySelectorAll('*'))if(node.scrollTop)node.scrollTop=0}
 function installNavigationScroll(){
@@ -9672,7 +9748,7 @@ const originalSchedule=window.genSchedule;
 window.genSchedule=function(...args){return withByes(originalSchedule.apply(this,args))};
 function isBye(){return state?.phase==='REGULAR'&&!!state.schedule?.[Number(state.week)-1]?.bye}
 function portalLabel(){const f=state.offseasonFlow217;if(f?.portalClosed)return f.postPortalBattleComplete?`Transfer portal closed · Ready for Year ${Number(state.year||1)+1}`:'Transfer portal closed · Position battles';return`Transfer portal · Week ${Math.min(4,Math.max(1,Number(state.portalWeek)||1))} of 4`}
-function label(){if(state.phase==='PORTAL'){const missing=window.SDF_V217_OFFSEASON?.missing?.()||[];return missing.length?`Offseason preparation · ${5-missing.length} of 5 complete`:portalLabel()}if(state.phase==='REGULAR')return`Year ${state.year} · Week ${state.week} of ${state.schedule?.length||12}${isBye()?' · Bye week':''}`;return`Year ${state.year} · ${{SIGNING:'Signing Day',CHAMP:'Conference championships',BOWLS:'Bowl / playoff',AWARDS:'Awards',POST:'Season complete'}[state.phase]||(window.sdfPhaseLabel||String)(state.phase)}`}
+function label(){if(state.phase==='PORTAL'){const missing=window.SDF_V217_OFFSEASON?.missing?.()||[];return missing.length?`Offseason preparation · ${4-missing.length} of 4 complete`:portalLabel()}if(state.phase==='REGULAR')return`Year ${state.year} · Week ${state.week} of ${state.schedule?.length||12}${isBye()?' · Bye week':''}`;return`Year ${state.year} · ${{SIGNING:'Signing Day',CHAMP:'Conference championships',BOWLS:'Bowl / playoff',AWARDS:'Awards',POST:'Season complete'}[state.phase]||(window.sdfPhaseLabel||String)(state.phase)}`}
 function byeHtml(){return`<section class="playbook-truth" style="grid-column:1/-1"><span class="eyebrow">WEEK ${state.week} OF ${state.schedule.length}</span><h3>Bye week · Rest. Recruit. Prepare.</h3><p>No game this week. Recruit, set your practice focus, and check your roster. Advancing refreshes recruiting hours and gives injured players a recovery week without counting a missed game.</p><button class="btn primary" onclick="advanceWeek()">Advance bye week →</button></section>`}
 function advanceBye(){const g=state.schedule?.[Number(state.week)-1];if(!isBye()||g.completed)return false;window.resolveRecruiting?.();window.healInjuries?.();window.applyYoungPlayerPracticeDevelopment?.();window.SDF_V103_TEST?.progressFacilityProject?.();window.SDF_DISCIPLINE?.processWeek?.();g.completed=true;state.news.push(`Week ${state.week}: bye week completed. No game was played; the team recovered and recruiting continued.`);state.week++;window.resetHours?.();window.SDF_V103_TEST?.applyWeeklyFacilityBenefits?.();window.renderAll();window.SDF_RELEASE_TEST?.saveNow?.('Bye week completed',false,true);return true}
 let pending=null;
@@ -9832,9 +9908,11 @@ function renderSupporter(){
  }
 }
 
-function injectButtons(){const shop=$('sdfPlayShop');if(shop&&!$('commissionerRulesShop251')){const b=document.createElement('button');b.id='commissionerRulesShop251';b.className='journey-preview-entry';b.textContent='Preview Commissioner League Rules';b.onclick=()=>openRules(true);shop.querySelector('#sdfCommissionerPreview')?.after(b)}const team=$('sdfAndroidEditor');if(team?.classList.contains('open')&&$('sdfEditorTitle')?.textContent==='Conference Manager'&&!$('commissionerRulesEditor251')){const b=document.createElement('button');b.id='commissionerRulesEditor251';b.className='sdf-editor-filter';b.textContent='League Rules Center';b.onclick=openRules;$('sdfEditorContent')?.prepend(b)}}
+function injectButtons(){const shop=$('sdfPlayShop');if(shop&&!$('commissionerRulesShop251')){const b=document.createElement('button');b.id='commissionerRulesShop251';b.className='journey-preview-entry';b.textContent='Preview Commissioner League Rules';b.onclick=()=>openRules(!(window.SDF_COMMISSIONER?.hasCommissioner?.()&&current()));shop.querySelector('#sdfCommissionerPreview')?.after(b)}const shopRules=$('commissionerRulesShop251');if(shopRules){const label=window.SDF_COMMISSIONER?.hasCommissioner?.()&&current()?'Edit League Rules':'Preview Commissioner League Rules';if(shopRules.textContent!==label)shopRules.textContent=label}const team=$('sdfAndroidEditor');if(team?.classList.contains('open')&&$('sdfEditorTitle')?.textContent==='Conference Manager'&&!$('commissionerRulesEditor251')){const b=document.createElement('button');b.id='commissionerRulesEditor251';b.className='sdf-editor-filter';b.textContent='League Rules Center';b.onclick=openRules;$('sdfEditorContent')?.prepend(b)}}
 
-function reshapePlayoffField(){const s=current(),r=ensureRules(s);if(!s?.postseasonData||num(r.playoffSize,12)===12)return;const size=num(r.playoffSize,12),cfp=s.cfpRankings||s.rankings||[],champs=(s.postseasonData.champions||[]).map(c=>cfp.find(x=>Number(x.id)===Number(c.id))||c).sort((a,b)=>num(a.cfpRank,a.rank||999)-num(b.cfpRank,b.rank||999)),auto=champs.slice(0,Math.min(size,num(r.autoBids,5))),field=auto.concat(cfp.filter(x=>!auto.some(a=>Number(a.id)===Number(x.id))).slice(0,size-auto.length)).slice(0,size);s.postseasonData.playoffField=field.map((x,i)=>({...x,seed:i+1,autoBid:auto.some(a=>Number(a.id)===Number(x.id))}));s.playoff=[...s.postseasonData.playoffField];const ids=new Set(field.map(x=>Number(x.id))),wins=num(r.bowlWins,6);s.postseasonData.bowls=(cfp.filter(x=>!ids.has(Number(x.id))&&num(x.record?.w)>=wins).slice(0,20).reduce((out,x,i,a)=>{if(i%2===0&&a[i+1])out.push({name:['Lakes Bowl','Liberty Bowl','Sun Coast Bowl','Frontier Bowl','Heritage Bowl','Citrus Classic','Desert Bowl','Motor City Bowl'][Math.floor(i/2)%8],a:x,b:a[i+1]});return out},[]))}
+function reshapePlayoffField(){const s=current(),r=ensureRules(s);if(!s?.postseasonData||(num(r.playoffSize,12)===12&&num(r.autoBids,5)===5&&num(r.bowlWins,6)===6))return;const size=num(r.playoffSize,12),cfp=s.cfpRankings||s.rankings||[],champs=(s.postseasonData.champions||[]).map(c=>cfp.find(x=>Number(x.id)===Number(c.id))||c).sort((a,b)=>num(a.cfpRank,a.rank||999)-num(b.cfpRank,b.rank||999)),auto=champs.slice(0,Math.min(size,num(r.autoBids,5))),field=auto.concat(cfp.filter(x=>!auto.some(a=>Number(a.id)===Number(x.id))).slice(0,size-auto.length)).slice(0,size);if(size===12)field.sort((a,b)=>num(a.cfpRank,a.rank||999)-num(b.cfpRank,b.rank||999));s.postseasonData.playoffField=field.map((x,i)=>({...x,seed:i+1,autoBid:auto.some(a=>Number(a.id)===Number(x.id))}));s.playoff=[...s.postseasonData.playoffField];const ids=new Set(field.map(x=>Number(x.id))),wins=num(r.bowlWins,6);s.postseasonData.bowls=(cfp.filter(x=>!ids.has(Number(x.id))&&num(x.record?.w)>=wins).slice(0,20).reduce((out,x,i,a)=>{if(i%2===0&&a[i+1])out.push({name:['Lakes Bowl','Liberty Bowl','Sun Coast Bowl','Frontier Bowl','Heritage Bowl','Citrus Classic','Desert Bowl','Motor City Bowl'][Math.floor(i/2)%8],a:x,b:a[i+1]});return out},[]))}
+function projectPlayoffField(){const s=current();if(!s||s.postseasonData?.playoffField?.length)return;const r=ensureRules(s),size=num(r.playoffSize,12),bids=num(r.autoBids,5),cfp=s.cfpRankings||[];if((size===12&&bids===5)||!cfp.length)return;const seen=new Set(),champs=[];for(const t of cfp){if(!t.conference||t.conference==='Independents'||seen.has(t.conference))continue;seen.add(t.conference);champs.push(t)}const auto=champs.slice(0,Math.min(size,bids)),ids=new Set(auto.map(x=>Number(x.id))),field=auto.concat(cfp.filter(x=>!ids.has(Number(x.id))).slice(0,size-auto.length)).slice(0,size);s.playoff=field.map((x,i)=>({...x,seed:i+1,autoBid:ids.has(Number(x.id))}))}
+const originalRankings=window.updateRankings;if(typeof originalRankings==='function')window.updateRankings=function(...args){const out=originalRankings.apply(this,args);projectPlayoffField();return out};
 const originalPrepare=window.prepareBowlsAndPlayoff;if(typeof originalPrepare==='function')window.prepareBowlsAndPlayoff=function(...args){const out=originalPrepare.apply(this,args);reshapePlayoffField();window.renderPostseasonBrackets?.();return out};
 
 function customPlayoff(){const s=current();return !!s&&num(ensureRules(s)?.playoffSize,12)!==12}
@@ -9863,7 +9941,7 @@ const style=document.createElement('style');style.textContent=`.rules-grid251{di
 
 const observe=new MutationObserver(()=>{installScenarios();decorateScenarioDialog();decorateScenarioShop();injectButtons();renderSupporter()});observe.observe(document.documentElement,{childList:true,subtree:true});
 window.addEventListener('sdf:play-entitlements',()=>{claimPending();decorateScenarioDialog();renderSupporter()});
-window.SDF_PREMIUM251={SCENARIOS,PACKS,installScenarios,owned,openRules,ensureRules,applyBoost,claimPending,canReceiveBoost:()=>!!current(),reshapePlayoffField,supporterTier,continueCustomPlayoff,startCustomPostseason,completeCustom,renderCustomBracket};
+window.SDF_PREMIUM251={SCENARIOS,PACKS,installScenarios,owned,openRules,ensureRules,applyBoost,claimPending,canReceiveBoost:()=>!!current(),reshapePlayoffField,projectPlayoffField,supporterTier,continueCustomPlayoff,startCustomPostseason,completeCustom,renderCustomBracket};
 installScenarios();setTimeout(()=>{claimPending();injectButtons();renderSupporter();decorateScenarioDialog()},300);
 })();
 
@@ -10613,7 +10691,7 @@ function validate(raw){
 function applyPackage(s,raw,creation=false){
  check(creation?fresh(s):allowed(),creation?'Creation imports require a fresh dynasty.':'Importing an existing dynasty requires Commissioner Mode or All Access.');check(!s.liveGame,'Finish or exit the live game before importing a league.');const pack=validate(raw),draft=clone(s),previousPlayers=new Map([...(s.roster||[]),...Object.values(s.aiRosters||{}).flat()].map(p=>[p.id,p]));
  // All validation finishes before even the draft is changed. Never merge arbitrary save fields.
- draft.teamIdentityOverrides={};draft.conferenceRegistry={version:250,conferences:{}};
+ draft.teamIdentityOverrides={};draft.identityApplied307={};draft.conferenceRegistry={version:250,conferences:{}};
  for(const c of pack.conferences)draft.conferenceRegistry.conferences[c.id]={id:c.id,displayName:c.displayName,abbr:c.abbr};
  draft.conferenceEcosystem??={};draft.conferenceEcosystem.autoRealignment=pack.autoRealignment;
  for(const t of pack.teams){const changes=Object.fromEntries(fields.filter(k=>t[k]!=null).map(k=>[k,clone(t[k])]));window.SDF_V195.applyTeamEdit(draft,t.id,changes);const o=draft.teamIdentityOverrides[t.id];Object.assign(o,{offense:t.offense,defense:t.defense,pipelines:[...t.pipelines],expectation:t.expectation});
@@ -10652,11 +10730,11 @@ function mountShare295(){
 function open(){
  if(!state.school){window.toast?.('Load a dynasty, then open Commissioner Mode.','error');return}
  let d=$('commissioner292');if(!d){d=document.createElement('dialog');d.id='commissioner292';document.body.append(d)}
- d.innerHTML=`<header><div><small class="sdf-premium-ey">COMMISSIONER TOOLS</small><h2>Commissioner Mode</h2></div><button id="commissionerClose292" aria-label="Close Commissioner Mode">×</button></header><div class="cm-body292"><p>Edit your program and AI programs. Commissioner edits disable scenario scoring. Tools follow your purchased upgrades.</p><div class="cm-grid292"><button id="cmTeams292">Team Editor<small>All 128 teams · logos, ratings, schemes and stadiums</small></button><button id="cmPlayers292">Player Editor<small>Every program’s roster</small></button><button id="cmConferences292">Conference Manager<small>Names, abbreviations, alignment and realignment</small></button></div><h3>Share a Custom League</h3><p>Export all 128 programs and conferences. Include rosters to share edited players too. Import at any point outside a live game. Names-only files keep your players. Roster files replace players; matching player IDs retain their statistics. Coach, budget and results stay intact. Imported alignment applies to standings immediately; the existing season schedule stays intact and new schedules use it next season.</p><label><input id="cmRosters292" type="checkbox" checked> Include all team rosters</label><button id="cmExport292">Export League File</button> <button id="cmCopy292" disabled>Copy League JSON</button><section id="cmShareOffer294"><p>Want other players to use your custom league? Uploading is optional and requires confirmation.</p><button id="cmUploadCommunity294" class="btn primary">Upload to Community</button></section><h3>Import a League</h3><p>1. Choose a JSON file. 2. Check Import. 3. Confirm replacement and apply.</p><button id="cmLibrary294" class="btn primary">Import League</button><label hidden>Choose league file<input id="cmFile292" type="file" accept=".json,application/json"></label><details><summary>Or paste league JSON</summary><label>League JSON<textarea id="cmJson292" rows="5" placeholder="Load a league file or paste one here. Large league files are checked without filling this box."></textarea></label></details><button id="cmValidate292">Check Import</button><label><input id="cmReplace292" type="checkbox"> Replace league customization (and players if included) with the checked file</label><button id="cmApply292" disabled>Apply Checked League</button><p id="cmStatus292" role="status"></p></div>`;
+ d.innerHTML=`<header><div><small class="sdf-premium-ey">COMMISSIONER TOOLS</small><h2>Commissioner Mode</h2></div><button id="commissionerClose292" aria-label="Close Commissioner Mode">×</button></header><div class="cm-body292"><p>Edit your program and AI programs. Commissioner edits disable scenario scoring. Tools follow your purchased upgrades.</p><div class="cm-grid292"><button id="cmTeams292">Team Editor<small>All 128 teams · logos, ratings, schemes and stadiums</small></button><button id="cmPlayers292">Player Editor<small>Every program’s roster</small></button><button id="cmConferences292">Conference Manager<small>Names, abbreviations, alignment and realignment</small></button><button id="cmRules307">League Rules<small>Playoff size, auto-bids, bowl eligibility and realism</small></button></div><h3>Share a Custom League</h3><p>Export all 128 programs and conferences. Include rosters to share edited players too. Import at any point outside a live game. Names-only files keep your players. Roster files replace players; matching player IDs retain their statistics. Coach, budget and results stay intact. Imported alignment applies to standings immediately; the existing season schedule stays intact and new schedules use it next season.</p><label><input id="cmRosters292" type="checkbox" checked> Include all team rosters</label><button id="cmExport292">Export League File</button> <button id="cmCopy292" disabled>Copy League JSON</button><section id="cmShareOffer294"><p>Want other players to use your custom league? Uploading is optional and requires confirmation.</p><button id="cmUploadCommunity294" class="btn primary">Upload to Community</button></section><h3>Import a League</h3><p>1. Choose a JSON file. 2. Check Import. 3. Confirm replacement and apply.</p><button id="cmLibrary294" class="btn primary">Import League</button><label hidden>Choose league file<input id="cmFile292" type="file" accept=".json,application/json"></label><details><summary>Or paste league JSON</summary><label>League JSON<textarea id="cmJson292" rows="5" placeholder="Load a league file or paste one here. Large league files are checked without filling this box."></textarea></label></details><button id="cmValidate292">Check Import</button><label><input id="cmReplace292" type="checkbox"> Replace league customization (and players if included) with the checked file</label><button id="cmApply292" disabled>Apply Checked League</button><p id="cmStatus292" role="status"></p></div>`;
  const status=msg=>$('cmStatus292').textContent=msg;let checked=null,checkedText=null,fileText=null,exportText=null;
  const access=()=>{if(allowed())return true;status('Existing-dynasty imports and conference tools require Commissioner Mode or All Access. Exporting and sharing are free.');return false};
  $('commissionerClose292').onclick=()=>d.close();
- for(const [id,fn] of [['cmTeams292',()=>window.SDF_COMMISSIONER.openTeamEditor()],['cmPlayers292',()=>window.SDF_COMMISSIONER.openPlayerEditor(null,false,state.school.id)],['cmConferences292',()=>window.SDF_COMMISSIONER.openConferenceManager()]])$(id).onclick=()=>{d.close();fn()};
+ for(const [id,fn] of [['cmTeams292',()=>window.SDF_COMMISSIONER.openTeamEditor()],['cmPlayers292',()=>window.SDF_COMMISSIONER.openPlayerEditor(null,false,state.school.id)],['cmConferences292',()=>window.SDF_COMMISSIONER.openConferenceManager()],['cmRules307',()=>window.SDF_PREMIUM251?.openRules?.()]])$(id).onclick=()=>{d.close();fn()};
  $('cmExport292').onclick=()=>{try{window.SDF_AI_ROSTERS?.ensureAll?.();const raw=packageLeague(state,$('cmRosters292').checked);validate(raw);const json=JSON.stringify(raw,null,2);exportText=json;$('cmCopy292').disabled=false;checked=null;$('cmApply292').disabled=true;const filename='Saturday-Dynasty-League.json';if(window.SDFNative?.exportSave)window.SDFNative.exportSave(filename,json);else{const url=URL.createObjectURL(new Blob([json],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(url),10000)}$('cmShareOffer294').hidden=false;status('League exported. Keep it private or choose Upload to Community below.')}catch(e){status(e.message)}};
  $('cmCopy292').onclick=async()=>{try{check(exportText,'Export a league first.');await navigator.clipboard.writeText(exportText);status('League JSON copied.')}catch(e){status('Copy unavailable here. Share the exported JSON file instead.')}};
  const openLibrary294=(extra={})=>{if(!access())return;window.SDF_LEAGUE294.open({mode:'existing',...extra,onSelect:(pack,title)=>{checked=validate(pack);fileText=JSON.stringify(checked);checkedText=fileText;$('cmJson292').value='';$('cmReplace292').checked=false;$('cmApply292').disabled=true;status(title+' checked: 128 teams'+(checked.teams[0].roster?' and player rosters.':'.')+' Confirm replacement, then Apply Checked League.')}})};
@@ -10684,10 +10762,19 @@ function mountCreation(){
  $('creationFile293').onchange=async e=>{const file=e.target.files?.[0];if(!file)return;const request=++creationRequest;creationPending=true;creationPack=null;$('creationStatus293').textContent='Checking league file…';try{check(!window.SDF_SEEDS?.pending?.()&&!window.SDF_DYNASTY_STORY?.pending?.(),'Custom leagues cannot be combined with a scored scenario.');check(file.size<=32*1024*1024,'League file exceeds 32 MB.');const pack=validate(JSON.parse(await file.text()));if(request!==creationRequest)return;creationPack=pack;$('creationStatus293').textContent='Ready: '+pack.teams.length+' teams'+(pack.teams[0].roster?' with player rosters.':'. Generated players will be kept.')+' Choose your program below.';}catch(error){if(request===creationRequest)$('creationStatus293').textContent='File not selected: '+error.message}finally{if(request===creationRequest){creationPending=false;window.renderSchools()}}};
 }
 
-function inject(){mountCreation();mountShare295();for(const id of ['cmOpen292nav','cmOpen292more'])$(id)?.remove();window.SDF_COMMISSIONER?.refreshButtons?.()}
-window.SDF_LEAGUE292={packageLeague,validate,applyPackage,fresh,open,inject,openShare:openShare295,prepareExport:prepareExport295,creationTeam,creationBrand,applyCreation,selectCreation,hasCreationPack:()=>!!creationPack,creationPending:()=>creationPending};
+function mountCommissionerNavigation(){
+ for(const [hostId,id]of [['mainTabs','cmOpen292nav'],['mobileMoreMenu','cmOpen292more']]){
+  const host=$(hostId);if(!host)continue;let button=$(id);
+  if(!button){button=document.createElement('button');button.id=id;button.type='button';button.className='commissioner-menu-entry';button.textContent='Commissioner Mode';button.setAttribute('aria-haspopup','dialog');button.setAttribute('aria-controls','commissioner292');host.insertBefore(button,hostId==='mobileMoreMenu'?$('moreTools296')||$('mobileMoreClose'):null)}
+  button.hidden=!allowed();button.disabled=!state.school;
+  button.onclick=()=>{if(!allowed()){inject();window.toast?.('Commissioner Mode or All Access is required.','error');return}if(!state.school){window.toast?.('Load a dynasty, then open Commissioner Mode.','error');return}open();$('mobileMoreMenu')?.classList.add('hidden')};
+ }
+}
+function inject(){mountCreation();mountShare295();mountCommissionerNavigation();window.SDF_COMMISSIONER?.refreshButtons?.()}
+window.SDF_LEAGUE292={packageLeague,validate,applyPackage,fresh,open,inject,mountCommissionerNavigation,openShare:openShare295,prepareExport:prepareExport295,creationTeam,creationBrand,applyCreation,selectCreation,hasCreationPack:()=>!!creationPack,creationPending:()=>creationPending};
 if(typeof document!=='undefined'){
- const style=document.createElement('style');style.textContent=`#leagueShare295{box-sizing:border-box;width:min(540px,calc(100vw - 20px));max-height:calc(100dvh - 24px);padding:0;overflow:auto;border:1px solid #466176;border-radius:16px;background:#0a1b27;color:#edf7ff}#leagueShare295::backdrop{background:#020a12dc}#leagueShare295 header{display:flex;justify-content:space-between;gap:12px;padding:16px;position:sticky;top:0;background:#0a1b27;z-index:2}#leagueShare295 h2{font-size:22px;margin:6px 0}#leagueShare295 small{color:#f1c95c;font-size:10px;letter-spacing:.12em}#leagueShare295 .share-body295{padding:0 16px 16px}#leagueShare295 p{font-size:14px;line-height:1.5;color:#bdd0da}#leagueShare295 label{display:block;margin:18px 0;font-size:14px}#leagueShare295 input{width:22px;height:22px;vertical-align:middle}#leagueShare295 button{min-height:44px;border:1px solid #884b9d;border-radius:8px;background:#652579;color:white;font-weight:800;padding:12px}#leagueShare295 .btn{display:block;width:100%}#shareClose295{width:44px;flex-shrink:0;font-size:22px}#shareStatus295{min-height:20px}#leagueShareTeam295{min-height:44px;white-space:normal}#creationFile293,#commissioner292 label[hidden]{display:none!important}#creationLeague293{padding:14px;margin:12px 0;border:1px solid #315268;border-radius:12px;background:#0b1e2c;color:#edf7ff}#creationLeague293 h3{margin:0 0 10px;font-size:16px}#creationLeague293 p{font-size:13px;line-height:1.5;color:#b7cdd9}#creationLeague293 label{display:block;font-size:13px;margin:12px 0}#creationLeague293 input{display:block;max-width:100%;margin-top:6px}#creationLeague293 button{min-height:44px}#commissioner292{box-sizing:border-box;width:min(780px,calc(100vw - 20px));max-height:calc(100vh - 24px);padding:0;overflow:auto;border:1px solid #466176;border-radius:16px;background:#0a1b27;color:#edf7ff}#commissioner292::backdrop{background:#020a12dc}#commissioner292 header{display:flex;justify-content:space-between;gap:12px;padding:16px;position:sticky;top:0;background:#0a1b27;z-index:2}#commissioner292 h2{margin:5px 0}#commissioner292 button{min-height:44px;padding:10px 14px;border:1px solid #315268;border-radius:7px;background:#183343;color:#fff;font-weight:800;cursor:pointer}#commissioner292 button:disabled{opacity:.45}#commissioner292 header small{color:#f1c95c;font-size:9px;font-weight:900;letter-spacing:.16em}#commissionerClose292{width:44px;height:44px;flex-shrink:0;padding:0!important;font-size:20px}#commissioner292 #cmApply292{background:#188875;border-color:#188875}#commissioner292 .cm-grid292 button{text-align:left}#commissioner292 small{display:block;font-weight:400;line-height:1.5;margin-top:5px}#commissioner292 .cm-body292{padding:0 16px 18px}#commissioner292 p{line-height:1.5;color:#b7cdd9}#commissioner292 label{display:block;margin:12px 0}#commissioner292 details{margin:14px 0}#commissioner292 summary{min-height:44px;display:flex;align-items:center;cursor:pointer;color:#b7cdd9}#commissioner292 input[type=checkbox]{width:22px;height:22px;vertical-align:middle}#commissioner292 input[type=file]{display:block;max-width:100%;margin-top:8px}#commissioner292 textarea{box-sizing:border-box;width:100%;background:#06131c;color:#e9f6ff;border:1px solid #406075;padding:8px}.cm-grid292{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}@media(max-width:620px){.cm-grid292{grid-template-columns:1fr}}`;
+ window.addEventListener?.('sdf:play-entitlements',inject);
+ const style=document.createElement('style');style.textContent=`#leagueShare295{box-sizing:border-box;width:min(540px,calc(100vw - 20px));max-height:calc(100dvh - 24px);padding:0;overflow:auto;border:1px solid #466176;border-radius:16px;background:#0a1b27;color:#edf7ff}#leagueShare295::backdrop{background:#020a12dc}#leagueShare295 header{display:flex;justify-content:space-between;gap:12px;padding:16px;position:sticky;top:0;background:#0a1b27;z-index:2}#leagueShare295 h2{font-size:22px;margin:6px 0}#leagueShare295 small{color:#f1c95c;font-size:10px;letter-spacing:.12em}#leagueShare295 .share-body295{padding:0 16px 16px}#leagueShare295 p{font-size:14px;line-height:1.5;color:#bdd0da}#leagueShare295 label{display:block;margin:18px 0;font-size:14px}#leagueShare295 input{width:22px;height:22px;vertical-align:middle}#leagueShare295 button{min-height:44px;border:1px solid #884b9d;border-radius:8px;background:#652579;color:white;font-weight:800;padding:12px}#leagueShare295 .btn{display:block;width:100%}#shareClose295{width:44px;flex-shrink:0;font-size:22px}#shareStatus295{min-height:20px}#leagueShareTeam295{min-height:44px;white-space:normal}#creationFile293,#commissioner292 label[hidden]{display:none!important}#creationLeague293{padding:14px;margin:12px 0;border:1px solid #315268;border-radius:12px;background:#0b1e2c;color:#edf7ff}#creationLeague293 h3{margin:0 0 10px;font-size:16px}#creationLeague293 p{font-size:13px;line-height:1.5;color:#b7cdd9}#creationLeague293 label{display:block;font-size:13px;margin:12px 0}#creationLeague293 input{display:block;max-width:100%;margin-top:6px}#creationLeague293 button{min-height:44px}#commissioner292{box-sizing:border-box;width:min(780px,calc(100vw - 20px));max-height:calc(100vh - 24px);padding:0;overflow:auto;border:1px solid #466176;border-radius:16px;background:#0a1b27;color:#edf7ff}#commissioner292::backdrop{background:#020a12dc}#commissioner292 header{display:flex;justify-content:space-between;gap:12px;padding:16px;position:sticky;top:0;background:#0a1b27;z-index:2}#commissioner292 h2{margin:5px 0}#commissioner292 button{min-height:44px;padding:10px 14px;border:1px solid #315268;border-radius:7px;background:#183343;color:#fff;font-weight:800;cursor:pointer}#commissioner292 button:disabled{opacity:.45}#commissioner292 header small{color:#f1c95c;font-size:9px;font-weight:900;letter-spacing:.16em}#commissionerClose292{width:44px;height:44px;flex-shrink:0;padding:0!important;font-size:20px}#commissioner292 #cmApply292{background:#188875;border-color:#188875}#commissioner292 .cm-grid292 button{text-align:left}#commissioner292 small{display:block;font-weight:400;line-height:1.5;margin-top:5px}#commissioner292 .cm-body292{padding:0 16px 18px}#commissioner292 p{line-height:1.5;color:#b7cdd9}#commissioner292 label{display:block;margin:12px 0}#commissioner292 details{margin:14px 0}#commissioner292 summary{min-height:44px;display:flex;align-items:center;cursor:pointer;color:#b7cdd9}#commissioner292 input[type=checkbox]{width:22px;height:22px;vertical-align:middle}#commissioner292 input[type=file]{display:block;max-width:100%;margin-top:8px}#commissioner292 textarea{box-sizing:border-box;width:100%;background:#06131c;color:#e9f6ff;border:1px solid #406075;padding:8px}.cm-grid292{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}@media(max-width:620px){.cm-grid292{grid-template-columns:1fr}}#cmOpen292nav{display:block;width:100%;margin-top:6px;padding:10px 11px;border:1px solid #8a6a2c;border-radius:5px;background:#1a1f1d;color:#f3d585;font:inherit;font-size:11.52px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;text-align:left;cursor:pointer}#cmOpen292nav:hover:not(:disabled){background:#2a2a20}#cmOpen292more{grid-column:1/-1;text-align:left;padding:12px 15px;color:#f3d585;box-shadow:inset 3px 0 0 #c9a24a}.commissioner-menu-entry[hidden]{display:none!important}.commissioner-menu-entry:disabled{opacity:.5;cursor:not-allowed}`;
  document.head.append(style);const base=window.renderAll;window.renderAll=function(...a){const value=base.apply(this,a);setTimeout(inject,0);return value};document.addEventListener('sdf:android-editor-saved',inject);document.addEventListener('click',e=>{if(e.target.closest?.('#newDynastyBtn'))setTimeout(mountCreation,0)});for(const node of [$('mainTabs'),$('mobileMoreMenu')])if(node)new MutationObserver(inject).observe(node,{childList:true});inject();
 }
 })();
@@ -11249,7 +11336,8 @@ const admin=()=>window.SDF_V193?.ensure?.()||state?.stakeholdersV193||null;
 function jobMult(){let d=1;try{d=n(window.difficultyConfig?.()?.job,1)}catch(e){}return d*n(state.realismSettings?.jobSecurity,1)}
 function snapshot(){return{fan:Math.round(n(state.fanApproval,65)),booster:Math.round(n(state.boosterSupport,65)),job:Math.round(n(state.jobSecurity,70)),admin:Math.round(n(admin()?.adminConfidence,60))}}
 function tenure(){return Math.max(1,n(state.year,1)-n(state.coachCareer?.currentJobStartYear,1)+1)}
-function expectedWins(){return n(state.seasonExpectations?.expectedWins,n(state.school?.expectation,6))}
+// Build 305: one accessor (SDF_PICK305.expectedWinsFor) serves this and the team-pick preview; same rule as before.
+function expectedWins(){const f=window.SDF_PICK305?.expectedWinsFor;return typeof f==='function'?f(state):n(state.seasonExpectations?.expectedWins,n(state.school?.expectation,6))}
 function games(){return(state.schedule||[]).filter(g=>g&&!g.bye)}
 function rawProb(g){let p=.5;try{p=n(window.SDF_V170?.expectedGameWin?.(g),.5)}catch(e){}return clip(p,.05,.95)}
 // Per-game chances are scaled so the season adds up to the announced win expectation: the weekly verdict is judged
@@ -14484,16 +14572,26 @@ window.SDF_TIER303={annotateTiers,tierFor};
 // Build 303: generated names. A new dynasty never repeats a name across your roster, the AI rosters and the
 // recruiting class, and a new recruiting class never repeats a name already in the world. Names that match
 // well-known real players are replaced too. Only freshly generated, untouched players are renamed (deterministically
-// from their id), and FIRST/LAST in game.js are never modified, so existing saves and seeded names are unchanged.
+// from their id). Existing saves keep every stored name.
+// Build 306: the extra pools are also appended to FIRST/LAST at load, so newly generated players and recruits draw
+// from about 250 first x 280 last names (was 32 x 30). Each pick still takes one random draw, so seeded worlds keep
+// the same ratings; only the generated name text differs from earlier builds. Occasional duplicates are allowed.
 (()=>{
 'use strict';
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const EXTRA_FIRST=['Adrian','Ahmad','Alonzo','Amari','Anthony','Asher','Avery','Beau','Blake','Bo','Brady','Brennan','Brock','Cade','Calvin','Carson','Cedric','Chase','Clay','Colby','Corey','Curtis','Dakota','Dallas','Damon','Davion','Deon','Derek','Desmond','Dominic','Donovan','Drew','Eli','Emmett','Ethan','Felix','Gabe','Garrett','Gavin','Grant','Hayden','Hunter','Ian','Jace','Jalen','Jamal','Jarrett','Jaxon','Jeremiah','Joel','Josiah','Julian','Kade','Kai','Keenan','Keith','Kendall','Kendrick','Kobe','Lamar','Landon','Lane','Levi','Logan','Lucas','Marcel','Marlon','Mateo','Maurice','Miles','Nate','Nico','Omar','Parker','Quentin','Quincy','Reggie','Rhett','Rodney','Ryder','Sam','Seth','Shane','Silas','Solomon','Terrell','Theo','Tobias','Trent','Tristan','Ty','Vance','Wade','Wesley','Wyatt','Zach','Zion'];
-const EXTRA_LAST=['Abbott','Alston','Ashby','Barlow','Baxter','Benson','Blackwell','Bowen','Boyd','Bradley','Bridges','Burke','Caldwell','Calhoun','Chambers','Clayton','Conley','Crawford','Dalton','Dawson','Delgado','Dixon','Donovan','Drummond','Ellis','Ellison','Fleming','Fletcher','Ford','Fuller','Gaines','Garner','Gibbs','Graves','Hale','Hampton','Hardy','Hawkins','Hendrix','Hines','Holmes','Holt','Hudson','Ingram','Jennings','Kendrick','Knox','Lambert','Lawson','Lowe','Lyons','Maddox','Manning','Marsh','Maxwell','McCoy','Merritt','Mosley','Nash','Norris','Oliver','Owens','Patton','Pearson','Pierce','Porter','Quinn','Ramsey','Rhodes','Riley','Rollins','Sampson','Sanders','Sawyer','Shelton','Sherman','Slater','Sloan','Spencer','Stafford','Stokes','Sutton','Tate','Thornton','Tillman','Townsend','Tucker','Vaughn','Wade','Wallace','Ward','Warren','Watts','Webb','Wells','Whitaker','Wilkins','Winston','Wolfe','Yates'];
+const EXTRA_FIRST=['Adrian','Ahmad','Alonzo','Amari','Anthony','Asher','Avery','Beau','Blake','Bo','Brady','Brennan','Brock','Cade','Calvin','Carson','Cedric','Chase','Clay','Colby','Corey','Curtis','Dakota','Dallas','Damon','Davion','Deon','Derek','Desmond','Dominic','Donovan','Drew','Eli','Emmett','Ethan','Felix','Gabe','Garrett','Gavin','Grant','Hayden','Hunter','Ian','Jace','Jalen','Jamal','Jarrett','Jaxon','Jeremiah','Joel','Josiah','Julian','Kade','Kai','Keenan','Keith','Kendall','Kendrick','Kobe','Lamar','Landon','Lane','Levi','Logan','Lucas','Marcel','Marlon','Mateo','Maurice','Miles','Nate','Nico','Omar','Parker','Quentin','Quincy','Reggie','Rhett','Rodney','Ryder','Sam','Seth','Shane','Silas','Solomon','Terrell','Theo','Tobias','Trent','Tristan','Ty','Vance','Wade','Wesley','Wyatt','Zach','Zion'
+ // Build 306: larger name base
+ ,'Aaron','Abram','Alec','Alijah','Amir','Angelo','Antoine','Armand','Arlo','Austin','Axel','Barrett','Ben','Braden','Brayden','Brent','Brian','Bryson','Byron','Camden','Casey','Chandler','Charles','Christian','Cody','Colin','Connor','Cooper','Corbin','Cyrus','Daniel','Darnell','Darren','David','Deandre','Deshawn','Dillon','Dorian','Duncan','Dylan','Easton','Eddie','Elias','Emanuel','Eric','Ezra','Fernando','Finn','Gerald','Gideon','Graham','Greg','Harrison','Hector','Isaac','Ivan','Jabari','Jack','Jacob','Jake','Jamarcus','Jared','Jarvis','Jason','Jaylon','Jermaine','Jesse','Johnny','Jonah','Jonathan','Joseph','Justin','Kaden','Kameron','Keegan','Kenny','Kevin','Kyle','Leon','Leonard','Lorenzo','Malcolm','Manny','Marco','Mario','Mark','Martin','Matt','Max','Michael','Nathan','Nehemiah','Nolan','Oscar','Preston','Rashad','Raymond','Ricky','Rocco','Ruben','Ryan','Sebastian','Steven','Tanner','Terrance','Tony','Troy','Victor','Vincent','Will','Damarion','Jaquan','Keshawn','Treyvon','Demetrius','Cortez','Tavion','Kamari','Daquan','Jamir','Ladarius','Marquis','Tristen','Cayden','Dashawn','Tremaine','Kaleb','Kendric'];
+const EXTRA_LAST=['Abbott','Alston','Ashby','Barlow','Baxter','Benson','Blackwell','Bowen','Boyd','Bradley','Bridges','Burke','Caldwell','Calhoun','Chambers','Clayton','Conley','Crawford','Dalton','Dawson','Delgado','Dixon','Donovan','Drummond','Ellis','Ellison','Fleming','Fletcher','Ford','Fuller','Gaines','Garner','Gibbs','Graves','Hale','Hampton','Hardy','Hawkins','Hendrix','Hines','Holmes','Holt','Hudson','Ingram','Jennings','Kendrick','Knox','Lambert','Lawson','Lowe','Lyons','Maddox','Manning','Marsh','Maxwell','McCoy','Merritt','Mosley','Nash','Norris','Oliver','Owens','Patton','Pearson','Pierce','Porter','Quinn','Ramsey','Rhodes','Riley','Rollins','Sampson','Sanders','Sawyer','Shelton','Sherman','Slater','Sloan','Spencer','Stafford','Stokes','Sutton','Tate','Thornton','Tillman','Townsend','Tucker','Vaughn','Wade','Wallace','Ward','Warren','Watts','Webb','Wells','Whitaker','Wilkins','Winston','Wolfe','Yates'
+ // Build 306: larger name base
+ ,'Acosta','Adkins','Aguilar','Alexander','Armstrong','Atkins','Bailey','Baker','Banks','Barnes','Barrett','Bates','Beck','Benton','Bishop','Blair','Booker','Bowman','Brewer','Briggs','Bullock','Burns','Byrd','Cannon','Cardenas','Carr','Carroll','Chandler','Chapman','Cobb','Collier','Combs','Copeland','Cortez','Cox','Crane','Cross','Cummings','Dean','Decker','Dennis','Dorsey','Douglas','Dunn','Eaton','Farmer','Ferguson','Flowers','Floyd','Flynn','Franklin','Freeman','Frost','Gardner','Gentry','Gilbert','Glover','Goodwin','Hancock','Harmon','Harper','Hart','Henderson','Hicks','Hoffman','Hogan','Horton','Houston','Howell','Hurst','Kemp','Kennedy','Kirby','Lane','Little','Malone','Marshall','Mathis','McBride','McDaniel','McGee','McKinney','Meadows','Medina','Mendez','Mills','Monroe','Montgomery','Moody','Morris','Morrison','Myers','Neal','Nelson','Nichols','Odom','Ortiz','Osborne','Pace','Page','Palmer','Payne','Phillips','Pittman','Pope','Pratt','Prince','Ray','Reese','Reyes','Rowe','Santos','Shaw','Shields','Simpson','Singleton','Steele','Stevens','Stewart','Strickland','Summers','Swanson','Terry','Todd','Underwood','Vance','Vargas','Wagner','Walton','Watkins','Weaver','Wheeler','Whitfield','Wiggins','Wilcox','Willis','Wise','Wynn','York','Avant','Bost','Cheatham','Dupree','Easley','Gatewood','Hairston','Kimble','Lockhart','Mabry','Okafor','Pruitt','Ransom','Tolbert','Varner','Whitlock'];
 // Real, well-known football players the base name pools can produce (lower case).
 // Best-effort list, checked against every first/last combination the pools can make.
-const REAL_NAMES=new Set(['bryce young','chase young','jalen carter','jordan davis','isaiah simmons','dante moore','damien harris','elijah moore','elijah mitchell','jayden reed','malik jackson','xavier woods','jordan howard','andre carter','jordan morgan','tyler davis','gabe davis','travis scott','lamar jackson','bo jackson','kobe bryant','blake griffin','tobias harris','anthony davis','donovan mitchell','desmond howard','eli manning','terrell owens','miles sanders','marcel reed','brady quinn','cam ward','andre ward','tyler warren','seth rollins']);
+const REAL_NAMES=new Set(['bryce young','chase young','jalen carter','jordan davis','isaiah simmons','dante moore','damien harris','elijah moore','elijah mitchell','jayden reed','malik jackson','xavier woods','jordan howard','andre carter','jordan morgan','tyler davis','gabe davis','travis scott','lamar jackson','bo jackson','kobe bryant','blake griffin','tobias harris','anthony davis','donovan mitchell','desmond howard','eli manning','terrell owens','miles sanders','marcel reed','brady quinn','cam ward','andre ward','tyler warren','seth rollins',
+ // Build 306: combinations the larger pools can make
+ 'andre reed','antoine walker','brandon ingram','brandon marshall','bryce harper','carson beck','carson palmer','cedric benson','corey davis','cortez kennedy','david carr','david montgomery','demetrius harris','deon jackson','derek carr','devin booker','dominic rhodes','dylan harper','gabe jackson','gerald mccoy','greg hardy','greg jennings','hayden hurst','jabari parker','jack lambert','jake bates','jake ferguson','jalen ramsey','jamal crawford','jesse james','jesse palmer','jonah jackson','justin gilbert','justin houston','justin tucker','kade mitchell','keith bullock','kendall fuller','kobe turner','lamar odom','landon donovan','levi wallace','lorenzo alexander','lucas moore','malik willis','marcus freeman','marcus morris','mark ingram','marlon jackson','marquis flowers','matt stafford','michael carter','michael floyd','michael pittman','miles bridges','nate wiggins','omar little','preston pearson','rashad jennings','reggie jackson','rhett ellison','rodney hudson','sam howell','sam mills','shane ray','silas young','steven jackson','terrell davis','tony parker','tristan simmons','ty montgomery','tyler boyd','vance walker','vincent jackson','wade davis','wade phillips','wesley walker','will fuller','wyatt davis','xavier mckinney','xavier rhodes','zach banks']);
+try{if(typeof FIRST!=='undefined'&&Array.isArray(FIRST))for(const n of EXTRA_FIRST)if(!FIRST.includes(n))FIRST.push(n);if(typeof LAST!=='undefined'&&Array.isArray(LAST))for(const n of EXTRA_LAST)if(!LAST.includes(n))LAST.push(n)}catch{}
 const blocked=name=>REAL_NAMES.has(String(name||'').trim().toLowerCase());
 function hashStr(s){let h=2166136261;for(const c of String(s)){h^=c.charCodeAt(0);h=Math.imul(h,16777619)>>>0}return h>>>0}
 function pools(){const F=typeof FIRST!=='undefined'&&Array.isArray(FIRST)?FIRST:[],L=typeof LAST!=='undefined'&&Array.isArray(LAST)?LAST:[];return{first:[...new Set([...F,...EXTRA_FIRST])],last:[...new Set([...L,...EXTRA_LAST])]}}
@@ -14528,7 +14626,16 @@ function wrapAsync(name,fn){const base=window[name];if(typeof base!=='function')
 
 wrapAsync('start',()=>{window.SDF_AI_ROSTERS?.ensureAll?.();afterNames(sanitizeNewWorld(state),'Generated names checked')});
 wrapAsync('finishOffseason',()=>{if(state?.phase==='REGULAR'&&Number(state.week)===1)afterNames(sanitizeNewClass(state),'Recruiting class names checked')});
-window.SDF_NAMES303={uniquifyNames,sanitizeNewWorld,sanitizeNewClass,freshName,blocked,REAL_NAMES};
+// Build 305: walk-ons, transfers and offseason additions are not checked by the class pass, so long dynasties
+// collected 2-6 shared names per roster. The longest-tenured player keeps a name; later arrivals are renamed.
+function tenure(p){const h=Array.isArray(p?.progressionHistory)?p.progressionHistory:[];const ys=h.map(x=>Number(x?.dynastyYear)).filter(Number.isFinite);return ys.length?Math.min(...ys):Infinity}
+function sanitizeRoster(s){if(!s?.school||!Array.isArray(s.roster))return 0;const taken=new Set(),P=pools();let renamed=0;
+ for(const p of [...s.roster].sort((a,b)=>tenure(a)-tenure(b))){if(!p?.name)continue;const key=String(p.name).toLowerCase();if(!taken.has(key)){taken.add(key);continue}
+  const n=freshName(p.id??p.name,new Set([...taken,...s.roster.map(x=>String(x?.name||'').toLowerCase())]),P);if(!n)continue;p.name=n;taken.add(n.toLowerCase());renamed++}
+ return renamed}
+wrapAsync('finishOffseason',()=>{if(state?.phase==='REGULAR')afterNames(sanitizeRoster(state),'Roster names checked')});
+wrapAsync('advanceWeek',()=>{if(state?.phase!=='REGULAR')afterNames(sanitizeRoster(state),'Roster names checked')});
+window.SDF_NAMES303={sanitizeRoster,uniquifyNames,sanitizeNewWorld,sanitizeNewClass,freshName,blocked,REAL_NAMES};
 })();
 
 // Build 303: small accessibility polish. Toasts never block taps on the tabs under them (they only ever hold
@@ -14688,10 +14795,15 @@ ${r.job?`<div class="ms-tile ${esc(r.job.cls)}"><small>JOB STATUS</small><b>${es
 <div class="ms-tile"><small>RECRUITING CLASS</small><b>${rec2}</b><span>${r.recruiting.commits} commit${r.recruiting.commits===1?'':'s'} so far</span></div>
 </div>
 <h3>TOP PERFORMERS</h3>${perf}
-<h3>NEXT BIG GAME</h3>${next}
+${extraSections(r,s)}<h3>NEXT BIG GAME</h3>${next}
 <div class="ms-actions"><button type="button" class="btn primary" data-ms-continue>Continue</button>
 ${showOffers?`<div class="ms-links"><button type="button" class="ms-link" data-ms-shop>Go ad-free: Remove Ads</button>${typeof window.openSponsorCenter==='function'?'<button type="button" class="ms-link" data-ms-sponsor>Recruiting boost: Sponsor Center</button>':''}</div>`:''}</div></section>`}
 
+// Build 305: later modules can add a short section above NEXT BIG GAME (SDF_MIDSEASON304.addSection(fn), fn(report,state)
+// returns HTML or ''). A section that throws is skipped so it can never block the report.
+const sectionHooks=[];
+function addSection(fn){if(typeof fn==='function'&&!sectionHooks.includes(fn))sectionHooks.push(fn)}
+function extraSections(r,s){return sectionHooks.map(fn=>{try{return String(fn(r,s)||'')}catch(error){window.SDF_RUNTIME_ERRORS?.capture?.(error,{operation:'v304-midseason-section'});return ''}}).join('')}
 function openReport(){
  queued=false;const s=S(),modal=$('modal'),body=$('modalBody');
  if(!modal||!body||!due(s))return false;
@@ -14718,7 +14830,2125 @@ function queueReport(){
 }
 const baseRender=window.renderAll;
 window.renderAll=function(...a){const out=baseRender?.apply(this,a);try{queueReport()}catch(error){window.SDF_RUNTIME_ERRORS?.capture?.(error,{operation:'v304-midseason-report'})}return out};
-window.SDF_MIDSEASON304={due,threshold,firstSeason,recentReward,adBlockReason,report,openReport,continueReport,queueReport,REWARD_COOLDOWN_MS};
+window.SDF_MIDSEASON304={due,threshold,firstSeason,recentReward,adBlockReason,report,openReport,continueReport,queueReport,addSection,REWARD_COOLDOWN_MS};
+})();
+
+(()=>{
+'use strict';
+// Build 305: Big moments. During a live game at 0.5x-2x, the clock stops on a few high-leverage snaps and the
+// user makes the call: (a) 4th down in a decision zone (Go / Punt / Field goal), (b) the try after a late
+// touchdown when a 2-point conversion matters (Kick PAT / Go for 2), (c) the final drive with the game within
+// one score (Aggressive / Balanced / Run clock). At 4x, in Sim to halftime/final, with the setting off, or with
+// no answer after 8 seconds, the coach decides exactly as before (specialTeamsDecision, automatic PAT, no drive
+// bias). The pending moment lives on state.liveGame.bigMoment305, so it saves and resumes with the game; the
+// play engine (v12) auto-resolves anything still pending, so the clock loop can never wait on it forever.
+const $=id=>document.getElementById(id);
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num=(v,d=0)=>v!==null&&v!==''&&Number.isFinite(Number(v))?Number(v):d;
+const S=()=>{try{return typeof state!=='undefined'?state:window.state}catch{return window.state}};
+const V=()=>window.SDF_V12_TEST||{};
+const rand=()=>window.SDF_SEEDS?.random?.()??Math.random();
+const PREF='sdf.bigMoments305';
+const DECIDE_MS=8000;
+const CAPS={total:5,fourth:3,try:2,drive:2};
+// After the touchdown (6 points on the board), the try is worth a prompt only where the chart says 2 matters.
+const TWO_POINT_TRAIL=[2,5,9,10,12,16],TWO_POINT_LEAD=[1,5,12];
+
+// ---------- Setting ----------
+function readPref(){try{const v=localStorage.getItem(PREF);return v===null?null:v!=='off'}catch{return null}}
+function enabled(s=S()){if(typeof s?.bigMomentsEnabled305==='boolean')return s.bigMomentsEnabled305;const p=readPref();return p===null?true:p}
+function setEnabled(on,s=S()){on=!!on;if(s)s.bigMomentsEnabled305=on;try{localStorage.setItem(PREF,on?'on':'off')}catch{}
+ const box=$('bigMomentsSetting');if(box)box.checked=on;
+ try{window.SDF_RELEASE_TEST?.saveNow?.('Big moment setting',false,false)}catch{}
+ const g=s?.liveGame;if(!on&&g?.bigMoment305)decide(null,'auto');return on}
+
+// ---------- Situation helpers ----------
+function us(){return S()?.school?.name||'Your team'}
+function abbr(game,side){const id=side==='us'?S()?.school?.id:game.oppId,name=side==='us'?us():game.opponent;try{const b=(typeof TEAM_BRANDING!=='undefined'?TEAM_BRANDING:window.TEAM_BRANDING)?.[Number(id)]?.abbr||(typeof schools!=='undefined'?schools:window.schools||[]).find?.(t=>Number(t.id)===Number(id))?.abbr;if(b)return String(b).slice(0,5).toUpperCase()}catch{}return String(name||'TEAM').slice(0,5).toUpperCase()}
+function toGoal(game){return game.possession==='us'?100-num(game.ball):num(game.ball)}
+function ordinal(d){return d===1?'1st':d===2?'2nd':d===3?'3rd':'4th'}
+function clockText(sec){sec=Math.max(0,Math.round(num(sec)));return `${Math.floor(sec/60)}:${String(sec%60).padStart(2,'0')}`}
+function periodText(game){return game.quarter<=4?`Q${game.quarter} · ${clockText(game.clock)}`:`OT ${game.quarter-4}`}
+function downText(game){const goal=toGoal(game),d=Math.max(1,Math.round(num(game.distance)));return `${ordinal(game.down)} & ${goal<=d?'Goal':d}`}
+function spotText(game){const b=Math.round(num(game.ball));if(b===50)return 'midfield';const ownHalf=game.possession==='us'?b<50:b>50;return `${ownHalf?'own':'their'} ${Math.min(b,100-b)}`}
+function diff(game){return num(game.score?.us)-num(game.score?.them)}
+function tracker(game){const t=game.bigMoments305&&typeof game.bigMoments305==='object'?game.bigMoments305:(game.bigMoments305={total:0,fourth:0,try:0,drive:0,log:[]});t.log??=[];return t}
+function capped(game,kind){const t=tracker(game);return num(t.total)>=CAPS.total||num(t[kind])>=CAPS[kind]}
+function kickerRating(){const s=S();const ks=(s?.roster||[]).filter(p=>p&&p.pos==='K'&&!p.injury&&!p.redshirt).sort((a,b)=>num(b.ovr)-num(a.ovr));return num(ks[0]?.ovr,65)}
+function punterRating(){const s=S();const ps=(s?.roster||[]).filter(p=>p&&p.pos==='P'&&!p.injury&&!p.redshirt).sort((a,b)=>num(b.ovr)-num(a.ovr));return num(ps[0]?.ovr,num(kickerRating(),60)-5)}
+function pctText(p){return `${Math.round(Math.max(0,Math.min(1,num(p)))*100)}%`}
+
+// ---------- When a moment is due ----------
+function fourthDue(game){
+ if(game.possession!=='us'||num(game.down)!==4||capped(game,'fourth'))return false;
+ if(game.quarter<=4&&num(game.clock)<=0)return false;
+ const goal=toGoal(game),need=Math.max(1,num(game.distance)),d=diff(game);
+ if(game.quarter>4)return true;
+ if(game.quarter===4&&num(game.clock)<=480&&d<0&&d>=-16)return true;// trailing late: every 4th down is a moment
+ if(game.quarter===4&&Math.abs(d)<=8&&goal<=40)return true;// one-score 4th quarter in field-goal range
+ if(Math.abs(d)>21)return false;// a blowout is no place for a big moment
+ return (need<=3&&goal<=50)||(need<=5&&goal<=40);// short yardage past midfield, or kick-or-go in field-goal range
+}
+function driveDue(game){
+ if(game.possession!=='us'||(game.quarter!==4&&game.quarter!==2)||capped(game,'drive'))return false;
+ const c=num(game.clock),d=diff(game),late=game.quarter===4?c<=150&&Math.abs(d)<=8:c<=90&&Math.abs(d)<=14&&toGoal(game)<=80;
+ return c>0&&late&&num(game.driveCall305?.driveNo,-1)!==num(game.driveNo)&&num(game.bigMoments305?.driveAsked,-1)!==num(game.driveNo)
+}
+function tryDue(game){
+ if(game.quarter<3||game.quarter>4||capped(game,'try'))return false;
+ const after=diff(game)+6;// scorePoints asks before the 6 points are added
+ if(after===-1)return game.quarter===4;// tie it or take the lead
+ return after<0?TWO_POINT_TRAIL.includes(-after):TWO_POINT_LEAD.includes(after)
+}
+
+// ---------- Odds (the play engine's own formulas) ----------
+function fourthMoment(game){
+ const plan=V().fourthPlan12?.(game)||{goal:toGoal(game),goChance:.5,auto:'punt',fgDistance:Math.round(toGoal(game)+17)};
+ const goal=plan.goal,fgDist=plan.fgDistance,fg=goal<=40?(V().fgChance12?.(fgDist,kickerRating())??.5):null;
+ const puntYds=Math.round(41+(punterRating()-65)/5),landing=Math.max(5,Math.round(goal-puntYds));
+ const options=[{call:'go',label:'Go for it',odds:plan.goChance,detail:`${pctText(plan.goChance)} to convert`}];
+ if(fg!==null)options.push({call:'fg',label:'Field goal',odds:fg,detail:`${fgDist} yd · ${pctText(fg)}`});
+ if(goal>=35&&game.quarter<=4)options.push({call:'punt',label:'Punt',odds:null,detail:landing<=20?`Pin them near their ${landing}`:`Flip field to their ${landing}`});
+ let auto=plan.auto;if(!options.some(o=>o.call===auto))auto='go';
+ return{kind:'fourth',auto,options,goal,need:Math.max(1,num(game.distance)),fgDistance:fgDist}
+}
+function tryOdds(game){
+ // A 2-point try is a 4th-and-3-ish snap from the 3: the 4th-down formula at that distance, a touch harder.
+ let go=.45;try{const plan=V().fourthPlan12?.(game);if(plan)go=V().goChance12(game,3,plan.aggression,plan.edge,true)-.08}catch{}
+ return Math.max(.25,Math.min(.7,go))
+}
+function stamp(game,m){
+ const t=tracker(game);t.total=num(t.total)+1;t[m.kind]=num(t[m.kind])+1;
+ return Object.assign(m,{id:`${game.startedAt||0}-${game.plays||0}-${m.kind}-${t.total}`,quarter:game.quarter,clock:game.clock,down:game.down,distance:game.distance,ball:game.ball,score:{...game.score},situation:downText(game),spot:spotText(game)})
+}
+
+// ---------- Hooks called by the play engine (only during a live 0.5x-2x tick) ----------
+function beforeSnap(game){
+ if(!enabled()||game.bigMoment305||game.complete||game.halftimePending)return false;
+ if(fourthDue(game)){game.bigMoment305=stamp(game,fourthMoment(game));shown(game);return true}
+ if(driveDue(game)){tracker(game).driveAsked=num(game.driveNo);const d=diff(game);
+  game.bigMoment305=stamp(game,{kind:'drive',auto:'balanced',options:[
+   {call:'aggressive',label:'Aggressive',detail:'Hurry-up, take shots downfield'},
+   {call:'balanced',label:'Balanced',detail:'Trust the game plan'},
+   {call:'clock',label:'Run clock',detail:game.quarter===2?'Run it out, regroup at halftime':d>0?'Stay on the ground, bleed it out':'Grind it out, keep it in bounds'}]});shown(game);return true}
+ return false
+}
+function holdTry(game){
+ if(!enabled()||game.bigMoment305||!tryDue(game))return false;
+ const two=tryOdds(game);
+ game.bigMoment305=stamp(game,{kind:'try',auto:'kick',options:[{call:'kick',label:'Kick PAT',odds:.99,detail:'Near-automatic'},{call:'two',label:'Go for 2',odds:two,detail:`${pctText(two)} to convert`}],two});
+ shown(game);return true
+}
+// Drive call bias for this drive only (offenseContext calls this with its adjustment object).
+function adjust(game,ctx){
+ const c=game.driveCall305;if(!c||num(c.driveNo)!==num(game.driveNo)||game.possession!=='us')return ctx;
+ if(c.mode==='aggressive'){ctx.passAdjustment+=16;ctx.tempoAdjustment+=30;ctx.aggressionAdjustment+=12;ctx.explosiveMultiplier*=1.15;ctx.turnoverMultiplier*=1.2}
+ else if(c.mode==='clock'){ctx.passAdjustment-=24;ctx.tempoAdjustment-=40;ctx.aggressionAdjustment-=10;ctx.explosiveMultiplier*=.85;ctx.turnoverMultiplier*=.8}
+ return ctx
+}
+function shown(game){try{window.SDF_USAGE?.record?.('big_moment_shown')}catch{}}
+
+// ---------- Resolving a call ----------
+const FOURTH_VERB={go:'goes for it',fg:'kicks the field goal',punt:'punts'};
+// The call is ours even when the play flipped possession, so the row is labelled with the user's team.
+function feed(game,text,type){try{V().addFeed?.(game,text,type)}catch{game.feed?.push?.({text,type,quarter:game.quarter,clock:game.clock,score:`${game.score.us}-${game.score.them}`})}const row=game.feed?.at?.(-1);if(row&&row.text===text){row.team=us();game.lastPlayTeam=us()}}
+// source: 'user' (tapped), 'timeout' (8 seconds / setting switched off / 4x while open), 'auto' (fast sim, stale save).
+// Returns true when a snap or score was played.
+function resolve(game,call,source='auto'){
+ const m=game?.bigMoment305;if(!m)return false;
+ game.bigMoment305=null;clearCountdown();
+ if(!m.options?.some(o=>o.call===call))call=null;
+ const chosen=call||m.auto,t=tracker(game),api=V(),live=fn=>source==='auto'||!api.bigMomentLive?fn():api.bigMomentLive(game,fn);
+ const lead=source==='user'?"Coach's call:":'No call in time. The coach';
+ let text='',type='play',result='';
+ if(m.kind==='fourth'){
+  const before={us:num(game.score.us),drive:game.driveNo,poss:game.possession},sit=m.situation||downText(game);
+  live(()=>api.specialTeamsDecision?.(game,source==='user'?chosen:null));game.plays=num(game.plays)+1;
+  const pts=num(game.score.us)-before.us,kept=game.possession==='us'&&game.driveNo===before.drive;
+  if(chosen==='go'){result=pts>=6?'touchdown':kept?'converted':'stopped';text=source==='user'?`${lead} went for it on ${sit}. ${result==='touchdown'?'Touchdown!':result==='converted'?'Converted!':'Stopped short.'}`:`${lead} goes for it on ${sit}: ${result==='stopped'?'stopped short.':'converted!'}`;type=pts?'score':'play'}
+  else if(chosen==='fg'){result=pts===3?'good':'missed';text=source==='user'?`${lead} ${m.fgDistance}-yard field goal. ${pts===3?"It's good!":'No good.'}`:`${lead} kicks a ${m.fgDistance}-yard field goal: ${pts===3?'good.':'no good.'}`;type=pts===3?'score':'play'}
+  else{result='punted';const spot=num(game.ball);text=source==='user'?`${lead} punt on ${sit}. ${game.opponent} starts at their ${Math.round(spot)}.`:`${lead} punts on ${sit}.`}
+ }else if(m.kind==='try'){
+  if(chosen==='two'){const ok=rand()<num(m.two,.45);if(ok)game.score.us=num(game.score.us)+2;result=ok?'converted':'failed';
+   text=`${lead} went for two. ${ok?'Converted!':'No good.'} ${us()} ${game.score.us}, ${game.opponent} ${game.score.them}.`;type=ok?'score':'play';game.driveSummary?.push?.(`2-point try ${ok?'good':'no good'} for ${us()}.`)}
+  else{const k=api.selectUserSkill?.('K');if(k&&api.stat){const ks=api.stat(game,k.id,k.name,k.pos);ks.xpa++;ks.xpm++;ks.points++}game.score.us=num(game.score.us)+1;result='good';
+   if(source!=='auto')text=source==='user'?`${lead} kicked the extra point. Good. ${us()} ${game.score.us}, ${game.opponent} ${game.score.them}.`:`${lead} kicks the extra point. Good.`}
+  if(game.score.us<game.score.them)game.trailed277=true;
+  api.afterScore12?api.afterScore12(game,'us'):null;
+ }else{
+  game.driveCall305={driveNo:game.driveNo,mode:chosen};result=chosen;
+  const label={aggressive:'Aggressive: hurry-up, take shots downfield.',balanced:'Balanced: trust the game plan.',clock:'Run clock: grind it out.'}[chosen];
+  const when=m.quarter===2?'drive before the half':'final drive';if(source!=='auto')text=source==='user'?`${lead} ${when}, ${label}`:`${lead} stays balanced on the ${when}.`;
+ }
+ if(text&&source!=='auto'){feed(game,text,type);if(m.kind!=='drive')game.lastPlay=`${text} ${m.kind==='fourth'?String(game.lastPlay||'').replace(text,'').trim():''}`.trim();else game.lastPlay=text}
+ t.log.push({kind:m.kind,call:chosen,source,result,quarter:m.quarter,clock:m.clock});if(t.log.length>12)t.log=t.log.slice(-12);
+ if(source==='user')try{window.SDF_USAGE?.record?.('big_moment_called')}catch{}
+ return m.kind!=='drive'
+}
+// UI path: resolve, then keep the clock going (or show the next moment, e.g. the try after a 4th-down TD).
+function decide(call,source='user'){
+ const s=S(),game=s?.liveGame;if(!game?.bigMoment305||game.finalized)return false;
+ try{resolve(game,call,source)}catch(error){console.error('Big moment call failed; the coach takes it',error);if(game.bigMoment305)try{V().bigMomentAuto?.(game)}catch{}game.bigMoment305=null}
+ const api=V();
+ if(!game.bigMoment305&&!game.complete&&!game.simulatingToFinal&&!game.simulatingToHalf){game.paused=false;try{api.startTimer?.()}catch{}}
+ try{api.renderGameCenter?.()}catch{}
+ return true
+}
+
+// ---------- Sheet ----------
+const STYLE=`
+#gcBigMoment305{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:min(560px,100vw);z-index:1120;box-sizing:border-box;padding:14px 16px calc(14px + var(--safe-bottom,0px));border:1px solid #3c6c68;border-bottom:0;border-radius:18px 18px 0 0;background:linear-gradient(180deg,#123039,#0b1c24 70%);box-shadow:0 -18px 60px rgba(0,0,0,.6);color:#edf3f5;animation:bm305Up .28s ease-out}
+#gcBigMoment305[hidden]{display:none}
+@keyframes bm305Up{from{transform:translate(-50%,40px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
+@media (prefers-reduced-motion:reduce){#gcBigMoment305{animation:none}}
+.bm305-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.bm305-top .gc-eyebrow{display:inline-flex;align-items:center;gap:6px}
+.bm305-top .gc-eyebrow i{width:8px;height:8px;border-radius:50%;background:#ffb547;box-shadow:0 0 0 0 rgba(255,181,71,.6);animation:bm305Pulse 1.2s infinite}
+@keyframes bm305Pulse{70%{box-shadow:0 0 0 8px rgba(255,181,71,0)}100%{box-shadow:0 0 0 0 rgba(255,181,71,0)}}
+.bm305-clock{font-size:12px;font-weight:800;color:#ffd27a;letter-spacing:.04em}
+#gcBigMoment305 h3{margin:6px 0 2px;font-size:22px;line-height:1.15}
+.bm305-score{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 10px;font-size:13px;color:#bcd0d7}
+.bm305-score b{color:#fff;font-size:15px}
+.bm305-score .bm305-tag{padding:2px 8px;border-radius:999px;background:#1b2b35;border:1px solid #42515a;font-size:11px;font-weight:800;letter-spacing:.04em}
+.bm305-tag.down{color:#ff9b8a;border-color:#7a3d36}.bm305-tag.up{color:#7fe0bd;border-color:#2f6b57}
+.bm305-options{display:grid;grid-template-columns:repeat(var(--bm-cols,3),minmax(0,1fr));gap:8px}
+.bm305-opt{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-height:76px;padding:10px 10px 12px;border:1px solid #42515a;border-radius:12px;background:#1b2b35;color:#edf3f5;text-align:left;font:inherit;cursor:pointer;overflow:hidden}
+.bm305-opt:hover,.bm305-opt:focus-visible{border-color:var(--gc-accent,#c4e885);background:#223845;outline:none}
+.bm305-opt b{font-size:15px}
+.bm305-opt span{font-size:12px;color:#bcd0d7;line-height:1.3}
+.bm305-opt em{font-style:normal;font-size:10px;font-weight:800;letter-spacing:.08em;color:var(--gc-accent,#c4e885)}
+.bm305-opt .bm305-meter{position:absolute;left:0;bottom:0;height:4px;background:var(--gc-accent,#c4e885);opacity:.85}
+.bm305-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:10px;font-size:12px;color:#9fb6c4}
+.bm305-timer{flex:1;height:4px;border-radius:4px;background:#1b2b35;overflow:hidden}
+.bm305-timer i{display:block;height:100%;width:100%;background:#ffb547;transform-origin:left;transition:transform .2s linear}
+.bm305-off{background:none;border:0;padding:6px 0;min-height:32px;color:#9fb6c4;text-decoration:underline;font:inherit;font-size:12px;cursor:pointer;white-space:nowrap}
+#gameSimBody .gc-feed-row.bm305-feed{box-shadow:inset 3px 0 0 #ffb547}
+@media(max-width:420px){#gcBigMoment305 h3{font-size:20px}.bm305-opt{min-height:70px;padding:9px 8px 11px}.bm305-opt b{font-size:14px}}`;
+function ensureStyle(){if(!document.head||$('bigMoments305Style'))return;const st=document.createElement('style');st.id='bigMoments305Style';st.textContent=STYLE;document.head.append(st)}
+function headline(m,game){
+ if(m.kind==='fourth')return{eyebrow:'BIG MOMENT · 4TH DOWN',title:`${m.situation} at ${m.spot}`};
+ if(m.kind==='try')return{eyebrow:'BIG MOMENT · THE TRY',title:'Touchdown! Kick it or go for 2?'};
+ return m.quarter===2?{eyebrow:'BIG MOMENT · BEFORE THE HALF',title:`${clockText(m.clock)} left in the half. Your call.`}:{eyebrow:'BIG MOMENT · FINAL DRIVE',title:`${clockText(m.clock)} left. How do we play it?`}
+}
+function sheetHtml(m,game){
+ const h=headline(m,game),d=diff(game),tag=d<0?`<span class="bm305-tag down">Down ${-d}</span>`:d>0?`<span class="bm305-tag up">Up ${d}</span>`:'<span class="bm305-tag">Tied</span>';
+ const opts=m.options.map(o=>`<button type="button" class="bm305-opt" data-bm-call="${esc(o.call)}"><b>${esc(o.label)}</b><span>${esc(o.detail)}</span>${o.call===m.auto?"<em>COACH'S LEAN</em>":''}${o.odds!=null?`<i class="bm305-meter" style="width:${Math.round(Math.max(0,Math.min(1,o.odds))*100)}%"></i>`:''}</button>`).join('');
+ return `<div class="bm305-top"><span class="gc-eyebrow"><i aria-hidden="true"></i>${esc(h.eyebrow)}</span><span class="bm305-clock">${esc(periodText(game))}</span></div><h3 id="bm305Title" tabindex="-1">${esc(h.title)}</h3><p class="bm305-score"><b>${esc(abbr(game,'us'))} ${num(game.score.us)}</b><span>·</span><b>${esc(abbr(game,'them'))} ${num(game.score.them)}</b>${tag}${m.kind==='fourth'&&m.spot?`<span>Ball on ${esc(m.spot)}</span>`:''}</p><div class="bm305-options" style="--bm-cols:${m.options.length}">${opts}</div><div class="bm305-foot"><div class="bm305-timer" aria-hidden="true"><i></i></div><span data-bm-count role="timer">Coach decides in 8s</span><button type="button" class="bm305-off" data-bm-off>Don't ask during games</button></div>`
+}
+let countdown=null,shownId=null,deadline=0;
+function clearCountdown(){if(countdown){clearInterval(countdown);countdown=null}}
+function hideSheet(){clearCountdown();shownId=null;const host=$('gcBigMoment305');if(host){host.hidden=true;host.innerHTML=''}}
+function modalOpen(){const m=$('gameSimModal');return !!m&&!m.classList.contains('hidden')}
+function startCountdown(host){
+ clearCountdown();deadline=Date.now()+DECIDE_MS;
+ const bar=host.querySelector('.bm305-timer i'),label=host.querySelector('[data-bm-count]');
+ const tick=()=>{const g=S()?.liveGame;if(!g?.bigMoment305){clearCountdown();return}
+  if(!modalOpen()||document.hidden||document.querySelector('#sdfContextHelp.open,#sdfHelpCenter.open')){deadline=Date.now()+DECIDE_MS;return}// closed or backgrounded: the clock waits, full 8s on return
+  const left=Math.max(0,deadline-Date.now());if(bar)bar.style.transform=`scaleX(${left/DECIDE_MS})`;if(label)label.textContent=`Coach decides in ${Math.ceil(left/1000)}s`;
+  if(left<=0){clearCountdown();decide(null,'timeout')}};
+ tick();countdown=setInterval(tick,200)
+}
+function render(game){
+ const s=S();if(!game||s?.liveGame!==game){hideSheet();return}
+ markFeed();
+ const m=game.bigMoment305,body=$('gameSimBody');
+ if(!m||game.simulatingToFinal||game.simulatingToHalf||game.complete||!body){hideSheet();return}
+ if(num(V().speed?.(),1)>2||!enabled()){hideSheet();setTimeout(()=>{if(S()?.liveGame===game&&game.bigMoment305)decide(null,'auto')},0);return}
+ if(!game.paused){game.paused=true;try{V().stopTimer?.()}catch{}}
+ ensureStyle();let host=$('gcBigMoment305');
+ if(!host||!body.contains(host)){host=document.createElement('section');host.id='gcBigMoment305';host.setAttribute('role','dialog');host.setAttribute('aria-labelledby','bm305Title');(body.querySelector('.gc-center')||body).append(host);shownId=null}
+ if(shownId===m.id&&host.innerHTML&&!host.hidden){if(!countdown)startCountdown(host);return}
+ shownId=m.id;host.hidden=false;host.innerHTML=sheetHtml(m,game);
+ host.querySelectorAll('[data-bm-call]').forEach(b=>b.onclick=()=>decide(b.dataset.bmCall,'user'));
+ host.querySelector('[data-bm-off]').onclick=()=>setEnabled(false);
+ const ann=$('gcAnnouncement');if(ann)ann.textContent=`Big moment. ${headline(m,game).title}. Make the call.`;
+ try{window.SDF_RELEASE_TEST?.saveNow?.('Big moment',false,false)}catch{}
+ startCountdown(host);
+ host.querySelector('[data-bm-call]')?.focus({preventScroll:true})
+}
+function markFeed(){const host=$('gcFeed');if(!host)return;host.querySelectorAll('.gc-feed-row p').forEach(p=>{if(/^(Coach's call:|No call in time)/.test(p.textContent||''))p.closest('.gc-feed-row')?.classList.add('bm305-feed')})}
+
+// ---------- Settings toggle (App Settings, Game Day section) ----------
+function mountSetting(){
+ const panel=document.querySelector('#appSettingsModal .app-settings-panel');if(!panel||$('bigMomentsSetting'))return;
+ const sec=document.createElement('section');sec.className='settings-section';sec.id='bigMomentsSettingSection';
+ sec.innerHTML='<div class="settings-section-head"><div><small>GAME DAY</small><h3>Live Games</h3></div></div><div class="settings-grid"><label class="toggle-row"><input id="bigMomentsSetting" type="checkbox" checked> Big moment decisions</label></div><p class="muted" style="font-size:13px;margin:8px 0 0">Pause on a few key 4th downs, 2-point tries and final drives so you make the call. At 4x speed or when you sim, your coach decides.</p>';
+ const note=panel.querySelector('.settings-save-note');note?panel.insertBefore(sec,note):panel.append(sec);
+ const box=$('bigMomentsSetting');box.checked=enabled();box.onchange=()=>setEnabled(box.checked)
+}
+function syncSetting(){const box=$('bigMomentsSetting');if(box)box.checked=enabled()}
+try{mountSetting()}catch{}
+document.addEventListener('click',e=>{if(e.target?.closest?.('#settingsBtn,#openSettingsStartupBtn,#openSettingsMobileBtn')){try{mountSetting();syncSetting()}catch{}}},true);
+const baseRender=window.renderAll;
+if(typeof baseRender==='function')window.renderAll=function(...a){const out=baseRender.apply(this,a);try{syncSetting()}catch{}return out};
+
+window.SDF_BIG_MOMENTS305={beforeSnap,holdTry,adjust,resolve,decide,render,enabled,setEnabled,fourthDue,driveDue,tryDue,tryOdds,fourthMoment,CAPS,DECIDE_MS};
+})();
+
+(()=>{
+'use strict';
+// Build 305: Home moments.
+// 1. First-ever moments: the program's first win, first commitment, first rivalry trophy, first ranked win,
+//    first bowl win and first championship each get one full-screen celebration per save, with the Build 301
+//    share card behind its Share button. Old saves mark whatever they already achieved as seen on first load.
+// 2. "Almost there": the locked achievements closest to unlocking, with numeric progress, on Home.
+// 3. Recruiting beat: the single most important recruiting move of the week for your tracked prospects.
+// 4. Home tile shortcuts: one contextual deep-link line on the Recruiting, Roster and Program tiles.
+// Everything reads existing save data; the only new save fields are firsts305 (seen firsts) and nothing else.
+const $=id=>document.getElementById(id);
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num=(v,d=0)=>v!==null&&v!==''&&Number.isFinite(Number(v))?Number(v):d;
+const S=()=>{try{return typeof state!=='undefined'?state:window.state}catch{return window.state}};
+const uid=s=>Number(s?.school?.id);
+const safe=(fn,fallback=null)=>{try{return fn()}catch(error){window.SDF_RUNTIME_ERRORS?.capture?.(error,{operation:'v305-home-moments'});return fallback}};
+const plural=(n,one,many=one+'s')=>`${n} ${n===1?one:many}`;
+const stars=n=>'★'.repeat(Math.max(0,Math.min(5,num(n))));
+const H=window.SDF299;
+
+// ---------------------------------------------------------------- 1. First-ever moments
+function oppName(g){return g?.opponent||(typeof schools!=='undefined'&&schools.find?.(x=>num(x.id)===num(g?.oppId))?.name)||'their opponent'}
+const score=g=>String(g?.score||'').replace('-','–');
+const wins=s=>(s.schedule||[]).filter(g=>g&&g.result==='W');
+const lastOf=list=>list.length?list[list.length-1]:null;
+const games277=s=>Object.values(s.achievementGames277||{}).filter(e=>e&&(e.schoolId==null||Number(e.schoolId)===uid(s)));
+const isConfTitle=t=>/champ/i.test(String(t?.type||''))&&!/playoff|bowl|national/i.test(String(t?.type||''));
+const isBowl=t=>/bowl/i.test(String(t?.type||''))&&!/playoff|national/i.test(String(t?.type||''));
+// Ordered most to least significant: when two firsts land together the bigger one leads the celebration.
+const FIRSTS=[
+ {id:'title',icon:'🏆',kind:'title',eyebrow:'FIRST CHAMPIONSHIP',headline:'First championship!',
+  detect:s=>{const t=(s.trophies||[]).find(x=>x.type==='National Championship')||(s.trophies||[]).find(isConfTitle);if(t)return{title:`${s.school.name}: ${t.type}`,big:'🏆',line:`Year ${num(t.year,s.year)}`};
+   return num(s.achievementStats?.nationalTitles)>0?{title:`${s.school.name} won a championship`,big:'🏆',line:`Year ${num(s.year)}`}:null}},
+ {id:'bowl',icon:'🥣',kind:'title',eyebrow:'FIRST BOWL WIN',headline:'First bowl win!',
+  detect:s=>{const t=(s.trophies||[]).find(isBowl);if(t)return{title:`${s.school.name} won the ${t.type}`,big:'🏆',line:`Year ${num(t.year,s.year)}`};
+   return num(s.achievementStats?.bowlWins)>0?{title:`${s.school.name} won a bowl game`,big:'🏆',line:`Year ${num(s.year)}`}:null}},
+ {id:'ranked',icon:'🗡️',kind:'upset',eyebrow:'FIRST RANKED WIN',headline:'First ranked win!',
+  detect:s=>{const g=lastOf(wins(s).filter(x=>num(x.opponentRank277,99)>=1&&num(x.opponentRank277,99)<=25));if(g)return{title:`${s.school.name} beat #${num(g.opponentRank277)} ${oppName(g)}`,big:score(g)||'W',line:`Year ${num(s.year)} · Week ${num(g.week)}`};
+   return games277(s).some(e=>e.win&&num(e.rank,99)>=1&&num(e.rank,99)<=25)||num(s.achievementStats?.roadRankedWins)>0||s.achievementStats?.beatTop5?{title:`${s.school.name} beat a ranked opponent`,big:'W',line:`Year ${num(s.year)}`}:null}},
+ {id:'rivalry',icon:'⚔️',kind:'rivalry',eyebrow:'FIRST RIVALRY TROPHY',headline:'First rivalry trophy!',
+  detect:s=>{const g=lastOf(wins(s).filter(x=>x.rivalry)),trophy=s.rivalryHistory?.[s.rivalId]?.trophy||'rivalry trophy';
+   if(g)return{title:`${s.school.name} beat ${oppName(g)} and claimed the ${trophy}`,big:score(g)||'W',line:`Year ${num(s.year)} · Week ${num(g.week)}`};
+   const any=num(s.achievementStats?.rivalWins)>0||Object.values(s.rivalryHistory||{}).some(r=>num(r?.wins)>0);return any?{title:`${s.school.name} claimed the ${trophy}`,big:'⚔️',line:`Year ${num(s.year)}`}:null}},
+ {id:'commit',icon:'✍️',kind:'recruit',eyebrow:'FIRST COMMITMENT',headline:'First commitment!',
+  detect:s=>{const list=(s.commits||[]).filter(Boolean);if(!list.length)return null;const r=list.slice().sort((a,b)=>num(b.stars)-num(a.stars))[0];
+   return{title:`${r.pos?r.pos+' ':''}${r.name||'A recruit'} committed to ${s.school.name}`,big:num(r.stars)?stars(r.stars):'✍️',line:`Year ${num(s.year)} recruiting class`,recruitId:r.id}}},
+ {id:'win',icon:'🏈',kind:'score',eyebrow:'FIRST WIN',headline:'First win!',
+  detect:s=>{const g=lastOf(wins(s));if(g)return{title:`${s.school.name} beat ${oppName(g)}`,big:score(g)||'W',line:`Year ${num(s.year)} · Week ${num(g.week)}`};
+   const any=num(s.coachCareer?.careerWins)>0||(s.history||[]).some(h=>num(h.wins)>0)||num(s.record?.w)>0;return any?{title:`${s.school.name} got its first win`,big:'W',line:`Year ${num(s.year)}`}:null}}
+];
+function firstsStore(s){const f=s.firsts305&&typeof s.firsts305==='object'?s.firsts305:(s.firsts305={});f.done??={};f.pending=Array.isArray(f.pending)?f.pending:[];return f}
+function detectFirsts(s=S()){const out={};if(!s?.school)return out;for(const f of FIRSTS){const d=safe(()=>f.detect(s));if(d)out[f.id]=d}return out}
+// Returns the firsts that just happened. The first look at a save records everything it already holds as seen.
+function scanFirsts(s=S()){
+ if(!s?.school)return[];const fresh=!s.firsts305,store=firstsStore(s),found=detectFirsts(s),added=[];
+ for(const f of FIRSTS){const d=found[f.id];if(!d||store.done[f.id])continue;store.done[f.id]={year:num(s.year),week:num(s.week),phase:s.phase||'',silent:fresh||undefined};if(!fresh){added.push(f.id);store.pending.push({id:f.id,...d})}}
+ if(fresh)store.baseline=true;
+ return added
+}
+function momentFor(item,s=S()){const f=FIRSTS.find(x=>x.id===item.id);return{key:`first305:${item.id}`,kind:f.kind,eyebrow:f.eyebrow,title:item.title,big:String(item.big||f.icon),line:item.line||`Year ${num(s?.year)}`,school:s?.school?.name||'',year:num(s?.year)}}
+function confetti(){let h='';for(let i=0;i<34;i++)h+=`<i style="--x:${(i*29)%100}%;--d:${((i*7)%11)*.08}s;--h:${(i*47)%360}"></i>`;return`<div class="first305-confetti" aria-hidden="true">${h}</div>`}
+function firstHtml(items,s=S()){
+ const lead=items[0],f=FIRSTS.find(x=>x.id===lead.id),also=items.slice(1).map(i=>FIRSTS.find(x=>x.id===i.id)).filter(Boolean);
+ return`<section id="first305" class="first305 first305-${esc(lead.id)}" role="dialog" aria-labelledby="first305Title">${document.body?.classList?.contains('reduce-motion')?'':confetti()}
+<span class="first305-eyebrow">A PROGRAM FIRST</span><div class="first305-icon" aria-hidden="true">${f.icon}</div>
+<h2 id="first305Title">${esc(f.headline)}</h2><p class="first305-title">${esc(lead.title)}</p>${lead.big&&lead.big!==f.icon&&lead.big!=='🏆'?`<p class="first305-big">${esc(lead.big)}</p>`:''}<p class="first305-line">${esc(lead.line||'')}</p>
+${also.length?`<div class="first305-also"><small>ALSO A FIRST</small>${also.map(a=>`<span>${a.icon} ${esc(a.headline.replace(/!$/,''))}</span>`).join('')}</div>`:''}
+<p class="first305-note">A moment your program only gets once.</p>
+<div class="first305-actions">${window.SDF_SHARE301?.shareMoment?'<button type="button" class="btn primary" data-first305-share>Share this moment</button>':''}<button type="button" class="btn neutral" data-first305-continue>Continue</button></div></section>`}
+function openFirst(){
+ const s=S(),modal=$('modal'),body=$('modalBody');if(!s?.school||!modal||!body)return false;const store=firstsStore(s);if(!store.pending.length)return false;
+ const order=FIRSTS.map(f=>f.id),items=store.pending.slice().sort((a,b)=>order.indexOf(a.id)-order.indexOf(b.id));store.pending=[];
+ for(const i of items)if(store.done[i.id])store.done[i.id].shown=true;
+ // The Build 301 share chip would offer the same game again: this celebration already carries its Share button.
+ safe(()=>{const S3=window.SDF_SHARE301,list=S3?.moments?.(s)||[],kinds={ranked:['upset'],rivalry:['rivalry'],title:['title','conference'],commit:['recruit']};for(const i of items){const k=kinds[i.id];const m=k&&[...list].reverse().find(x=>k.includes(x.kind));if(m)S3.markSeen?.(m,s)}});
+ window.SDF_RELEASE_TEST?.scheduleSave?.('First-ever moment',300,false);
+ ensureStyle();body.innerHTML=firstHtml(items,s);modal.classList.add('sdf305-moment-modal');watchModal(modal);
+ const m=momentFor(items[0],s);
+ const share=body.querySelector('[data-first305-share]');if(share)share.onclick=()=>window.SDF_SHARE301?.shareMoment?.(m);
+ body.querySelector('[data-first305-continue]').onclick=()=>modal.classList.add('hidden');
+ modal.classList.remove('hidden');body.querySelector('[data-first305-continue]')?.focus?.();return true
+}
+let modalObs=null;
+function watchModal(modal){if(modalObs||typeof MutationObserver!=='function')return;modalObs=new MutationObserver(()=>{if(modal.classList.contains('sdf305-moment-modal')&&(modal.classList.contains('hidden')||!$('first305')))modal.classList.remove('sdf305-moment-modal')});modalObs.observe(modal,{attributes:true,attributeFilter:['class'],childList:true,subtree:false});const b=$('modalBody');if(b)modalObs.observe(b,{childList:true})}
+let firstQueued=false;
+function queueFirsts(s=S()){
+ if(!s?.school)return false;scanFirsts(s);if(!firstsStore(s).pending.length||firstQueued)return false;
+ const flow=window.SDF_WEEKFLOW299;if(flow?.enqueue){firstQueued=true;flow.enqueue({key:'first305',priority:20,open:()=>{firstQueued=false;return openFirst()}});return true}
+ const busy=['gameSimModal','gameResultModal','recruitRecap280','modal'].some(id=>{const n=$(id);return n&&!n.hidden&&!n.classList.contains('hidden')});if(!busy)openFirst();return true
+}
+// The post-game recap says when the game was a program first (the full celebration follows once the result windows close).
+H?.registerPostGameSection?.({id:'firsts305',order:5,render(){
+ const s=S();if(!s?.school)return'';scanFirsts(s);const store=firstsStore(s),list=store.pending.map(p=>FIRSTS.find(f=>f.id===p.id)).filter(f=>f&&f.id!=='commit');
+ return list.length?`<p class="first305-recap">${list.map(f=>`<span>${f.icon} ${esc(f.headline.replace(/!$/,''))}</span>`).join('')}<small>A program first: your celebration is next.</small></p>`:''}});
+
+// ---------------------------------------------------------------- 2. "Almost there" achievements
+function achievementDefs(){try{if(typeof ACHIEVEMENT_DEFS!=='undefined'&&Array.isArray(ACHIEVEMENT_DEFS))return ACHIEVEMENT_DEFS}catch{}return Array.isArray(window.ACHIEVEMENT_DEFS)?window.ACHIEVEMENT_DEFS:[]}
+// Custom achievements that count toward a number (others are yes/no and have no useful progress).
+const NUMERIC_CUSTOM={sellout:s=>num(s.stadium?.selloutStreak),weatherWins:s=>Object.keys(s.achievementStats?.weatherConditions||{}).length};
+function progress(id,s=S(),defs=achievementDefs()){
+ const a=defs.find(d=>d.id===id);if(!a||!s?.school)return null;let have;
+ if(a.stat==='careerWins')have=num(s.coachCareer?.careerWins);
+ else if(a.stat)have=num(s.achievementStats?.[a.stat]);
+ else if(a.seasonStat==='wins')have=Math.max(0,num(s.record?.w),...(s.history||[]).map(h=>num(h.wins)));
+ else if(a.custom&&NUMERIC_CUSTOM[a.custom])have=NUMERIC_CUSTOM[a.custom](s);
+ else return null;
+ const goal=Math.max(1,num(a.goal,1));
+ return{id:a.id,name:a.name,desc:a.desc,icon:a.icon,have:Math.min(goal,Math.max(0,have)),goal,unlocked:!!s.achievements?.[a.id],ratio:Math.min(1,Math.max(0,have)/goal)}
+}
+// Locked achievements with real progress (goal of 2 or more, at least a fifth of the way), closest first.
+function almostThere(s=S(),limit=3,defs=achievementDefs()){
+ return defs.map(a=>a.goal>=2?progress(a.id,s,defs):null).filter(p=>p&&!p.unlocked&&p.have>0&&p.have<p.goal&&p.ratio>=.2)
+  .sort((a,b)=>b.ratio-a.ratio||(a.goal-a.have)-(b.goal-b.have)||a.goal-b.goal).slice(0,limit)
+}
+const goalText=p=>String(p.desc||p.name).replace(/\.$/,'');
+function almostHtml(s=S()){
+ const list=almostThere(s);if(!list.length)return'';
+ return`<h4 class="sdf299-wf-h">Almost there <small>achievements</small></h4><ul class="almost305">${list.map(p=>`<li><span class="almost305-icon" aria-hidden="true">${esc(p.icon||'🏅')}</span><span class="almost305-text"><b>${esc(goalText(p))}</b><small>${esc(p.name)}</small></span><strong>${p.have}/${p.goal}</strong><div class="sdf299-wf-bar" role="progressbar" aria-label="${esc(goalText(p))}" aria-valuemin="0" aria-valuemax="${p.goal}" aria-valuenow="${p.have}"><i style="width:${Math.round(p.ratio*100)}%"></i></div></li>`).join('')}</ul><button type="button" class="home305-link" data-home305-go="dynasty">All achievements →</button>`
+}
+
+// ---------------------------------------------------------------- 3. Recruiting beat
+const BEAT={flipsIn:{w:100,tone:'good',say:(e,s)=>`${e.name} flipped to ${s.school.name}!`},commits:{w:90,tone:'good',say:(e,s)=>`${e.name} committed to ${s.school.name}!`},
+ flipsOut:{w:80,tone:'bad',say:e=>`${e.name} flipped away`},lost:{w:70,tone:'bad',say:e=>`${e.name} chose another school`},cuts:{w:60,tone:'bad',say:e=>`${e.name} cut you from his list`},
+ hard:{w:50,tone:'good',say:e=>`${e.name} is now a hard commit`},signed:{w:40,tone:'good',say:e=>`${e.name} signed with you`},reopened:{w:30,tone:'info',say:e=>`${e.name} reopened his recruitment`},
+ shortlists:{w:20,tone:'info',say:e=>`${e.name} narrowed his list`}};
+// The newest recap if it belongs to this week (the recap written as the last game week closed) or to this signing day.
+function currentRecap(s=S()){
+ const all=s?.recruitingRecaps280||[],rc=all[all.length-1];if(!rc||!Array.isArray(rc.events)||!rc.events.length)return null;
+ if(num(rc.year)!==num(s.year))return null;
+ if(rc.signing)return s.phase!=='REGULAR'?rc:null;
+ if(s.phase!=='REGULAR')return null;const gap=num(s.week)-num(rc.week);return gap>=0&&gap<=1?rc:null
+}
+function tracked(s,e){const r=(s.recruits||[]).find(x=>String(x.id)===String(e.id))||(s.commits||[]).find(x=>String(x.id)===String(e.id));if(!r)return['commits','flipsIn','signed','hard'].includes(e.kind)?{id:null}:null;return r.onBoard||r.offered||Number(r.committedTo)===uid(s)||['commits','flipsIn','signed','hard','flipsOut'].includes(e.kind)?r:null}
+function recruitBeat(s=S()){
+ const rc=currentRecap(s);if(!rc)return null;let best=null;
+ for(const e of rc.events){const k=BEAT[e.kind];if(!k)continue;const r=tracked(s,e);if(!r)continue;const w=k.w+num(e.stars)*3;if(!best||w>best.w)best={w,e,r}}
+ if(!best)return null;const k=BEAT[best.e.kind];
+ return{kind:best.e.kind,tone:k.tone,headline:k.say(best.e,s),event:best.e,recruitId:best.r?.id??null,more:rc.events.length-1,week:num(rc.week),signing:!!rc.signing,recapKey:rc.key}
+}
+function beatHtml(s=S()){
+ const b=recruitBeat(s);if(!b)return'';const e=b.event;
+ return`<div class="beat305 beat305-${b.tone}"><small>RECRUITING BEAT · ${b.signing?'SIGNING DAY':`WEEK ${b.week}`}</small><b>${esc(b.headline)}</b><span class="beat305-meta">${esc([num(e.stars)?stars(e.stars):'',e.pos].filter(Boolean).join(' · '))}</span>${e.detail?`<p>${esc(e.detail)}</p>`:''}<div class="beat305-actions">${b.recruitId!=null&&b.recruitId!==''?`<button type="button" class="btn neutral" data-beat305-open="${esc(b.recruitId)}">Open profile</button>`:''}${b.more>0?`<button type="button" class="home305-link" data-beat305-recap>+${plural(b.more,'more move')} →</button>`:''}</div></div>`
+}
+function openRecruitProfile(id){const s=S();if((s?.recruits||[]).some(r=>String(r.id)===String(id))){window.showTab?.('recruiting');window.openRecruit?.(id)}else window.showTab?.('recruiting')}
+
+// ---------------------------------------------------------------- 4. Home tile shortcuts (pure functions of state)
+const DECIDING=['TOP3','BATTLE'];
+function decideThisWeek(s=S()){
+ if(!s?.school||s.phase!=='REGULAR'||s.seasonDone)return 0;const week=num(s.week),year=num(s.year),me=uid(s);
+ return(s.recruits||[]).filter(r=>{if(!r||!r.onBoard||r.committedTo||(r.lockedOut||[]).map(Number).includes(me))return false;const d=r.decision280;if(!d||num(d.year)!==year)return false;const dw=num(d.decisionWeek,99);return dw===week||(dw<week&&DECIDING.includes(d.stage))}).length
+}
+// Same rule as the Injury Report's "Projected starters out": players hurt while starting (the depth chart moves them down).
+function injuredStarters(s=S()){return(s?.roster||[]).filter(p=>p&&p.injury&&(p.injury.wasStarter||p.starter)).length}
+function defaultFacilityCost(key){const f=window.SDF_V103_TEST?.facilityCost103;return typeof f==='function'?f(key):Infinity}
+function affordableFacility(s=S(),cost=defaultFacilityCost){
+ if(!s?.school||s.facilityProject)return null;const budget=num(s.budget);
+ const options=Object.keys(s.facilities||{}).filter(k=>num(s.facilities[k])<5).map(k=>({key:k,cost:num(cost(k),Infinity)})).filter(o=>Number.isFinite(o.cost)&&o.cost>0&&budget>=o.cost).sort((a,b)=>a.cost-b.cost);
+ return options[0]||null
+}
+function tileHints(s=S(),opts={}){
+ const out={},n=decideThisWeek(s),inj=injuredStarters(s),fac=affordableFacility(s,opts.facilityCost||defaultFacilityCost);
+ if(n>0)out.recruiting={text:`${plural(n,'prospect')} decide${n===1?'s':''} this week →`,go:'recruiting'};
+ if(inj>0)out.roster={text:`${plural(inj,'starter')} injured →`,go:'injuries'};
+ if(fac)out.program={text:'Facility upgrade affordable →',go:'facilities'};
+ return out
+}
+const GO={recruiting:()=>window.showTab?.('recruiting'),injuries:()=>{if(typeof window.navigateCoachTask==='function')window.navigateCoachTask('roster','injuries');else window.showTab?.('roster')},
+ facilities:()=>{if(typeof window.goProgram==='function')window.goProgram('facilities');else window.showTab?.('program')},dynasty:()=>window.showTab?.('dynasty')};
+function decorateTiles(s=S()){
+ const cc=$('gameCommandCenterV219');if(!cc||!s?.school)return;const hints=tileHints(s);
+ for(const tile of cc.querySelectorAll('.ui-command-tile[data-ui-tab]')){
+  const tab=tile.dataset.uiTab,h=hints[tab],col=tile.querySelector(':scope>span:not(.ui-command-icon):not(.ui-command-arrow)')||tile;let line=tile.querySelector('.hint305');
+  if(!h){if(line)line.remove();continue}
+  if(!line){line=document.createElement('span');line.className='hint305';line.setAttribute('role','link');line.tabIndex=0;col.append(line)}
+  if(line.dataset.go!==h.go)line.dataset.go=h.go;if(line.textContent!==h.text){line.textContent=h.text;line.setAttribute('aria-label',h.text.replace(/\s*→$/,''))}
+ }
+}
+// A tap on the shortcut line follows the deep link instead of the tile's own tab switch.
+document.addEventListener('click',e=>{
+ const t=e.target?.closest?.('.hint305[data-go],[data-home305-go]');if(t){e.preventDefault();e.stopPropagation();const go=t.dataset.go||t.dataset.home305Go;safe(()=>GO[go]?.());return}
+ const o=e.target?.closest?.('[data-beat305-open]');if(o){e.preventDefault();safe(()=>openRecruitProfile(o.dataset.beat305Open));return}
+ const r=e.target?.closest?.('[data-beat305-recap]');if(r){e.preventDefault();const s=S(),rc=(s?.recruitingRecaps280||[]).slice(-1)[0];safe(()=>window.SDF_RECRUITING280?.showRecap?.(rc))}
+},true);
+document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target?.classList?.contains('hint305')){e.preventDefault();e.stopPropagation();safe(()=>GO[e.target.dataset.go]?.())}},true);
+
+// ---------------------------------------------------------------- Home sections
+H?.registerHomeSection?.({id:'recruit-beat',order:40,render:()=>beatHtml()});
+H?.registerHomeSection?.({id:'almost-there',order:80,render:()=>almostHtml()});
+
+// ---------------------------------------------------------------- Style
+const STYLE=`
+#modal.sdf305-moment-modal{padding:0!important;align-items:stretch!important;justify-content:stretch!important}
+#modal.sdf305-moment-modal>.modal-card{width:100%!important;max-width:none!important;height:100%!important;max-height:none!important;min-height:100%!important;margin:0!important;border-radius:0!important;border:0!important;display:flex;flex-direction:column;justify-content:center;overflow:auto;padding:0!important;background:radial-gradient(circle at 50% 18%,#f3d58533,transparent 58%),linear-gradient(180deg,#14301f,#081521 72%)!important}
+#modal.sdf305-moment-modal #closeModal{display:none!important}
+.first305{position:relative;overflow:hidden;min-height:100%;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:calc(28px + env(safe-area-inset-top,0px)) 20px calc(24px + env(safe-area-inset-bottom,0px));color:#fff}
+.first305-eyebrow{display:block;font-size:.72rem;letter-spacing:.2em;color:#f3d585;font-weight:850}
+.first305-icon{font-size:4.6rem;line-height:1;margin:18px 0 6px;filter:drop-shadow(0 8px 24px #f3d58566);animation:first305Pop .7s cubic-bezier(.2,1.4,.4,1) both}
+.first305 h2{margin:8px 0 6px;font-size:2rem;line-height:1.1;letter-spacing:-.01em}
+.first305-title{margin:0 auto;max-width:30ch;font-size:1.05rem;line-height:1.4;color:#e8f2f7;font-weight:650;overflow-wrap:anywhere}
+.first305-big{margin:10px 0 0;font-size:2.4rem;font-weight:900;color:#fff;letter-spacing:.02em}
+.first305-line{margin:6px 0 0;color:#9fc3d6;font-size:.85rem}
+.first305-also{margin:16px auto 0;display:flex;flex-wrap:wrap;justify-content:center;gap:6px;max-width:340px}.first305-also small{flex-basis:100%;font-size:.66rem;letter-spacing:.14em;color:#9fc3d6;font-weight:800}
+.first305-also span,.first305-recap span{display:inline-block;padding:5px 10px;border:1px solid #a8862c;border-radius:999px;background:#2c241099;color:#f3d585;font-size:.8rem;font-weight:750}
+.first305-note{margin:18px 0 0;color:#cfe0ea99;font-size:.78rem}
+.first305-actions{display:grid;gap:10px;width:min(340px,100%);margin-top:20px}.first305-actions .btn{min-height:50px;width:100%;font-size:1rem}
+.first305-confetti{position:absolute;inset:0;pointer-events:none;overflow:hidden}.first305-confetti i{position:absolute;top:-14px;left:var(--x);width:8px;height:13px;border-radius:2px;background:hsl(var(--h),85%,62%);opacity:0;animation:first305Fall 2.4s ease-in var(--d) 3 both}
+.first305-recap{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 8px}.first305-recap small{flex-basis:100%;color:#f3d585;font-size:.76rem;font-weight:700}
+@keyframes first305Fall{0%{opacity:1;transform:translateY(0) rotate(0)}100%{opacity:0;transform:translateY(105vh) rotate(720deg)}}
+@keyframes first305Pop{0%{transform:scale(.3) rotate(-12deg);opacity:0}70%{transform:scale(1.12) rotate(3deg);opacity:1}100%{transform:scale(1) rotate(0)}}
+@media (prefers-reduced-motion:reduce){.first305-confetti{display:none}.first305-icon{animation:none}}body.reduce-motion .first305-confetti{display:none}
+.almost305{list-style:none;margin:0;padding:0;display:grid;gap:6px}.almost305 li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 9px;align-items:center;padding:8px 10px;border-radius:10px;background:#ffffff0d;min-width:0}
+.almost305-icon{font-size:1.15rem;line-height:1}.almost305-text{min-width:0}.almost305-text b{display:block;font-size:.85rem;overflow-wrap:anywhere}.almost305-text small{display:block;font-size:.72rem;color:#9fb6c3}.almost305 strong{color:#f3d585;font-size:.9rem;white-space:nowrap}
+.home305-link{background:none;border:0;padding:8px 0 0;min-height:36px;color:#f3d585;font:inherit;font-size:.82rem;font-weight:750;cursor:pointer;text-align:left}
+.beat305{padding:10px 12px;border:1px solid #2f5163;border-radius:12px;background:#0c1f2b;color:#e8f2f7;min-width:0}.beat305 small{display:block;font-size:.68rem;letter-spacing:.08em;color:#9fc3d6;font-weight:800}
+.beat305 b{display:block;margin-top:3px;font-size:1rem;line-height:1.3;overflow-wrap:anywhere}.beat305-meta{display:block;font-size:.78rem;color:#f3d585;margin-top:2px}.beat305 p{margin:6px 0 0;font-size:.8rem;line-height:1.4;color:#cfe0ea;overflow-wrap:anywhere}
+.beat305-good{border-color:#2c6b45;background:#0f2e1e}.beat305-bad{border-color:#7a3b2a;background:#2a1612}.beat305-actions{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin-top:8px}.beat305-actions .btn{min-height:40px}
+.hint305{display:block;margin-top:4px;color:#f3d585;font-size:.74rem;font-weight:800;font-style:normal;line-height:1.3;text-decoration:underline;text-decoration-color:#f3d58566;text-underline-offset:3px;cursor:pointer;overflow-wrap:anywhere}
+.hint305:focus-visible{outline:2px solid #f3d585;outline-offset:2px;border-radius:4px}`;
+function ensureStyle(){if(!document.head||$('home305Style'))return;const st=document.createElement('style');st.id='home305Style';st.textContent=STYLE;document.head.append(st)}
+ensureStyle();
+
+// ---------------------------------------------------------------- Hooks
+let tileTimer=null;
+function scheduleTiles(){if(tileTimer)return;tileTimer=setTimeout(()=>{tileTimer=null;safe(()=>decorateTiles())},0)}
+const baseRender=window.renderAll;
+if(typeof baseRender==='function')window.renderAll=function(...a){const out=baseRender.apply(this,a);safe(()=>queueFirsts());safe(()=>decorateTiles());return out};
+const baseShowTab=window.showTab;
+if(typeof baseShowTab==='function')window.showTab=function(...a){const out=baseShowTab.apply(this,a);scheduleTiles();return out};
+// Recruiting resolves between renders (commits): pick those up when the recap or week closes too.
+H?.onGameFinished?.(()=>safe(()=>queueFirsts()));
+H?.onWeekChanged?.(()=>safe(()=>queueFirsts()));
+if(typeof MutationObserver==='function'){const watch=()=>{const n=$('dashboardTab');if(n&&!n.dataset.home305){n.dataset.home305='1';new MutationObserver(muts=>{if(muts.some(m=>[...m.addedNodes].some(x=>x.nodeType===1&&(x.id==='gameCommandCenterV219'||x.classList?.contains('ui-command-tile')||x.querySelector?.('.ui-command-tile')))))scheduleTiles()}).observe(n,{childList:true,subtree:true})}};watch();if(document.body)new MutationObserver(watch).observe(document.body,{childList:true})}
+
+window.SDF_HOME305={FIRSTS,detectFirsts,scanFirsts,openFirst,queueFirsts,momentFor,firstHtml,progress,almostThere,almostHtml,currentRecap,recruitBeat,beatHtml,openRecruitProfile,decideThisWeek,injuredStarters,affordableFacility,tileHints,decorateTiles};
+if(window.SDF_ACHIEVEMENTS277&&!window.SDF_ACHIEVEMENTS277.progress)window.SDF_ACHIEVEMENTS277.progress=progress;
+})();
+
+(()=>{
+'use strict';
+// Build 305: Dynasty Hall of Fame & Record Book.
+// A full-screen page (More menu, Home and the History tab) with the program's record book (best seasons, longest
+// win streak, titles, biggest wins, the coach's career and single-season player records) and a Hall of Fame of
+// the program's best players. Players are inducted automatically once they leave with a notable career (a national
+// award, All-American honors, a first-round selection or big career production). Everything is rebuilt from the
+// history the save already has (season history, trophies, award/All-American/draft history, the Build 192 departed
+// player archive and the Build 277 per-game log); hallOfFame305 only remembers inductees and which are new.
+// Every entry can be shared with the Build 301 share card.
+const $=id=>document.getElementById(id);
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num=(v,d=0)=>v!==null&&v!==''&&Number.isFinite(Number(v))?Number(v):d;
+const S=()=>{try{return typeof state!=='undefined'?state:window.state}catch{return window.state}};
+const uid=s=>Number(s?.school?.id);
+const safe=(fn,fallback=null)=>{try{return fn()}catch(error){window.SDF_RUNTIME_ERRORS?.capture?.(error,{operation:'v305-hall-of-fame'});return fallback}};
+const fmt=v=>Math.round(num(v)).toLocaleString('en-US');
+const dash=s=>String(s).replace('-','–');
+const plural=(n,one,many=one+'s')=>`${n} ${n===1?one:many}`;
+const schoolName=id=>{try{return(typeof schools!=='undefined'&&schools.find?.(x=>num(x.id)===num(id))?.name)||''}catch{return''}};
+
+// ---------------------------------------------------------------- Record book
+function seasons(s=S()){return(s?.history||[]).filter(h=>h&&(h.schoolId==null||Number(h.schoolId)===uid(s)))}
+const pct=h=>{const g=num(h.wins)+num(h.losses);return g?num(h.wins)/g:0};
+function trophiesFor(s,year){return(s.trophies||[]).filter(t=>num(t.year)===num(year)).map(t=>t.type)}
+function bestSeasons(s=S(),limit=5){
+ return seasons(s).slice().sort((a,b)=>pct(b)-pct(a)||num(b.wins)-num(a.wins)||num(a.year)-num(b.year)).slice(0,limit)
+  .map(h=>({year:num(h.year),wins:num(h.wins),losses:num(h.losses),post:h.post||'',grade:h.grade||'',classRank:num(h.classRank,0),honors:trophiesFor(s,h.year).filter(t=>t!=='Playoff Appearance')}))
+}
+// Per-game log: Build 277 records every finished game (regular season and postseason, live or simulated) with its
+// margin; this season's schedule fills in anything the log does not have.
+const CONTEXT_ORDER={REGULAR:0,CONFERENCE:1,BOWL:2,PLAYOFF:3,CHAMPIONSHIP:4};
+function gameLog(s=S()){
+ const out=[],seen=new Set(),me=uid(s);
+ for(const [key,e] of Object.entries(s?.achievementGames277||{})){
+  if(!e||(e.schoolId!=null&&Number(e.schoolId)!==me))continue;const parts=key.split(':'),oppId=parts[parts.length-1],ctx=parts[2]||'REGULAR',label=parts[3]||'';
+  out.push({year:num(e.year),ctx,order:CONTEXT_ORDER[ctx]??5,week:num(label,ctx==='REGULAR'?0:99),label,oppId:num(oppId,0),opponent:schoolName(oppId),win:!!e.win,margin:num(e.margin),rank:e.rank==null?null:num(e.rank,null)});
+  if(ctx==='REGULAR')seen.add(`${num(e.year)}:${label}`);
+ }
+ for(const g of s?.schedule||[]){if(!g||!g.result||g.bye||seen.has(`${num(s.year)}:${g.week}`))continue;const p=String(g.score||'').split('-').map(Number),m=Number.isFinite(p[0])&&Number.isFinite(p[1])?p[0]-p[1]:(g.result==='W'?1:-1);
+  out.push({year:num(s.year),ctx:'REGULAR',order:0,week:num(g.week),label:String(g.week),oppId:num(g.oppId),opponent:g.opponent||schoolName(g.oppId),win:g.result==='W',margin:m,rank:g.opponentRank277==null?null:num(g.opponentRank277,null),score:g.score||''})}
+ return out.sort((a,b)=>a.year-b.year||a.order-b.order||a.week-b.week)
+}
+function longestStreak(log){let best=null,run=[];for(const g of log){if(g.win){run.push(g);if(!best||run.length>best.length)best=run.slice()}else run=[]}
+ return best?{length:best.length,from:best[0],to:best[best.length-1],active:run.length===best.length&&run.length>0&&log[log.length-1]===best[best.length-1]}:null}
+function biggestWins(log,limit=5){return log.filter(g=>g.win&&g.margin>0).sort((a,b)=>b.margin-a.margin||a.year-b.year).slice(0,limit)}
+function titles(s=S()){
+ const t=s?.trophies||[],years=f=>t.filter(f).map(x=>num(x.year)).sort((a,b)=>a-b);
+ return{national:years(x=>x.type==='National Championship'),conference:years(x=>/champ/i.test(x.type)&&!/national|playoff|bowl/i.test(x.type)),
+  bowls:t.filter(x=>/bowl/i.test(x.type)&&!/playoff|national/i.test(x.type)).map(x=>({year:num(x.year),name:x.type})).sort((a,b)=>a.year-b.year),playoffs:years(x=>x.type==='Playoff Appearance')}
+}
+function coachCareer(s=S()){
+ const h=seasons(s),w=h.reduce((t,x)=>t+num(x.wins),0)+num(s.record?.w),l=h.reduce((t,x)=>t+num(x.losses),0)+num(s.record?.l),c=s.coachCareer||{};
+ const cw=Math.max(w,num(c.careerWins)),cl=Math.max(l,num(c.careerLosses));
+ return{name:c.name||'Head Coach',wins:cw,losses:cl,pct:cw+cl?cw/(cw+cl):0,seasons:h.length,programWins:w,programLosses:l}
+}
+const PLAYER_RECORDS=[['passing','Passing yards'],['rushing','Rushing yards'],['receiving','Receiving yards'],['sacks','Sacks'],['interceptions','Interceptions']];
+function playerRecords(s=S()){const r=s?.records||{};return PLAYER_RECORDS.filter(([k])=>r[k]&&r[k].player).map(([k,label])=>({key:k,label,player:r[k].player,value:num(r[k].value),year:r[k].year!=null?num(r[k].year):null}))}
+function recordBook(s=S()){const log=gameLog(s);return{seasons:bestSeasons(s),streak:longestStreak(log),biggest:biggestWins(log),titles:titles(s),coach:coachCareer(s),players:playerRecords(s),games:log.length}}
+
+// ---------------------------------------------------------------- Hall of Fame
+const FIELDS=['games','passYds','passTD','rushYds','rushTD','rec','recYds','recTD','tackles','tfl','sacks','defINT','ff','fgm'];
+function totals(history){const t={};for(const k of FIELDS)t[k]=0;for(const h of history||[])for(const k of FIELDS)t[k]+=num(h?.[k]);return t}
+function production(t){return t.passYds/250+t.passTD+t.rushYds/100+t.rushTD+t.recYds/100+t.recTD+t.tackles/7+t.tfl/2+t.sacks+t.defINT*1.5+t.ff+t.fgm/3}
+function careerLine(t){const out=[];
+ if(t.passYds>=500)out.push(`${fmt(t.passYds)} pass yds · ${t.passTD} TD`);if(t.rushYds>=300)out.push(`${fmt(t.rushYds)} rush yds${t.rushTD?` · ${t.rushTD} TD`:''}`);
+ if(t.recYds>=300)out.push(`${fmt(t.recYds)} rec yds${t.recTD?` · ${t.recTD} TD`:''}`);if(t.tackles>=40)out.push(`${fmt(t.tackles)} tackles`);if(t.sacks>=5)out.push(`${t.sacks} sacks`);if(t.defINT>=4)out.push(`${t.defINT} INT`);if(t.fgm>=15)out.push(`${t.fgm} FG`);
+ return out.slice(0,2).join(' · ')}
+const PRODUCTION_BAR=75;
+const nameKey=(name,pos)=>`n:${String(name||'').toLowerCase()}:${String(pos||'').toUpperCase()}`;
+// Every departed player with a notable career, best first. Inducted when they have left the program and either won a
+// national award, made All-American, went in the first round, or produced a big career (PRODUCTION_BAR).
+function candidates(s=S()){
+ if(!s?.school)return[];const me=uid(s),school=s.school.name,map=new Map(),byName=new Map();
+ const onRoster=new Set();for(const p of s.roster||[]){if(p?.id!=null)onRoster.add('id:'+p.id);onRoster.add(nameKey(p?.name,p?.pos))}
+ const entry=(key,name,pos)=>{let e=map.get(key)||byName.get(nameKey(name,pos))||byName.get(nameKey(name,''));if(!e){e={key,id:null,name,pos:pos||'',history:[],awards:[],allAmerican:[],draft:null,left:null,reason:''};map.set(key,e)}if(name&&!byName.has(nameKey(name,pos)))byName.set(nameKey(name,pos),e);if(name&&!byName.has(nameKey(name,'')))byName.set(nameKey(name,''),e);if(!e.pos&&pos)e.pos=pos;return e};
+ for(const a of s.playerStoryArchiveV192||[]){if(!a?.name)continue;const e=entry('p:'+a.id,a.name,a.pos);e.id=a.id;e.history=(a.statHistory||[]).filter(h=>!h.team||h.team===school);e.left=num(a.year,null);e.reason=a.reason||'Left the program'}
+ for(const h of s.nationalAwardHistory||[])for(const a of h?.awards||[])if(Number(a.teamId)===me&&a.player)entry(nameKey(a.player,a.pos),a.player,a.pos).awards.push({year:num(h.year),title:a.title||a.key||'National award'});
+ for(const a of s.allAmericans||[])if(a?.player)entry(nameKey(a.player,a.pos),a.player,a.pos).allAmerican.push(num(a.year));
+ for(const d of s.draftHistory||[]){if(!d?.player||(d.schoolId!=null&&Number(d.schoolId)!==me))continue;const e=d.playerId!=null&&map.get('p:'+d.playerId)||entry(nameKey(d.player,d.pos),d.player,d.pos);if(!e.draft||num(d.round,9)<num(e.draft.round,9))e.draft={round:num(d.round),pick:num(d.pick),year:num(d.year)};if(e.left==null)e.left=num(d.year)}
+ const out=[];
+ for(const e of new Set(map.values())){
+  if((e.id!=null&&onRoster.has('id:'+e.id))||onRoster.has(nameKey(e.name,e.pos)))continue;// still on the team: not eligible yet
+  const t=totals(e.history),prod=production(t),aa=[...new Set(e.allAmerican)].sort((a,b)=>a-b),r1=e.draft&&e.draft.round===1;
+  const notable=e.awards.length>0||aa.length>0||r1||prod>=PRODUCTION_BAR;if(!notable)continue;
+  const years=[...e.history.map(h=>num(h.year)),...e.awards.map(a=>a.year),...aa,e.draft?.year].filter(y=>y>0),from=years.length?Math.min(...years):null,to=e.left??(years.length?Math.max(...years):null);
+  const honors=[...e.awards.map(a=>`${a.title} · Year ${a.year}`),...aa.map(y=>`All-American · Year ${y}`),...(e.draft?[`Round ${e.draft.round} pick${e.draft.pick?` (#${e.draft.pick})`:''} · Year ${e.draft.year}`]:[])];
+  const score=e.awards.length*40+aa.length*25+(e.draft?Math.max(0,23-e.draft.round*3):0)+prod*.6;
+  out.push({key:e.key,name:e.name,pos:e.pos,from,to,seasons:e.history.length,totals:t,line:careerLine(t),honors,awards:e.awards.length,allAmerican:aa.length,draft:e.draft,score:Math.round(score*10)/10,reason:e.reason})
+ }
+ return out.sort((a,b)=>b.score-a.score||String(a.name).localeCompare(String(b.name)))
+}
+function hofStore(s){const h=s.hallOfFame305&&typeof s.hallOfFame305==='object'?s.hallOfFame305:(s.hallOfFame305={});h.inducted??={};h.unseen=Array.isArray(h.unseen)?h.unseen:[];return h}
+// Inducts new candidates. The first run on a save inducts its existing legends quietly; later inductions are news.
+function induct(s=S()){
+ if(!s?.school)return[];const fresh=!s.hallOfFame305,store=hofStore(s),added=[];
+ for(const c of candidates(s)){const prev=store.inducted[c.key];
+  if(prev){Object.assign(prev,{...c,inductedYear:prev.inductedYear});continue}
+  store.inducted[c.key]={...c,inductedYear:num(s.year)};if(!fresh){added.push(c.key);store.unseen.push(c.key);s.news??=[];s.news.push(`Hall of Fame: ${c.name} (${c.pos}) was inducted into the ${s.school.name} Hall of Fame.`)}}
+ store.unseen=store.unseen.filter(k=>store.inducted[k]).slice(-12);
+ return added
+}
+function inductees(s=S()){const store=s?.hallOfFame305;return store?Object.values(store.inducted||{}).sort((a,b)=>num(b.score)-num(a.score)||String(a.name).localeCompare(String(b.name))):[]}
+let lastSig='';
+function sync(s=S()){if(!s?.school)return[];const sig=[uid(s),s.year,s.phase,(s.playerStoryArchiveV192||[]).length,(s.nationalAwardHistory||[]).length,(s.allAmericans||[]).length,(s.draftHistory||[]).length,(s.roster||[]).length,!!s.hallOfFame305].join('|');if(sig===lastSig)return[];lastSig=sig;return induct(s)}
+
+// ---------------------------------------------------------------- Share
+const yearSpan=e=>e.from&&e.to&&e.from!==e.to?`Years ${e.from}–${e.to}`:e.to||e.from?`Year ${e.to||e.from}`:'';
+function shareEntry(type,item,s=S()){
+ const school=s?.school?.name||'',year=num(s?.year),base={school,year};let m=null;
+ if(type==='hof')m={key:`hof305:${item.key}`,kind:'award',eyebrow:'HALL OF FAME',title:`${item.name} (${item.pos}) is in the ${school} Hall of Fame`,big:item.pos||'HOF',line:[yearSpan(item),item.honors[0]||item.line].filter(Boolean).join(' · ')};
+ else if(type==='season')m={key:`rb305:season:${item.year}`,kind:'perfect',eyebrow:'RECORD BOOK',title:`${school}'s best season: ${item.wins}–${item.losses}${item.honors.length?`, ${item.honors[0]}`:''}`,big:`${item.wins}–${item.losses}`,line:`Year ${item.year}`};
+ else if(type==='streak')m={key:'rb305:streak',kind:'milestone',eyebrow:'RECORD BOOK',title:`${school}'s longest win streak: ${item.length} straight`,big:String(item.length),line:`Year ${item.from.year} to Year ${item.to.year}`};
+ else if(type==='win')m={key:`rb305:win:${item.year}:${item.label}`,kind:'score',eyebrow:'BIGGEST WIN',title:`${school} beat ${item.opponent||'an opponent'} by ${item.margin}`,big:`+${item.margin}`,line:`Year ${item.year}${item.ctx==='REGULAR'?` · Week ${item.week}`:''}`};
+ else if(type==='titles')m={key:'rb305:titles',kind:'title',eyebrow:'TROPHY CASE',title:`${school}: ${[item.national.length?plural(item.national.length,'national title'):'',item.conference.length?plural(item.conference.length,'conference title'):'',item.bowls.length?plural(item.bowls.length,'bowl win'):''].filter(Boolean).join(', ')}`,big:'🏆',line:`Through Year ${year}`};
+ else if(type==='coach')m={key:'rb305:coach',kind:'milestone',eyebrow:'COACHING CAREER',title:`${item.name}: ${item.wins}–${item.losses} career record`,big:`${item.wins}–${item.losses}`,line:`${plural(item.seasons,'completed season')} · ${school}`};
+ else if(type==='player')m={key:`rb305:player:${item.key}`,kind:'award',eyebrow:'PROGRAM RECORD',title:`${item.player} holds the ${school} ${item.label.toLowerCase()} record`,big:fmt(item.value),line:item.year?`Year ${item.year}`:''};
+ if(!m)return null;Object.assign(m,base);window.SDF_SHARE301?.shareMoment?.(m);return m
+}
+
+// ---------------------------------------------------------------- Page
+let tab='hof',items=[];
+const shareBtn=(type,i,label)=>window.SDF_SHARE301?.shareMoment?`<button type="button" class="hof305-share" data-hof305-share="${type}:${i}" aria-label="Share ${esc(label)}">Share</button>`:'';
+function hofHtml(s){
+ const list=inductees(s),unseen=new Set(s.hallOfFame305?.unseen||[]);
+ if(!list.length)return`<div class="hof305-empty"><div aria-hidden="true">🏛️</div><b>No inductees yet</b><p>Players are inducted when they leave your program after a notable career: a national award, All-American honors, a first-round pick or a big career stat line.</p></div>`;
+ return`<p class="hof305-lede">${plural(list.length,'inductee')} · inducted automatically when a great career ends.</p><ol class="hof305-list">${list.map(e=>{const i=items.push({type:'hof',item:e})-1;return`<li class="hof305-card${unseen.has(e.key)?' new':''}"><div class="hof305-card-head"><span class="hof305-pos">${esc(e.pos||'—')}</span><div><b>${esc(e.name)}</b><small>${esc(yearSpan(e))}${e.seasons?` · ${plural(e.seasons,'season')}`:''}${unseen.has(e.key)?' · <em>NEW</em>':''}</small></div>${shareBtn('hof',i,e.name)}</div>${e.line?`<p class="hof305-stat">${esc(e.line)}</p>`:''}${e.honors.length?`<ul class="hof305-honors">${e.honors.slice(0,4).map(h=>`<li>${esc(h)}</li>`).join('')}</ul>`:''}</li>`}).join('')}</ol>`
+}
+function row(label,value,sub,type,item){const i=items.push({type,item})-1;return`<li class="hof305-row"><div><small>${esc(label)}</small><b>${esc(value)}</b>${sub?`<span>${esc(sub)}</span>`:''}</div>${shareBtn(type,i,label)}</li>`}
+// Post-season result first, then any trophy it does not already name ("Sun Bowl" is in "Sun Bowl win").
+function seasonLine(x){const post=String(x.post||''),low=post.toLowerCase(),extra=x.honors.filter(h=>!low.includes(String(h).toLowerCase().replace(/ (champions|championship)$/,'')));return[post,...extra,x.classRank?`Class #${x.classRank}`:''].filter(Boolean).slice(0,3).join(' · ')}
+function recordsHtml(s){
+ const r=recordBook(s),c=r.coach,t=r.titles,out=[];
+ out.push(`<h3>Coach</h3><ul class="hof305-rows">${row(c.name,`${c.wins}–${c.losses}`,`${(c.pct*100).toFixed(1)}% · ${plural(c.seasons,'completed season')}`,'coach',c)}</ul>`);
+ const trophyLine=[t.national.length?`${plural(t.national.length,'national title')} (Year ${t.national.join(', ')})`:'',t.conference.length?`${plural(t.conference.length,'conference title')} (Year ${t.conference.join(', ')})`:'',t.bowls.length?plural(t.bowls.length,'bowl win'):'',t.playoffs.length?plural(t.playoffs.length,'playoff trip'):''].filter(Boolean);
+ out.push(`<h3>Titles</h3>${trophyLine.length?`<ul class="hof305-rows">${row('Trophy case',trophyLine[0],trophyLine.slice(1).join(' · '),'titles',t)}</ul>${t.bowls.length?`<p class="hof305-note">${t.bowls.map(b=>`${esc(b.name)} (Year ${b.year})`).join(' · ')}</p>`:''}`:'<p class="hof305-note">No titles yet. The first one is waiting.</p>'}`);
+ out.push(`<h3>Best seasons</h3>${r.seasons.length?`<ul class="hof305-rows">${r.seasons.map(x=>row(`Year ${x.year}`,`${x.wins}–${x.losses}`,seasonLine(x),'season',x)).join('')}</ul>`:'<p class="hof305-note">Finish your first season to start the book.</p>'}`);
+ out.push(`<h3>Longest win streak</h3>${r.streak?`<ul class="hof305-rows">${row(r.streak.active?'Active streak':'Program record',`${r.streak.length} straight`,`Year ${r.streak.from.year} to Year ${r.streak.to.year}${r.streak.to.opponent?` · last vs ${r.streak.to.opponent}`:''}`,'streak',r.streak)}</ul>`:'<p class="hof305-note">No wins recorded yet.</p>'}`);
+ out.push(`<h3>Biggest wins</h3>${r.biggest.length?`<ul class="hof305-rows">${r.biggest.map(g=>row(`Year ${g.year}${g.ctx==='REGULAR'?` · Week ${g.week}`:` · ${g.ctx[0]+g.ctx.slice(1).toLowerCase()}`}`,`+${g.margin} vs ${g.opponent||'opponent'}`,[g.score?dash(g.score):'',g.rank&&g.rank<=25?`#${g.rank} opponent`:''].filter(Boolean).join(' · '),'win',g)).join('')}</ul>`:'<p class="hof305-note">No wins recorded yet.</p>'}`);
+ if(r.players.length)out.push(`<h3>Single-season player records</h3><ul class="hof305-rows">${r.players.map(p=>row(p.label,fmt(p.value),`${p.player}${p.year?` · Year ${p.year}`:''}`,'player',p)).join('')}</ul>`);
+ return out.join('')
+}
+function render(){
+ const s=S(),page=$('hof305');if(!page||!s?.school)return;items=[];
+ const body=tab==='hof'?hofHtml(s):recordsHtml(s);
+ page.querySelector('.hof305-school').textContent=s.school.name;
+ for(const b of page.querySelectorAll('[data-hof305-tab]')){const on=b.dataset.hof305Tab===tab;b.classList.toggle('active',on);b.setAttribute('aria-selected',on?'true':'false')}
+ const main=page.querySelector('.hof305-body');main.innerHTML=body;main.scrollTop=0;
+}
+let lastFocus=null;
+function open(which='hof'){
+ const s=S();if(!s?.school)return false;sync(s);tab=which==='records'?'records':'hof';ensureStyle();
+ let page=$('hof305');
+ if(!page){page=document.createElement('div');page.id='hof305';page.className='hof305';page.setAttribute('role','dialog');page.setAttribute('aria-modal','true');page.setAttribute('aria-labelledby','hof305Title');
+  page.innerHTML=`<div class="hof305-box"><header class="hof305-head"><button type="button" class="hof305-back" data-hof305-close aria-label="Close Hall of Fame">‹ Back</button><div><span class="eyebrow hof305-school"></span><h2 id="hof305Title">Hall of Fame &amp; Record Book</h2></div></header><div class="hof305-tabs" role="tablist"><button type="button" role="tab" data-hof305-tab="hof">Hall of Fame</button><button type="button" role="tab" data-hof305-tab="records">Record Book</button></div><div class="hof305-body"></div></div>`;
+  document.body.append(page);
+  page.addEventListener('click',e=>{const t=e.target.closest?.('[data-hof305-tab]');if(t){tab=t.dataset.hof305Tab;render();return}
+   if(e.target.closest?.('[data-hof305-close]')){close();return}
+   const sh=e.target.closest?.('[data-hof305-share]');if(sh){const i=num(sh.dataset.hof305Share.split(':')[1],-1),it=items[i];if(it)safe(()=>shareEntry(it.type,it.item))}})}
+ lastFocus=document.activeElement;page.hidden=false;render();page.querySelector('[data-hof305-close]')?.focus?.();
+ if(tab==='hof'&&s.hallOfFame305?.unseen?.length){setTimeout(()=>{if(s.hallOfFame305)s.hallOfFame305.unseen=[];window.SDF_RELEASE_TEST?.scheduleSave?.('Hall of Fame viewed',600,false);homeCard()},0)}
+ return true
+}
+function close(){const page=$('hof305');if(!page||page.hidden)return;page.hidden=true;lastFocus?.focus?.();homeCard()}
+document.addEventListener('keydown',e=>{const page=$('hof305');if(!page||page.hidden||document.querySelector('dialog[open]'))return;if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();close()}},true);
+
+// ---------------------------------------------------------------- Entry points: More menu, History tab, Home
+function homeSummary(s=S()){
+ const list=inductees(s),unseen=(s?.hallOfFame305?.unseen||[]).map(k=>s.hallOfFame305.inducted[k]).filter(Boolean),best=bestSeasons(s,1)[0],t=titles(s);
+ const parts=[list.length?plural(list.length,'inductee'):'',best?`best season ${best.wins}–${best.losses}`:'',t.national.length?plural(t.national.length,'national title'):''].filter(Boolean);
+ return{text:parts.join(' · ')||'Your program’s legends and records',newest:unseen[unseen.length-1]||null}
+}
+function homeCard(){
+ const s=S(),content=document.querySelector('#homeDetailsCard .home-details-content');if(!s?.school||!content)return;
+ let card=$('hofHome305');if(!card){card=document.createElement('button');card.type='button';card.id='hofHome305';card.className='hof305-home';card.onclick=()=>open('hof')}
+ if(card.parentElement!==content||card.nextElementSibling)content.append(card);
+ const h=homeSummary(s),html=`<span class="hof305-home-icon" aria-hidden="true">🏛️</span><span><small>${h.newest?'NEW HALL OF FAMER':'HALL OF FAME &amp; RECORD BOOK'}</small><b>${esc(h.newest?`${h.newest.name} (${h.newest.pos}) inducted`:h.text)}</b></span><span class="hof305-home-arrow" aria-hidden="true">›</span>`;
+ if(card.dataset.html!==html){card.dataset.html=html;card.innerHTML=html}const nw=h.newest?'1':'';if(card.dataset.newest!==nw)card.dataset.newest=nw;if(card.classList.contains('new')!==!!h.newest)card.classList.toggle('new',!!h.newest);
+}
+function menuButton(){
+ const mm=$('mobileMoreMenu'),closeBtn=$('mobileMoreClose');
+ if(mm&&closeBtn&&!$('hofMenu305')){const b=document.createElement('button');b.id='hofMenu305';b.type='button';b.textContent='🏛 Hall of Fame';b.onclick=()=>{mm.classList.add('hidden');open('hof')};closeBtn.before(b)}
+ const hist=$('historyTab');
+ if(hist&&!$('hofHistory305')){const sec=document.createElement('section');sec.id='hofHistory305';sec.className='surface hof305-history';sec.innerHTML='<div class="section-head"><div><span class="eyebrow">LEGENDS</span><h2>Hall of Fame &amp; Record Book</h2><p class="muted">Your program’s greatest players, best seasons, streaks and biggest wins, all shareable.</p></div><button type="button" class="btn primary" data-hof305-open>Open</button></div>';sec.querySelector('[data-hof305-open]').onclick=()=>open('hof');hist.prepend(sec)}
+}
+
+const STYLE=`
+#hof305{position:fixed;inset:0;z-index:24000;display:flex;align-items:stretch;justify-content:center;background:#020a12e6}#hof305[hidden]{display:none!important}
+.hof305-box{display:flex;flex-direction:column;width:min(720px,100%);height:100%;min-height:0;background:#0a1b27;color:#eff7fa;box-shadow:0 20px 70px #000b}
+.hof305-head{display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top,0px)) 16px 10px;border-bottom:1px solid #2b4554;flex-shrink:0;background:linear-gradient(180deg,#2c241055,transparent)}
+.hof305-head h2{margin:2px 0 0;font-size:1.2rem;line-height:1.2}.hof305-head .eyebrow{color:#f3d585}
+.hof305-back{min-height:44px;padding:0 12px;border:1px solid #3c5968;border-radius:10px;background:#102632;color:#e8f2f7;font:inherit;font-weight:750;cursor:pointer;flex-shrink:0}
+.hof305-tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:10px 16px;flex-shrink:0}
+.hof305-tabs button{min-height:42px;border:1px solid #2f5163;border-radius:10px;background:#0c1f2b;color:#cfe0ea;font:inherit;font-weight:800;cursor:pointer}.hof305-tabs button.active{border-color:#a8862c;background:#2c2410;color:#f3d585}
+.hof305-body{flex:1;min-height:0;overflow:auto;padding:4px 16px calc(24px + env(safe-area-inset-bottom,0px));-webkit-overflow-scrolling:touch}
+.hof305-body h3{margin:16px 0 6px;font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:#9fc3d6}
+.hof305-lede,.hof305-note{margin:6px 0 10px;font-size:.82rem;color:#a9bfcc;line-height:1.45}
+.hof305-list{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.hof305-card{padding:12px;border:1px solid #6b5a28;border-radius:14px;background:linear-gradient(160deg,#2c241066,#0c1f2b 60%);min-width:0}.hof305-card.new{border-color:#f3d585;box-shadow:0 0 0 1px #f3d58555,0 6px 22px #f3d58522}
+.hof305-card-head{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center}.hof305-card-head b{display:block;font-size:1rem;overflow-wrap:anywhere}.hof305-card-head small{display:block;color:#9fb6c3;font-size:.76rem}.hof305-card-head em{color:#f3d585;font-style:normal;font-weight:800}
+.hof305-pos{display:grid;place-items:center;min-width:44px;height:44px;padding:0 6px;border-radius:12px;background:#f3d585;color:#2c2410;font-weight:900;font-size:.85rem}
+.hof305-stat{margin:8px 0 0;font-size:.85rem;color:#e8f2f7;font-weight:650}
+.hof305-honors{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:5px}.hof305-honors li{padding:4px 8px;border-radius:999px;background:#ffffff12;color:#f3d585;font-size:.72rem;font-weight:700}
+.hof305-rows{list-style:none;margin:0;padding:0;display:grid;gap:6px}.hof305-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:9px 10px;border:1px solid #2e4859;border-radius:10px;background:#0b1924}
+.hof305-row small{display:block;font-size:.7rem;letter-spacing:.05em;color:#9fb6c4;font-weight:750}.hof305-row b{display:block;font-size:1.05rem;margin-top:1px;overflow-wrap:anywhere}.hof305-row span{display:block;font-size:.76rem;color:#a9bfcc;margin-top:1px;overflow-wrap:anywhere}
+.hof305-share{min-height:36px;padding:0 12px;border:1px solid #a8862c;border-radius:999px;background:transparent;color:#f3d585;font:inherit;font-size:.78rem;font-weight:800;cursor:pointer}
+.hof305-empty{text-align:center;padding:30px 12px;color:#cfe0ea}.hof305-empty div{font-size:3rem}.hof305-empty b{display:block;margin-top:8px;font-size:1.05rem}.hof305-empty p{font-size:.84rem;line-height:1.5;color:#a9bfcc;max-width:34ch;margin:8px auto 0}
+.hof305-home{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;width:100%;margin:12px 0 0;padding:10px 12px;border:1px solid #6b5a28;border-radius:12px;background:#1b1a12;color:#f4efe0;text-align:left;font:inherit;cursor:pointer;min-height:56px}
+.hof305-home.new{border-color:#f3d585;background:#2a2410}.hof305-home-icon{font-size:1.4rem}.hof305-home small{display:block;font-size:.66rem;letter-spacing:.08em;color:#f3d585;font-weight:800}.hof305-home b{display:block;font-size:.88rem;overflow-wrap:anywhere}.hof305-home-arrow{font-size:1.4rem;color:#f3d585}
+#hofMenu305{color:#f3d585}`;
+function ensureStyle(){if(!document.head||$('hof305Style'))return;const st=document.createElement('style');st.id='hof305Style';st.textContent=STYLE;document.head.append(st)}
+
+const baseRender=window.renderAll;
+if(typeof baseRender==='function')window.renderAll=function(...a){const out=baseRender.apply(this,a);safe(()=>{if(!S()?.school)return;ensureStyle();sync();menuButton();homeCard();if(!$('hof305')?.hidden&&$('hof305'))render()});return out};
+const baseShowTab=window.showTab;
+if(typeof baseShowTab==='function')window.showTab=function(...a){const out=baseShowTab.apply(this,a);safe(()=>{if(S()?.school){menuButton();homeCard()}});return out};
+
+window.SDF_HOF305={seasons,bestSeasons,gameLog,longestStreak,biggestWins,titles,coachCareer,playerRecords,recordBook,totals,production,careerLine,candidates,induct,inductees,sync,shareEntry,open,close,homeSummary,PRODUCTION_BAR};
+})();
+
+// Build 305: team-pick cards show what the board will expect in year one ("Board expects ~N wins") and a typical
+// first-season range. The static school.expectation field is NOT the board's number: once a dynasty starts the
+// board sets state.seasonExpectations.expectedWins from the schedule (v170 makeExpectations: sum of per-game win
+// chances from roster OVR edge and home field, rounded, clamped 3-11). previewExpectation() projects that same
+// calculation from school data alone (no state): roster OVR from prestige + recent success, as genRoster/AI rosters
+// do, conference opponents from the league table. In-season code (v299 stakes, Program Pulse, verdicts) reads the
+// board's number through expectedWinsFor(), and the preview hands its projection back through that same function.
+(()=>{
+'use strict';
+const $=id=>typeof document!=='undefined'?document.getElementById(id):null;
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const n=(v,d=0)=>Number.isFinite(Number(v))?Number(v):d;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+// Calibrated against real Year 1 starts (Build 305 audit): the user's roster rates about 2-3 OVR above its
+// (prestige+recent)/2 base, AI rosters about 4-5 above theirs and top out near 95; home field is 1.8 OVR.
+const OURS_OFFSET=2.5,OPP_OFFSET=4.5,OPP_CAP=95,HOME_EDGE=1.8,SEASON_GAMES=12,CONF_GAMES=9,ROSTER_SPREAD=4;
+const MIN_WINS=3,MAX_WINS=11;
+const API={};// filled at the end; the preview calls API.expectedWinsFor, the same entry v299 stakes uses
+
+// The one accessor for the board's win expectation. v299 stakes' expectedWins() delegates here, and the preview
+// passes its projection through it as well, so the card and the in-season Program Pulse never use different rules.
+function expectedWinsFor(st){return n(st?.seasonExpectations?.expectedWins,n(st?.school?.expectation,6))}
+// The board's rounding: sum of game chances, capped at last season + 2 when there is one, clamped 3-11 (v170).
+function boardWins(probs,lastWins=null){const raw=Math.min(probs.reduce((a,b)=>a+n(b),0),lastWins==null?Infinity:Number(lastWins)+2);return clamp(Math.round(raw),MIN_WINS,MAX_WINS)}
+function probabilityFromEdge(edge,variance=1){const f=window.SDF_V170?.probabilityFromEdge;if(typeof f==='function')return f(edge,variance);const scale=7.8*Math.max(.72,variance);return clamp(1/(1+Math.exp(-edge/scale)),.04,.96)}
+function base(s){return(n(s?.prestige,60)+n(s?.recent,n(s?.prestige,60)))/2}
+function oppRating(s){return Math.min(OPP_CAP,base(s)+OPP_OFFSET)}
+function leagueList(){
+ try{if(typeof schools==='undefined')return[];return schools.map(s=>window.SDF_LEAGUE292?.creationTeam?.(s)||s)}catch{return[]}
+}
+// Expected wins for one roster rating against a projected schedule: conference games against the average league
+// mate (half home, half away), the rest against a non-conference opponent of similar standing.
+function projectedSum(ours,school,list){
+ const mates=list.filter(s=>s&&s.conference===school.conference&&Number(s.id)!==Number(school.id)&&s.conference!=='Independents');
+ const confGames=Math.min(CONF_GAMES,mates.length),other=SEASON_GAMES-confGames;
+ const vs=r=>(probabilityFromEdge(ours-r+HOME_EDGE)+probabilityFromEdge(ours-r-HOME_EDGE))/2;
+ const conf=mates.length?mates.reduce((a,s)=>a+vs(oppRating(s)),0)/mates.length:0;
+ // Independents play a national schedule: their opponents look like the median program, not like themselves.
+ const bases=mates.length?null:list.map(base).sort((a,b)=>a-b),nonBase=bases?.length?bases[bases.length>>1]:base(school)+1;
+ const non=vs(Math.min(OPP_CAP,nonBase+OPP_OFFSET));
+ return conf*confGames+non*other
+}
+// Pure preview: needs only the school (and optionally the league list), never the save state.
+function previewExpectation(school,list=leagueList()){
+ if(!school)return null;
+ const ours=base(school)+OURS_OFFSET,mid=projectedSum(ours,school,list);
+ const wins=API.expectedWinsFor({seasonExpectations:{expectedWins:boardWins([mid])}});
+ const low=boardWins([projectedSum(ours-ROSTER_SPREAD,school,list)]),high=boardWins([projectedSum(ours+ROSTER_SPREAD,school,list)]);
+ return{wins,low:Math.min(low,wins),high:Math.max(high,wins),raw:Math.round(mid*10)/10}
+}
+function line(p){return p?`Board expects ~${p.wins} wins`:''}
+function rangeText(p){return!p?'':p.low===p.high?`Typical first season: ${p.low} wins`:`Typical first season: ${p.low}–${p.high} wins`}
+
+const STYLE=`
+.exp305{display:flex;flex-direction:column;gap:2px;margin:10px 0 10px;padding:8px 10px;border:1px solid #2f5263;border-left:3px solid #f5d471;border-radius:10px;background:#0f2532}
+.exp305 b{font-size:.84rem;color:#f2f8fb}.exp305 small{font-size:.72rem;color:#a9c4d3}
+.sdf299-rec .exp305{margin:6px 0 0;padding:4px 8px;border-left-width:2px}.sdf299-rec .exp305 b{font-size:.74rem}.sdf299-rec .exp305 small{font-size:.66rem}`;
+function ensureStyle(){if(typeof document==='undefined'||!document.head||$('exp305Style'))return;const s=document.createElement('style');s.id='exp305Style';s.textContent=STYLE;document.head.append(s)}
+const cache=new Map();
+function previewFor(id){
+ const list=leagueList(),s=list.find(x=>Number(x.id)===Number(id));if(!s)return null;
+ const key=[id,s.prestige,s.recent,s.conference,list.length].join(':');if(cache.has(key))return cache.get(key);
+ const p=previewExpectation(s,list);cache.set(key,p);return p
+}
+function block(p,compact=false){return`<b>${esc(line(p))}</b><small>${esc(compact?rangeText(p).replace('Typical first season','Typical year one'):rangeText(p))}</small>`}
+function annotate(){
+ if(typeof document==='undefined')return;ensureStyle();
+ for(const card of document.querySelectorAll('#schoolGrid .school-card')){
+  if(card.querySelector('.exp305'))continue;const btn=card.querySelector('.choose'),p=previewFor(btn?.dataset.id);if(!p)continue;
+  const box=document.createElement('div');box.className='exp305';box.innerHTML=block(p);btn.before(box);
+ }
+ for(const rec of document.querySelectorAll('#sdf299Recommended .sdf299-rec')){
+  if(rec.querySelector('.exp305'))continue;const id=rec.querySelector('[data-sdf299-team]')?.dataset.sdf299Team,p=previewFor(id),host=rec.querySelector(':scope>div');if(!p||!host)continue;
+  const box=document.createElement('div');box.className='exp305';box.innerHTML=block(p,true);host.append(box);
+ }
+}
+function safeAnnotate(){try{annotate()}catch(error){window.SDF_RUNTIME_ERRORS?.capture?.(error,{operation:'v305-team-pick'})}}
+const baseSchools=window.renderSchools;
+if(typeof baseSchools==='function')window.renderSchools=function(...args){const out=baseSchools.apply(this,args);safeAnnotate();watch();return out};
+// The Recommended rebuilds panel is drawn a frame later by v299-layout; annotate it when it appears.
+let observer=null;
+function watch(){
+ if(observer||typeof MutationObserver!=='function'||typeof document==='undefined')return;const grid=$('schoolGrid'),root=grid?.parentElement;if(!root)return;
+ let queued=false;observer=new MutationObserver(()=>{if(queued)return;queued=true;(window.requestAnimationFrame||setTimeout)(()=>{queued=false;safeAnnotate()})});observer.observe(root,{childList:true,subtree:true});
+}
+Object.assign(API,{version:305,previewExpectation,expectedWinsFor,boardWins,projectedSum,annotate,line,rangeText,OURS_OFFSET,OPP_OFFSET});
+window.SDF_PICK305=API;
+})();
+
+// Build 305: "Need a player at…" quick filter on the recruiting board. Chips list the positions where next season's
+// roster is thin (same forecast as Recruiting Intel → All Position Needs: returning players + commits vs the full
+// target). One tap filters the board to that position, recruitable now, sorted best-available first: talent weighed
+// against how realistic he is to land, so easy 1-star depth signings no longer sit on the last pages. Tap again to
+// clear; the previous filters come back. Display only: recruiting odds and rules are unchanged.
+(()=>{
+'use strict';
+const R=window.SDF_RECRUITING_V2;if(!R)return;
+const $=id=>typeof document!=='undefined'?document.getElementById(id):null;
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const n=(v,d=0)=>Number.isFinite(Number(v))?Number(v):d;
+const uid=()=>Number(state?.school?.id);
+const MAX_CHIPS=5;
+const mode={pos:null,prev:null};
+function safe(fn,fallback=null){try{return fn()}catch(error){window.SDF_RUNTIME_ERRORS?.capture?.(error,{operation:'v305-recruit-needs'});return fallback}}
+function positions(){return typeof POSITIONS!=='undefined'?POSITIONS:['QB','RB','WR','TE','OT','IOL','EDGE','DL','LB','CB','S','K','P']}
+
+// Next-season shortage per position. Prefers the Build 113 forecast that Recruiting Intel shows, so both always agree.
+function forecastRow(pos){
+ const f=window.SDF_V113_TEST?.forecast;if(typeof f==='function'){const x=f(pos);if(x)return x}
+ const players=(state.roster||[]).filter(p=>p.pos===pos),returning=players.filter(p=>p.year<4||p.redshirt).length,graduating=players.length-returning,
+  commits=(state.commits||[]).filter(r=>r.pos===pos).length,target=typeof DEPTH!=='undefined'?n(DEPTH[pos],3):3,projected=returning+commits;
+ return{pos,returning,graduating,commits,target,projected,shortage:Math.max(0,target-projected)}
+}
+function starterQuality(pos){const list=(state.roster||[]).filter(p=>p.pos===pos).map(p=>n(p.ovr)).sort((a,b)=>b-a),k=typeof STARTERS!=='undefined'?n(STARTERS[pos],1):1,top=list.slice(0,k);return top.length?Math.round(top.reduce((a,b)=>a+b,0)/top.length):0}
+// Thin positions, worst first. With no open roster spots, the weakest starting groups are offered as upgrades instead.
+function thinPositions(limit=MAX_CHIPS){
+ if(!state?.school)return[];
+ const rows=positions().map(forecastRow).filter(Boolean);
+ const short=rows.filter(x=>x.shortage>0).sort((a,b)=>b.shortage-a.shortage||b.graduating-a.graduating||positions().indexOf(a.pos)-positions().indexOf(b.pos)).map(x=>({pos:x.pos,kind:'need',open:x.shortage,label:`${x.shortage} open`}));
+ if(short.length>=2)return short.slice(0,limit);
+ const have=new Set(short.map(x=>x.pos));
+ const upgrades=positions().filter(p=>!have.has(p)&&!['K','P'].includes(p)).map(p=>({pos:p,q:starterQuality(p)})).filter(x=>x.q>0).sort((a,b)=>a.q-b.q).slice(0,Math.max(0,3-short.length)).map(x=>({pos:x.pos,kind:'upgrade',open:0,label:'upgrade'}));
+ return short.concat(upgrades).slice(0,limit)
+}
+
+// How realistic a signing is right now, from the live recruiting race (no hidden ratings are read). 1-stars are
+// cheap depth: since Build 302 they never lock you out and your contact counts 1.5x, while rivals cap out at 72.
+function landability(r){
+ const one=n(r.stars)===1,rc=safe(()=>R.race(r),null),u=rc?.user;
+ if(one)return{score:26+n(u?.score)/20,tier:'easy',label:'Easy depth'};
+ if(!u)return{score:0,tier:'long',label:'Uphill'};
+ const rank=n(u.rank,99),gap=n(rc.gap,0);
+ if(rank===1)return{score:24,tier:'easy',label:'You lead'};
+ if(rank<=3||gap<=10)return{score:Math.max(4,14-gap/3),tier:'battle',label:'In the race'};
+ return{score:Math.max(0,8-gap/4),tier:'long',label:'Uphill'}
+}
+// Talent the player can see: stars, plus scouted overall/upside when scouted (never the hidden true rating).
+function talent(r){const ovr=r.scouted?n(r.ovr):0;return n(r.stars)*10+(ovr?Math.max(0,ovr-55)*.6:0)}
+function bestAvailableScore(r){return talent(r)+landability(r).score}
+// Best available first, with the easiest depth signings (1-stars) moved up right after the top five so they no
+// longer sit on the last pages: as many as the position has open spots (at least two).
+function bestAvailable(list,pos){
+ const sorted=list.filter(r=>(!pos||r.pos===pos)&&!r.committedTo).map(r=>({r,s:bestAvailableScore(r)})).sort((a,b)=>b.s-a.s||n(a.r.rank)-n(b.r.rank)).map(x=>x.r);
+ const open=pos?n(safe(()=>forecastRow(pos)?.shortage,0)):0,depth=sorted.filter(r=>n(r.stars)===1).slice(0,Math.max(2,Math.min(5,open)));
+ if(!depth.length)return sorted;const rest=sorted.filter(r=>!depth.includes(r));
+ return[...rest.slice(0,5),...depth,...rest.slice(5)]
+}
+// Hook read by filteredProspects() in recruiting-overhaul.js: re-sorts only while a need chip is active.
+function reorder(list){
+ if(!mode.pos)return list;
+ if($('positionFilter')&&$('positionFilter').value!==mode.pos){mode.pos=null;mode.prev=null;return list}
+ return safe(()=>bestAvailable(list,mode.pos),list)
+}
+
+function setSelect(id,value){const el=$(id);if(!el)return;if(id==='positionFilter'&&el.options&&![...el.options].some(o=>o.value===value)){const o=document.createElement('option');o.value=value;o.textContent=value;el.append?.(o)}el.value=value}
+function rerender(){window.SDF_RECRUIT_UI??={page:1};window.SDF_RECRUIT_UI.page=1;window.renderRecruiting?.()}
+function activate(pos){
+ if(!pos)return clear();
+ if(mode.pos===pos)return clear();
+ if(!mode.pos)mode.prev={pos:$('positionFilter')?.value||'ALL',status:$('statusFilter')?.value||'RECRUITABLE',star:$('starFilter')?.value||'ALL',stage:$('recruitStageFilter280')?.value||'ALL',search:$('recruitSearch')?.value||''};
+ mode.pos=pos;setSelect('positionFilter',pos);setSelect('statusFilter','RECRUITABLE');setSelect('starFilter','ALL');setSelect('recruitStageFilter280','ALL');if($('recruitSearch'))$('recruitSearch').value='';
+ rerender();setTimeout(()=>$('recruitPager')?.scrollIntoView?.({block:'start',behavior:'smooth'}),0)
+}
+function clear(){
+ const prev=mode.prev;mode.pos=null;mode.prev=null;
+ if(prev){setSelect('positionFilter',prev.pos);setSelect('statusFilter',prev.status);setSelect('starFilter',prev.star);setSelect('recruitStageFilter280',prev.stage);if($('recruitSearch'))$('recruitSearch').value=prev.search}
+ rerender()
+}
+
+const STYLE=`
+.need305{margin:10px 0 2px;padding:10px 12px;border:1px solid #2f5263;border-radius:14px;background:linear-gradient(135deg,#0f2532,#0b1c27)}
+.need305-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:8px}
+.need305-head b{font-size:.84rem;color:#eaf5fb;letter-spacing:.01em}.need305-head small{font-size:.7rem;color:#8fb0c2}
+.need305-chips{display:flex;flex-wrap:wrap;gap:7px}
+.need305-chip{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:6px 12px;border:1px solid #3d6274;border-radius:999px;background:#132f3e;color:#e6f2f8;font-weight:800;font-size:.8rem;cursor:pointer}
+.need305-chip small{font-weight:650;font-size:.68rem;color:#f2cf73}.need305-chip.upgrade small{color:#9cc7da}
+.need305-chip.active{background:#f5d471;border-color:#f5d471;color:#14212b}.need305-chip.active small{color:#3a3010}
+.need305-chip.clear{background:transparent;border-style:dashed;color:#b8d0dd}
+.need305-note{margin:8px 0 0;font-size:.74rem;line-height:1.45;color:#b4ccd9}.need305-note b{color:#f5d471}
+.need305-tag{display:inline-block;margin:4px 6px 0 0;padding:2px 8px;border-radius:999px;font-size:.66rem;font-weight:800;letter-spacing:.03em;text-transform:uppercase;border:1px solid #3d6274;color:#cfe3ee;background:#123040}
+.need305-tag.easy{border-color:#3f8f63;color:#a8efc4;background:#11301f}.need305-tag.battle{border-color:#8a6d2b;color:#f5d471;background:#2c2412}
+`;
+function ensureStyle(){if(typeof document==='undefined'||!document.head||$('need305Style'))return;const s=document.createElement('style');s.id='need305Style';s.textContent=STYLE;document.head.append(s)}
+function host(){
+ let box=$('need305');if(box)return box;
+ const anchor=document.querySelector('#recruitBoardToolsV223 .recruit-quick-filters-v223')||$('recruitPager');if(!anchor)return null;
+ box=document.createElement('section');box.id='need305';box.className='need305';box.setAttribute('aria-label','Fill a roster need');
+ if(anchor.id==='recruitPager')anchor.before(box);else anchor.after(box);
+ box.addEventListener('click',e=>{const b=e.target.closest?.('[data-need305]');if(!b)return;e.preventDefault();const pos=b.dataset.need305;if(pos==='CLEAR')clear();else activate(pos)});
+ return box
+}
+function renderBar(){
+ if(!state?.school||!$('recruitTable'))return;ensureStyle();const box=host();if(!box)return;
+ const chips=thinPositions();
+ if(mode.pos&&!chips.some(c=>c.pos===mode.pos))chips.push({pos:mode.pos,kind:'need',label:'filter'});
+ if(!chips.length){box.hidden=true;return}box.hidden=false;
+ const active=mode.pos,count=active?Number(String($('recruitPager')?.querySelector('.pager-info')?.textContent||'').match(/of (\d+)/)?.[1]||0):0;
+ const sig=JSON.stringify([chips,active,count]);if(box.dataset.sig===sig)return;box.dataset.sig=sig;
+ box.innerHTML=`<div class="need305-head"><b>Need a player at…</b><small>${active?'Best available first':'Thin spots next season'}</small></div>
+ <div class="need305-chips" role="group" aria-label="Thin positions">${chips.map(c=>`<button type="button" class="need305-chip ${c.kind==='upgrade'?'upgrade':''} ${active===c.pos?'active':''}" data-need305="${esc(c.pos)}" aria-pressed="${active===c.pos}">${esc(c.pos)} <small>${esc(c.label)}</small></button>`).join('')}${active?'<button type="button" class="need305-chip clear" data-need305="CLEAR">✕ Clear</button>':''}</div>
+ ${active?`<p class="need305-note">Best available <b>${esc(active)}</b> first · ${count} recruitable now. Talent is weighed against your odds; 1-stars are easy depth.</p>`:''}`;
+}
+function decorateCards(){
+ if(!mode.pos)return;
+ const byId=new Map((state.recruits||[]).map(r=>[String(r.id),r]));
+ for(const card of document.querySelectorAll('#recruitCardList [data-recruit-id], #recruitTable [data-recruit-id]')){
+  const r=byId.get(card.dataset.recruitId);if(!r||card.querySelector('.need305-tag'))continue;const l=landability(r);
+  const tag=document.createElement('span');tag.className=`need305-tag ${l.tier}`;tag.textContent=l.label;
+  const spot=card.querySelector('.mobile-data-head > div')||card.querySelector('td:nth-child(2)');spot?.append(tag);
+ }
+}
+const baseRender=window.renderRecruiting;
+if(typeof baseRender==='function')window.renderRecruiting=function(...args){const out=baseRender.apply(this,args);safe(()=>{renderBar();decorateCards()});return out};
+window.SDF_RECRUIT_NEEDS305={version:305,reorder,thinPositions,forecastRow,landability,talent,bestAvailable,bestAvailableScore,activate,clear,mode:()=>({...mode}),renderBar};
+})();
+
+// Build 305: live National Signing Day. When the class finalizes (resolveSigningDay), the user's pending top targets
+// are revealed one at a time ("…and he's choosing…" with a hat pick), then a summary shows the class rank and stars.
+// Presentation only: the snapshot taken before Signing Day reads plain fields, decisions are made by the existing
+// resolver, and the reveal reads the results afterwards. Once per year (state.signingDay305), skippable, and with no
+// pending targets it goes straight to the summary.
+(()=>{
+'use strict';
+const $=id=>typeof document!=='undefined'?document.getElementById(id):null;
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const n=(v,d=0)=>Number.isFinite(Number(v))?Number(v):d;
+const uid=()=>Number(state?.school?.id);
+const MAX_REVEALS=8;
+function safe(fn,fallback=null){try{return fn()}catch(error){window.SDF_RUNTIME_ERRORS?.capture?.(error,{operation:'v305-signing-day'});return fallback}}
+function store(){const s=state.signingDay305;if(s&&typeof s==='object'&&!Array.isArray(s))return s;return state.signingDay305={}}
+function seen(year=state.year){return!!store()[year]}
+function schoolName(id){id=Number(id);if(id===uid())return state.school?.name||'Your school';const w=(state.world||[]).find(t=>Number(t?.id)===id);return w?.name||(typeof schools!=='undefined'?schools.find(s=>Number(s.id)===id)?.name:null)||'Another program'}
+function logo(id){id=Number(id);try{const b=typeof TEAM_BRANDING!=='undefined'?TEAM_BRANDING?.[id]:null;return b?.logo||'icon-192.png'}catch{return'icon-192.png'}}
+function color(id){try{const b=typeof TEAM_BRANDING!=='undefined'?TEAM_BRANDING?.[Number(id)]:null;return b?.primary||'#2b5876'}catch{return'#2b5876'}}
+
+// Pending top targets: on the board or offered, not yet committed anywhere. The top eight are revealed with the
+// biggest name last. Plain field reads only, so taking the
+// snapshot cannot change any recruit (no ensure/recalculate calls before the real resolver runs).
+function pendingTargets(){
+ if(!state?.school)return[];
+ return(state.recruits||[]).filter(r=>r&&!r.committedTo&&(r.onBoard||r.offered)&&!(r.lockedOut||[]).some(id=>Number(id)===uid()))
+  .sort((a,b)=>n(b.stars)-n(a.stars)||(b.offered?1:0)-(a.offered?1:0)||n(a.rank,9999)-n(b.rank,9999));
+}
+function finalistIds(r){
+ const short=Array.isArray(r.decision280?.shortlist)?r.decision280.shortlist.map(Number):null,ids=[...new Set([...(short||r.contenderIds||[]).map(Number),uid()])];
+ return ids.filter(id=>Number.isFinite(id)&&!(r.lockedOut||[]).some(x=>Number(x)===id)).sort((a,b)=>n(r.interest?.[b])-n(r.interest?.[a])).slice(0,4);
+}
+function snapshot(){
+ const list=pendingTargets();
+ return{total:list.length,commitsBefore:(state.commits||[]).length,targets:list.slice(0,MAX_REVEALS).reverse().map(r=>({id:r.id,name:r.name,pos:r.pos,stars:n(r.stars),home:[r.city,r.home].filter(Boolean).join(', '),offered:!!r.offered,finalists:finalistIds(r)})),ids:list.map(r=>r.id)};
+}
+function classRank(){
+ const id=uid();let row=(state.classRankings||[]).find(x=>Number(x.id)===id);
+ if(typeof window.computeClassRankings==='function'){const rows=safe(()=>window.computeClassRankings());const list=Array.isArray(rows)?rows:state.classRankings;row=(list||[]).find(x=>Number(x.id)===id)||row}
+ return row?.rank||null;
+}
+function outcomes(snap){
+ const byId=new Map((state.recruits||[]).map(r=>[String(r.id),r]));
+ const reveal=snap.targets.map(t=>{const r=byId.get(String(t.id)),to=r?.committedTo?Number(r.committedTo):null;const finalists=[...new Set([...(t.finalists||[]),...(to?[to]:[])])].slice(0,4);return{...t,to,ours:to===uid(),school:to?schoolName(to):null,finalists}});
+ const all=snap.ids.map(id=>byId.get(String(id))).filter(Boolean),won=all.filter(r=>Number(r.committedTo)===uid()).length;
+ const commits=state.commits||[],stars={5:0,4:0,3:0,2:0,1:0};for(const r of commits)stars[Math.max(1,Math.min(5,n(r.stars,3)))]++;
+ return{year:n(state.year),reveal,won,total:snap.total,signed:commits.length,stars,rank:classRank(),avg:commits.length?Math.round(commits.reduce((a,r)=>a+n(r.ovr),0)/commits.length):0};
+}
+
+const STYLE=`
+#signing305{position:fixed;inset:0;z-index:26000;display:flex;align-items:center;justify-content:center;padding:14px;background:radial-gradient(circle at 50% 30%,#14324a 0%,#050d15 70%);color:#eef7fb}
+#signing305[hidden]{display:none!important}
+.sd305-box{width:min(520px,100%);max-height:calc(100vh - 28px);overflow:auto;text-align:center;padding:20px 18px 18px;border:1px solid #3c5968;border-radius:20px;background:#0a1b27e6;box-shadow:0 24px 80px #000c}
+.sd305-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
+.sd305-top small{font-size:.7rem;font-weight:800;letter-spacing:.14em;color:#f5d471}
+.sd305-skip{min-height:34px;padding:6px 12px;border:1px solid #3d6274;border-radius:999px;background:transparent;color:#b8d0dd;font-weight:750;font-size:.76rem;cursor:pointer}
+.sd305-dots{display:flex;justify-content:center;gap:5px;margin:0 0 12px}.sd305-dots i{width:7px;height:7px;border-radius:50%;background:#2e4b5a}.sd305-dots i.on{background:#f5d471}.sd305-dots i.won{background:#58d68d}
+.sd305-name{margin:2px 0 2px;font-size:1.45rem;line-height:1.15}.sd305-meta{margin:0;color:#a9c4d3;font-size:.82rem}.sd305-stars{color:#f5d471;letter-spacing:2px;font-size:1rem;margin:6px 0 2px}
+.sd305-table{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:16px 0 10px;min-height:86px}
+.sd305-hat{display:flex;flex-direction:column;align-items:center;gap:4px;width:74px;padding:8px 4px;border:2px solid #2c4757;border-radius:14px;background:#0f2635;transition:transform .25s,opacity .35s,border-color .25s,box-shadow .25s}
+.sd305-hat img{width:44px;height:44px;object-fit:contain}.sd305-hat span{font-size:.62rem;line-height:1.2;color:#b8d0dd;max-width:68px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sd305-hat.lit{border-color:#f5d471;transform:translateY(-4px)}.sd305-hat.out{opacity:.25;transform:scale(.92)}
+.sd305-hat.pick{border-color:#f5d471;box-shadow:0 0 0 3px #f5d47155,0 0 28px #f5d47188;transform:scale(1.12)}
+.sd305-line{min-height:58px;margin:6px 0 12px;font-size:1.05rem;font-weight:800}
+.sd305-line .tease{color:#cfe3ee;font-style:italic;font-weight:650}
+.sd305-line .ours{display:block;font-size:1.5rem;color:#f5d471;animation:sd305pop .5s ease-out}.sd305-line .theirs{display:block;font-size:1.15rem;color:#dbe8ef}.sd305-line .none{display:block;color:#a9c4d3;font-size:1rem}
+@keyframes sd305pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
+.sd305-actions{display:flex;gap:8px;justify-content:center}.sd305-actions .btn{min-width:140px}
+.sd305-sum h2{margin:4px 0 6px;font-size:1.4rem}.sd305-sum p{margin:0 0 12px;color:#b4ccd9;font-size:.84rem}
+.sd305-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}.sd305-grid div{padding:10px 6px;border:1px solid #2f5263;border-radius:12px;background:#0f2532}.sd305-grid small{display:block;font-size:.62rem;letter-spacing:.08em;color:#8fb0c2}.sd305-grid b{font-size:1.25rem}
+.sd305-starrow{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin:0 0 12px}.sd305-starrow span{padding:4px 9px;border-radius:999px;border:1px solid #3d6274;background:#123040;font-size:.74rem;font-weight:750}.sd305-starrow span b{color:#f5d471}
+.sd305-list{list-style:none;margin:0 0 14px;padding:0;text-align:left;font-size:.8rem}.sd305-list li{display:flex;justify-content:space-between;gap:8px;padding:6px 2px;border-bottom:1px solid #1d3747}.sd305-list li em{font-style:normal;color:#a9c4d3}.sd305-list li.won em{color:#58d68d;font-weight:800}
+@media (prefers-reduced-motion:reduce){.sd305-hat,.sd305-line .ours{transition:none;animation:none}}
+`;
+function ensureStyle(){if(typeof document==='undefined'||!document.head||$('sd305Style'))return;const s=document.createElement('style');s.id='sd305Style';s.textContent=STYLE;document.head.append(s)}
+const reduced=()=>{try{return!!window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches}catch{return false}};
+const stars=k=>'★'.repeat(Math.max(0,Math.min(5,k)))+'☆'.repeat(Math.max(0,5-k));
+
+let timers=[],view=null;
+function clearTimers(){timers.forEach(clearTimeout);timers=[]}
+function later(fn,ms){timers.push(setTimeout(fn,reduced()?Math.min(ms,60):ms))}
+function overlay(){let el=$('signing305');if(!el){el=document.createElement('div');el.id='signing305';el.hidden=true;el.setAttribute('role','dialog');el.setAttribute('aria-modal','true');el.setAttribute('aria-label','National Signing Day');document.body.append(el)}return el}
+function close(){clearTimers();const el=$('signing305');if(el){el.hidden=true;el.innerHTML=''}view=null;try{window.SDF_RELEASE_TEST?.scheduleSave?.('Signing Day reveal',450,false)}catch{}}
+function dots(i){return`<div class="sd305-dots" aria-hidden="true">${view.data.reveal.map((t,k)=>`<i class="${k<i?(t.ours?'won':'on'):k===i?'on':''}"></i>`).join('')}</div>`}
+function showReveal(i){
+ const d=view.data,t=d.reveal[i];if(!t)return showSummary();view.i=i;clearTimers();
+ const el=overlay(),hats=t.finalists.length?t.finalists:[t.to||uid()];
+ el.innerHTML=`<section class="sd305-box"><div class="sd305-top"><small>NATIONAL SIGNING DAY · ${i+1} OF ${d.reveal.length}</small><button type="button" class="sd305-skip" data-sd305="skip">Skip ›</button></div>${dots(i)}
+ <div class="sd305-stars" aria-label="${t.stars} stars">${stars(t.stars)}</div><h2 class="sd305-name">${esc(t.name)}</h2><p class="sd305-meta">${esc(t.pos)}${t.home?` · ${esc(t.home)}`:''}</p>
+ <div class="sd305-table">${hats.map(id=>`<div class="sd305-hat" data-hat="${id}" style="--hat:${esc(color(id))}"><img src="${esc(logo(id))}" alt=""><span>${esc(schoolName(id))}</span></div>`).join('')}</div>
+ <div class="sd305-line" aria-live="polite"><span class="tease">…and he's choosing…</span></div>
+ <div class="sd305-actions"><button type="button" class="btn primary" data-sd305="next" disabled>${i+1<d.reveal.length?'Next prospect':'See your class'}</button></div></section>`;
+ el.hidden=false;bind(el);
+ const nodes=[...el.querySelectorAll('.sd305-hat')];let k=0;const spins=reduced()?0:Math.min(7,3+nodes.length);
+ const spin=()=>{nodes.forEach(x=>x.classList.remove('lit'));if(k<spins&&nodes.length>1){nodes[k%nodes.length].classList.add('lit');k++;later(spin,180)}else later(land,240)};
+ const land=()=>{nodes.forEach(x=>{x.classList.remove('lit');const pick=t.to&&Number(x.dataset.hat)===t.to;x.classList.toggle('pick',!!pick);x.classList.toggle('out',!pick)});
+  const line=el.querySelector('.sd305-line');line.innerHTML=t.ours?`<span class="ours">${esc(String(state.school?.name||'Your school').toUpperCase())}! 🧢</span>`:t.to?`<span class="theirs">He picks ${esc(t.school)}.</span>`:`<span class="none">No hat today. He stays unsigned.</span>`;
+  const next=el.querySelector('[data-sd305="next"]');if(next){next.disabled=false;next.focus?.()}};
+ later(spin,450);
+}
+function showSummary(){
+ clearTimers();const d=view.data,el=overlay();view.i=d.reveal.length;
+ const starRow=[5,4,3,2,1].filter(k=>d.stars[k]).map(k=>`<span><b>${k}★</b> ${d.stars[k]}</span>`).join('')||'<span>No signees</span>';
+ el.innerHTML=`<section class="sd305-box sd305-sum"><div class="sd305-top"><small>NATIONAL SIGNING DAY · YEAR ${esc(d.year)}</small></div><h2>Your class is official</h2>
+ <p>${d.total?`You landed ${d.won} of ${d.total} pending target${d.total===1?'':'s'} today.`:'No pending targets today: your committed class signed as planned.'}</p>
+ <div class="sd305-grid"><div><small>CLASS RANK</small><b>${d.rank?'#'+d.rank:'—'}</b></div><div><small>SIGNEES</small><b>${d.signed}</b></div><div><small>AVG OVR</small><b>${d.avg||'—'}</b></div></div>
+ <div class="sd305-starrow">${starRow}</div>
+ ${d.reveal.length?`<ul class="sd305-list">${d.reveal.map(t=>`<li class="${t.ours?'won':''}"><span>${'★'.repeat(t.stars)} ${esc(t.name)} · ${esc(t.pos)}</span><em>${t.ours?'Signed 🧢':t.to?esc(t.school):'Unsigned'}</em></li>`).join('')}</ul>`:''}
+ <div class="sd305-actions"><button type="button" class="btn primary" data-sd305="done">Continue</button></div></section>`;
+ el.hidden=false;bind(el);el.querySelector('[data-sd305="done"]')?.focus?.();
+}
+function bind(el){for(const b of el.querySelectorAll('[data-sd305]'))b.onclick=()=>{const a=b.dataset.sd305;if(a==='skip')showSummary();else if(a==='next')showReveal(view.i+1);else close()}}
+function present(data){
+ if(typeof document==='undefined'||!document.body)return false;ensureStyle();view={data,i:0};
+ if(data.reveal.length)showReveal(0);else showSummary();return true
+}
+function replay(year=state.year){const d=store()[year];if(!d||typeof d!=='object')return false;return present(d)}
+
+const baseResolve=window.resolveSigningDay;
+function afterResolve(snap){
+ if(!snap||!state.signingDayResolved||seen())return null;
+ const data=outcomes(snap),all=store();all[state.year]=data;
+ // Keep the details of recent years only; older years stay marked as shown.
+ for(const y of Object.keys(all))if(Number(y)<n(state.year)-2&&all[y]&&typeof all[y]==='object')all[y]=true;
+ present(data);return data
+}
+if(typeof baseResolve==='function')window.resolveSigningDay=function(...args){
+ const snap=!state?.signingDayResolved&&!seen()?safe(snapshot):null;
+ const out=baseResolve.apply(this,args);
+ if(out&&typeof out.then==='function')return out.then(v=>{safe(()=>afterResolve(snap));return v});
+ safe(()=>afterResolve(snap));return out
+};
+window.SDF_SIGNING305={version:305,pendingTargets,snapshot,outcomes,present,replay,close,seen,MAX_REVEALS};
+})();
+
+(()=>{
+'use strict';
+// Build 305: Weekly storylines. Every two or three weeks of the regular season a short narrative beat about the
+// user's program (injury drama, a booster rumor, a walk-on, a quarterback debate, a viral play...) asks for one
+// choice with a small, bounded consequence on fields the save already has (player morale, injury weeks, recruit
+// interest, budget, fan/booster/job ratings, prestige). It plugs into the Build 299 week flow instead of adding a
+// new popup system: a storyline takes that week's event slot (the week-flow history marks the week, so the program
+// event and coaching dilemma stand down) and opens through SDF_WEEKFLOW299.enqueue, one window at a time.
+// No storyline repeats within a season; history persists in state.storylines305. Removing this module restores 304.
+const H=window.SDF299,WF=()=>window.SDF_WEEKFLOW299;
+const $=id=>document.getElementById(id);
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num=(v,d=0)=>v!==null&&v!==''&&Number.isFinite(Number(v))?Number(v):d;
+const lim=(v,a,b)=>Math.max(a,Math.min(b,v));
+const S=()=>{try{return typeof state!=='undefined'?state:window.state}catch{return window.state}};
+const rng=()=>window.SDF_SEEDS?.random?.()??Math.random();
+const pick=list=>list.length?list[Math.floor(rng()*list.length)%list.length]:null;
+const safe=(fn,fallback=null)=>{try{return fn()}catch(error){window.SDF_RUNTIME_ERRORS?.capture?.(error,{operation:'v305-storylines'});return fallback}};
+const KEY='storyline305',MIN_GAP=2,CHANCE=.6,FIRST_WEEK=2;
+const weekIndex=(y=S().year,w=S().week)=>num(y,1)*16+num(w,1);// same scale as the Build 299 week flow
+
+function store(s=S()){const o=s.storylines305&&typeof s.storylines305==='object'?s.storylines305:(s.storylines305={});o.version??=1;if(!Array.isArray(o.history))o.history=[];o.pending??=null;o.last??=null;return o}
+const uid=()=>Number(S()?.school?.id);
+const roster=()=>S().roster||[];
+const available=p=>p&&!p.injury&&!p.redshirt&&window.SDF_DISCIPLINE?.available?.(p)!==false;
+const playerById=id=>roster().find(p=>String(p.id)===String(id));
+const recruitById=id=>(S().recruits||[]).find(r=>String(r.id)===String(id));
+const board=()=>(S().recruits||[]).filter(r=>r.onBoard&&!r.committedTo&&!(r.lockedOut||[]).map(Number).includes(uid()));
+const userInterest=r=>num(r?.interest&&typeof r.interest==='object'?r.interest[uid()]:r?.interest);
+const nextGame=()=>(S().schedule||[]).slice(Math.max(0,num(S().week,1)-1)).find(g=>g&&!g.result&&!g.bye)||null;
+const lastGame=()=>(S().schedule||[]).filter(g=>g&&!g.bye&&g.result).slice(-1)[0]||null;
+const CLASS=['FR','SO','JR','SR','GR'];
+const tag=p=>p?`${p.pos} · ${num(p.ovr)} OVR · ${CLASS[lim(num(p.year,1)-1,0,4)]||'FR'}`:'';
+const pname=p=>p?.name||'Your player';
+
+// ---------- Small, bounded effects on existing fields ----------
+function fx(L,label,before,after,unit=''){const d=Math.round((after-before)*10)/10;if(d)L.push({label,d,unit})}
+const E={
+ morale(L,p,d){if(!p)return;const b=num(p.morale,70);p.morale=lim(Math.round(b+lim(d,-15,15)),0,99);fx(L,`${pname(p)} morale`,b,p.morale)},
+ injury(L,p,d){if(!p?.injury)return;const b=num(p.injury.weeks,1),a=Math.max(1,b+lim(d,-1,2));p.injury.weeks=a;fx(L,`${pname(p)} weeks out`,b,a,'wks')},
+ interest(L,r,d){if(!r)return;d=lim(d,-5,5);const before=userInterest(r);
+  if(r.interest&&typeof r.interest==='object'){r.recruitInfluence??={};r.recruitInfluence[uid()]=lim(num(r.recruitInfluence[uid()])+d,0,58);const re=window.SDF_RECRUITING_V2?.recalculateRecruit;if(re)safe(()=>re(r,true));else r.interest[uid()]=lim(before+d,0,100)}
+  else r.interest=lim(num(r.interest)+d,0,100);fx(L,`${r.name} interest`,before,userInterest(r))},
+ stat(L,key,label,d){const s=S(),b=num(s[key],50);s[key]=lim(b+lim(d,-5,5),0,100);fx(L,label,b,s[key])},
+ budget(L,d){const s=S(),b=num(s.budget);s.budget=Math.max(0,b+lim(d,-25000,25000));fx(L,'Program budget',b,s.budget,'$')},
+ prestige(L,d){const sc=S().school;if(!sc)return;const b=num(sc.prestige,50);sc.prestige=lim(b+lim(d,-1,1),1,99);fx(L,'Program prestige',b,sc.prestige)},
+ // Team culture: the Build 188 event modifier (bounded -12..12) is the persistent input to the culture score.
+ culture(L,d){const s=S(),b=num(s.cultureEventModifierV188);s.cultureEventModifierV188=lim(b+lim(d,-2,2),-12,12);fx(L,'Team culture',b,s.cultureEventModifierV188)},
+ trust(L,p,d){if(!p)return;const b=num(p.trust,70);p.trust=lim(Math.round(b+lim(d,-5,5)),0,100);fx(L,`${pname(p)} trust`,b,p.trust)},
+ sit(L,p,type){if(!p||p.injury)return;p.injury={weeks:1,type};p.starter=false;L.push({label:`${pname(p)} misses next game`,d:-1,unit:'out'})},
+ note(L,label,good=true){L.push({label,d:good?1:-1,unit:'note'})}
+};
+const money=v=>`$${Math.round(Math.abs(v)/1000).toLocaleString()}k`;
+function fmt(e){if(e.unit==='out'||e.unit==='note')return e.label;const sign=e.d>0?'+':'−',v=Math.abs(e.d);return`${e.label} ${sign}${e.unit==='$'?money(v):e.unit==='wks'?`${v} wk${v===1?'':'s'}`:v}`}
+// "Weeks out" going down is good news; everything else is good when it goes up.
+const good=e=>e.unit==='wks'?e.d<0:e.d>0;
+
+// ---------- The storylines ----------
+const STORYLINES=[
+ {id:'injury_return',title:'Back Before He’s Ready',
+  need(){const p=roster().filter(p=>p.injury&&num(p.injury.weeks)>=2&&num(p.ovr)>=60&&!/suspen|academ|ineligib|exam/i.test(String(p.injury.type||''))).sort((a,b)=>num(b.ovr)-num(a.ovr))[0];return p?{p:p.id}:null},
+  subject:c=>tag(playerById(c.p)),
+  text:c=>{const p=playerById(c.p);return`<b>${esc(pname(p))}</b> has been out with a ${esc(String(p?.injury?.type||'injury').toLowerCase())}. He is begging the trainers to clear him early, and the local paper wants to know if he plays.`},
+  options:[{label:'Push to get him back',hint:'He returns a week sooner and loves you for it. There is a small chance of a setback.',apply:(L,c)=>{const p=playerById(c.p);E.morale(L,p,5);if(rng()<.25){E.injury(L,p,1);E.note(L,'Setback in practice',false)}else E.injury(L,p,-1)}},
+   {label:'Follow the doctors',hint:'Full recovery plan. He is frustrated, the locker room sees a coach who protects players.',tone:'neutral',fallback:true,apply:(L,c)=>{E.morale(L,playerById(c.p),-3);E.trust(L,playerById(c.p),3);E.culture(L,1)}}]},
+ {id:'booster_rumor',title:'Booster Rumor Mill',need:()=>({}),subject:()=>'',
+  text:()=>`A message-board post claims one of your boosters has been handing out “appreciation gifts” to players. Nothing is confirmed, but talk radio has picked it up.`,
+  options:[{label:'Get in front of it',hint:'Hold a press conference: you look transparent, the boosters feel exposed.',apply:L=>{E.stat(L,'fanApproval','Fan approval',2);E.stat(L,'boosterSupport','Booster support',-3);E.stat(L,'jobSecurity','Job security',1)}},
+   {label:'Quiet compliance review',hint:'Pay for an outside review. Costs budget, clears the air.',tone:'neutral',apply:L=>{E.budget(L,-15000);E.stat(L,'jobSecurity','Job security',2)}},
+   {label:'Say nothing',hint:'Free, if it blows over. If it does not, the program takes a hit.',tone:'neutral',fallback:true,apply:L=>{if(rng()<.5)E.note(L,'The rumor faded on its own');else{E.prestige(L,-1);E.stat(L,'fanApproval','Fan approval',-3)}}}]},
+ {id:'walk_on',title:'Walk-On Earns a Scholarship',
+  need(){const p=roster().filter(p=>!p.starter&&!p.redshirt&&num(p.year,1)>=2&&num(p.ovr)<70).sort((a,b)=>num(b.year)-num(a.year)||num(b.ovr)-num(a.ovr))[0];return p?{p:p.id}:null},
+  subject:c=>tag(playerById(c.p)),
+  text:c=>`Your staff says <b>${esc(pname(playerById(c.p)))}</b> has outworked everyone on the scout team since the day he walked on. The coordinators want to put him on scholarship.`,
+  options:[{label:'Surprise him in front of the team',hint:'An emotional team moment, paid from the budget.',apply:(L,c)=>{E.budget(L,-8000);E.morale(L,playerById(c.p),15);E.culture(L,1);E.stat(L,'fanApproval','Fan approval',1)}},
+   {label:'Wait until spring',hint:'Saves money now; he is crushed.',tone:'neutral',fallback:true,apply:(L,c)=>E.morale(L,playerById(c.p),-5)}]},
+ {id:'qb_controversy',title:'Quarterback Controversy',
+  need(){const qbs=roster().filter(p=>p.pos==='QB'&&available(p)).sort((a,b)=>num(b.ovr)-num(a.ovr)),st=qbs.find(p=>p.starter),bk=qbs.find(p=>!p.starter);return st&&bk&&num(st.ovr)-num(bk.ovr)<=7?{s:st.id,b:bk.id}:null},
+  subject:c=>`${tag(playerById(c.s))} vs ${tag(playerById(c.b))}`,
+  text:c=>`Fans are chanting for backup <b>${esc(pname(playerById(c.b)))}</b> every time starter <b>${esc(pname(playerById(c.s)))}</b> throws an incompletion. Reporters ask about it at every press conference.`,
+  options:[{label:'Back your starter publicly',hint:'Your QB1 plays with confidence; the backup sulks.',apply:(L,c)=>{E.morale(L,playerById(c.s),6);E.morale(L,playerById(c.b),-5)}},
+   {label:'Give the backup a series',hint:'Keeps both engaged; the starter feels the heat.',tone:'neutral',apply:(L,c)=>{E.morale(L,playerById(c.s),-4);E.morale(L,playerById(c.b),6);E.stat(L,'fanApproval','Fan approval',2)}},
+   {label:'No comment',hint:'The debate keeps simmering on talk radio.',tone:'neutral',fallback:true,apply:L=>E.stat(L,'fanApproval','Fan approval',-2)}]},
+ {id:'viral_moment',title:'Viral Moment',
+  need(){const last=lastGame();if(!last||last.result!=='W')return null;const p=pick(roster().filter(p=>p.starter&&available(p)&&['QB','RB','WR','TE','CB','S','LB','EDGE'].includes(p.pos)).sort((a,b)=>num(b.ovr)-num(a.ovr)).slice(0,6));const r=board().sort((a,b)=>num(b.stars)-num(a.stars)||userInterest(b)-userInterest(a)).slice(0,3).map(r=>r.id);return p?{p:p.id,opp:last.opponent,r}:null},
+  subject:c=>tag(playerById(c.p)),
+  text:c=>`A clip of <b>${esc(pname(playerById(c.p)))}</b> from the win over ${esc(c.opp||'your last opponent')} has millions of views. Recruits are sharing it in group chats.`,
+  options:[{label:'Lean into it',hint:'Your social team pushes it to every prospect on the board.',apply:(L,c)=>{E.morale(L,playerById(c.p),4);for(const id of c.r||[])E.interest(L,recruitById(id),3);if(!(c.r||[]).length)E.stat(L,'fanApproval','Fan approval',2)}},
+   {label:'Keep him grounded',hint:'One post, then back to work. The team appreciates the focus.',tone:'neutral',fallback:true,apply:(L,c)=>{E.morale(L,playerById(c.p),1);E.culture(L,1);E.stat(L,'fanApproval','Fan approval',1)}}]},
+ {id:'exam_conflict',title:'Exam on Game Day',
+  need(){const g=nextGame();if(!g)return null;const p=pick(roster().filter(p=>available(p)&&num(p.ovr)>=60).slice(0,40));return p?{p:p.id,opp:g.opponent}:null},
+  subject:c=>tag(playerById(c.p)),
+  text:c=>`<b>${esc(pname(playerById(c.p)))}</b> has a required lab exam Saturday morning, the day of the ${esc(c.opp||'next')} game. His professor will not move it on her own.`,
+  options:[{label:'Fly a proctor with the team',hint:'He takes the exam at the hotel. Costs a little budget.',apply:(L,c)=>{E.budget(L,-5000);E.morale(L,playerById(c.p),4)}},
+   {label:'Ask the dean for an extension',hint:'Free if it works; if not, he is stressed all week.',tone:'neutral',apply:(L,c)=>{if(rng()<.6)E.note(L,'The dean approved the extension');else E.morale(L,playerById(c.p),-4)}},
+   {label:'He takes the exam, misses the game',hint:'Academics first. The administration notices.',tone:'warning',fallback:true,apply:(L,c)=>{E.sit(L,playerById(c.p),'Academic commitment');E.stat(L,'jobSecurity','Job security',2);E.morale(L,playerById(c.p),2)}}]},
+ {id:'legend_returns',title:'A Legend Comes Home',need:()=>{const r=board().sort((a,b)=>num(b.stars)-num(a.stars))[0];return{r:r?.id||null}},
+  subject:c=>{const r=recruitById(c.r);return r?`Top target: ${r.pos} · ${num(r.stars)}★`:''},
+  text:c=>{const r=recruitById(c.r);return`A former All-American is back in town and wants to help the program.${r?` He played the same position as your top target <b>${esc(r.name)}</b>.`:''}`},
+  options:[{label:'Honor him at the game',hint:'A pregame ceremony. Fans and boosters love it.',apply:L=>{E.stat(L,'fanApproval','Fan approval',3);E.stat(L,'boosterSupport','Booster support',2)}},
+   {label:'Ask him to call recruits',hint:'His pitch carries weight with your top target.',tone:'neutral',fallback:true,apply:(L,c)=>{const r=recruitById(c.r);if(r)E.interest(L,r,5);else E.prestige(L,1)}}]},
+ {id:'bulletin_board',title:'Bulletin-Board Material',
+  need(){const g=nextGame();return g?{opp:g.opponent,rival:!!g.rivalry}:null},subject:()=>'',
+  text:c=>`A ${c.rival?'rivalry ':''}opponent, <b>${esc(c.opp)}</b>, says your team is “soft” on a podcast. Your players have the quote taped inside their lockers.`,
+  options:[{label:'Fire back at the presser',hint:'Fans love the swagger. Your players feel backed up.',apply:L=>{E.stat(L,'fanApproval','Fan approval',3);E.culture(L,1);E.stat(L,'jobSecurity','Job security',-1)}},
+   {label:'Take the high road',hint:'Classy. The administration appreciates it.',tone:'neutral',fallback:true,apply:L=>{E.stat(L,'jobSecurity','Job security',1);E.culture(L,1)}}]}
+];
+const byId=id=>STORYLINES.find(x=>x.id===id);
+
+// ---------- When one fires ----------
+function usedThisSeason(s=S()){return new Set(store(s).history.filter(h=>Number(h.year)===Number(s.year)).map(h=>h.id))}
+function weekTaken(idx){return(WF()?.state?.()?.history||[]).some(h=>h.i===idx)}
+function eligible(s=S(),idx=weekIndex()){
+ const o=store(s);
+ if(!s?.school||s.phase!=='REGULAR'||s.seasonDone||s.liveGameContext||num(s.week)<FIRST_WEEK)return false;
+ if(o.pending||weekTaken(idx))return false;
+ if(o.last!=null&&idx-num(o.last)<MIN_GAP)return false;
+ return true
+}
+function candidates(s=S()){const used=usedThisSeason(s);return STORYLINES.filter(d=>!used.has(d.id)).map(d=>({d,ctx:safe(()=>d.need())})).filter(x=>x.ctx)}
+function maybeStoryline(force=false,id=null){
+ const s=S(),idx=weekIndex();if(!eligible(s,idx)&&!force)return null;if(store(s).pending)return null;
+ if(!force&&rng()>CHANCE)return null;
+ const pool=candidates(s).filter(x=>!id||x.d.id===id),c=pick(pool);if(!c)return null;
+ const o=store(s);o.pending={id:c.d.id,ctx:c.ctx,i:idx,year:s.year,week:s.week};o.last=idx;
+ // Claim the week in the Build 299 history so that week's program event and coaching dilemma stand down.
+ const w=WF()?.state?.();if(w){w.history.push({t:'S:'+c.d.id,i:idx,y:s.year,w:s.week});w.history=w.history.slice(-30)}
+ queueOpen();return o.pending
+}
+function queueOpen(){const flow=WF();if(flow?.enqueue)flow.enqueue({key:KEY,priority:35,open:openStoryline});else openStoryline()}
+
+// ---------- Window ----------
+const STYLE=`.story305 .eyebrow{color:#f4c36a}.story305 h2{margin:2px 0 6px}.story305 .story305-lede{border-left:3px solid #f4c36a;padding:2px 0 2px 10px;margin:8px 0 10px;line-height:1.45}
+.story305 .story305-subject{margin:0 0 4px;color:#9fc3d6;font-size:.82rem;font-weight:700}.story305 .story305-note{font-size:.8rem;color:#a9bfcc;margin:0 0 4px}
+.story305-effects{list-style:none;padding:0;margin:10px 0 14px;display:grid;gap:6px}.story305-effects li{padding:8px 10px;border-radius:10px;font-weight:700;font-size:.88rem;border:1px solid}
+.story305-effects li.up{color:#9ff0b8;background:#0f2e1e;border-color:#2c6b45}.story305-effects li.down{color:#ffc2b0;background:#341a14;border-color:#7a3b2a}
+.story305-card{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid #6a5426;border-radius:12px;background:#231c0e;color:#f4efe0}
+.story305-card small{display:block;color:#f4c36a;font-size:.7rem;letter-spacing:.06em}.story305-card b{display:block;overflow-wrap:anywhere}.story305-card .btn{min-height:44px;flex:0 0 auto}
+.midseason304 .ms-story{list-style:none;margin:0;padding:0;display:grid;gap:4px;font-size:13px}.midseason304 .ms-story li{color:#d8e6ee}.midseason304 .ms-story small{color:#9fb6c4}`;
+function ensureStyle(){if(!document.head||$('story305Style'))return;const st=document.createElement('style');st.id='story305Style';st.textContent=STYLE;document.head.append(st)}
+function openStoryline(){
+ const o=store(),p=o.pending,d=p&&byId(p.id),m=$('modal'),b=$('modalBody');
+ if(!d||!m||!b){if(p&&!d)o.pending=null;return false}
+ ensureStyle();const subject=safe(()=>d.subject(p.ctx))||'';
+ b.innerHTML=`<section class="story305" aria-labelledby="story305Title"><span class="eyebrow">STORYLINE · WEEK ${num(p.week)}</span><h2 id="story305Title">${esc(d.title)}</h2>${subject?`<p class="story305-subject">${esc(subject)}</p>`:''}<p class="story305-lede">${d.text(p.ctx)}</p><p class="story305-note">Your call. The effects are small and shown after you choose.</p><div class="sdf299-wf-options">${d.options.map((x,i)=>`<button type="button" class="btn ${x.tone||'primary'} full sdf299-wf-option" data-story305="${i}"><b>${esc(x.label)}</b><small>${esc(x.hint)}</small></button>`).join('')}</div></section>`;
+ b.querySelectorAll('[data-story305]').forEach(btn=>btn.onclick=()=>choose(Number(btn.dataset.story305)));
+ m.classList.remove('hidden');window.playSound?.('event');return true
+}
+function resolve(i,auto=false){
+ const s=S(),o=store(s),p=o.pending,d=p&&byId(p.id);if(!d){if(p)o.pending=null;return null}
+ const opt=d.options[i]||d.options.find(x=>x.fallback)||d.options[d.options.length-1],L=[];
+ safe(()=>opt.apply(L,p.ctx));
+ const row={id:d.id,title:d.title,choice:opt.label,auto,effects:L,year:p.year,week:p.week,i:p.i};
+ o.pending=null;o.history.push(row);o.history=o.history.slice(-40);
+ s.news??=[];s.news.push(`Storyline · ${d.title}: ${auto?'your staff handled it':`you chose "${opt.label}"`}. ${L.map(fmt).join(', ')||'No measurable change.'}`);
+ return row
+}
+function choose(i){
+ const row=resolve(i);if(!row)return null;const b=$('modalBody'),m=$('modal');
+ if(b&&m){b.innerHTML=`<section class="story305"><span class="eyebrow">STORYLINE · WEEK ${num(row.week)}</span><h2>${esc(row.title)}</h2><p>You chose <b>${esc(row.choice)}</b>.</p>${row.effects.length?`<ul class="story305-effects">${row.effects.map(e=>`<li class="${good(e)?'up':'down'}">${esc(fmt(e))}</li>`).join('')}</ul>`:'<p class="muted">No measurable change.</p>'}<button type="button" class="btn primary full" id="story305Done">Continue</button></section>`;
+  const done=$('story305Done');if(done){done.onclick=()=>m.classList.add('hidden');done.focus?.()}}
+ window.SDF_RELEASE_TEST?.scheduleSave?.('Storyline',200,false);safe(()=>window.renderAll?.());return row
+}
+// A storyline still open when the week moves on is settled with its default (the last, low-risk option).
+function autoResolveStale(idx=weekIndex()){const p=store().pending;if(p&&p.i!==idx)return resolve(-1,true);return null}
+
+// ---------- Hooks ----------
+const baseWeekly=window.weeklyEvent;
+window.weeklyEvent=function(...a){
+ safe(()=>{autoResolveStale();maybeStoryline()});
+ return baseWeekly?.apply(this,a)
+};
+// Midseason Report: one compact list of this season's storylines.
+function seasonStories(s=S()){return store(s).history.filter(h=>Number(h.year)===Number(s.year))}
+function midseasonSection(r,s){const list=seasonStories(s);if(!list.length)return'';
+ return`<h3>STORYLINES</h3><ul class="ms-story">${list.slice(-4).map(h=>`<li><small>Wk ${num(h.week)}</small> <b>${esc(h.title)}</b> <small>· ${esc(h.auto?'Staff decision':h.choice)}</small></li>`).join('')}</ul>`}
+window.SDF_MIDSEASON304?.addSection?.(midseasonSection);
+H?.registerHomeSection?.({id:'storyline305',order:21,render(){
+ const p=S()?.storylines305?.pending,d=p&&byId(p.id);if(!d)return'';ensureStyle();
+ return`<div class="story305-card"><div><small>STORYLINE WAITING</small><b>${esc(d.title)}</b></div><button type="button" class="btn primary" onclick="SDF_STORYLINES305.openPending()">Decide</button></div>`}});
+const offered=new Set();
+function openPending(){if(!store().pending)return;const flow=WF();if(flow?.flowOpen?.())queueOpen();else openStoryline()}
+const baseRender=window.renderAll;
+if(typeof baseRender==='function')window.renderAll=function(...a){
+ // A storyline saved before a reload is offered once per session; afterwards it waits on Home behind Decide.
+ safe(()=>{const p=S()?.school&&S().storylines305?.pending;if(p&&!offered.has(p.i)&&!(WF()?.queue||[]).some(q=>q.key===KEY)){offered.add(p.i);queueOpen()}});
+ return baseRender.apply(this,a)};
+window.SDF_STORYLINES305={STORYLINES,store,eligible,candidates,maybeStoryline,openStoryline,choose,resolve,autoResolveStale,openPending,seasonStories,midseasonSection,weekIndex,MIN_GAP,CHANCE};
+})();
+
+(()=>{
+'use strict';
+// Build 305: Film Session. An optional, clearly labelled rewarded video on the Game Day screen before a regular-season
+// game: "Watch a short video: Film Session". It reuses the existing rewarded-ad flow (SDF_MONETIZATION.registerReward
+// + showReward, with the existing Second-Half Preparation ad unit, so no new ad unit or native code) and grants a
+// one-game scouting edge: +2 offensive and defensive execution for this week's game (about 2-3% of a typical team
+// rating) plus the opponent's film notes (tendency, defense, weak spot, player to watch, form).
+// Once per game week. Ad-free owners (Remove Ads / All Access policy) get it free as a "Supporter perk", with no ad.
+// The browser build has no ads, so the button is hidden there. showReward records lastRewardedAdAt itself, so the
+// Build 304 rule "no midseason interstitial right after a rewarded video" keeps working.
+const $=id=>document.getElementById(id);
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const S=()=>{try{return typeof state!=='undefined'?state:window.state}catch{return window.state}};
+const native=()=>!!(window.Capacitor?.isNativePlatform?.()||window.Capacitor?.getPlatform?.()==='android');
+const adFree=()=>window.SDF_AD_POLICY?.shouldShowForcedAds?.()===false;
+const BONUS=2,KIND='FILM';
+const safe=(fn,fallback=null)=>{try{return fn()}catch(error){window.SDF_RUNTIME_ERRORS?.capture?.(error,{operation:'v305-film-session'});return fallback}};
+let pending=false;
+
+const weekKey=(s=S())=>`${s.year}:${s.week}`;
+function game(s=S()){const g=s?.schedule?.[Number(s.week)-1];return g&&!g.bye?g:null}
+// Only before an unplayed regular-season game (not bowls or playoffs, which run through liveGameContext).
+function reason(s=S()){
+ if(!s?.school)return 'Choose a dynasty first.';
+ if(s.phase!=='REGULAR'||s.seasonDone||s.liveGameContext)return 'Film sessions are available before regular-season games.';
+ const g=game(s);if(!g||g.result)return 'No game to prepare for this week.';
+ if(claimed(s))return 'Film session complete for this week.';
+ return ''
+}
+function store(s=S()){const o=s.filmSession305&&typeof s.filmSession305==='object'?s.filmSession305:(s.filmSession305={});o.count=Number(o.count||0);return o}
+function claimed(s=S()){return store(s).key===weekKey(s)}
+function active(s=S(),week=s?.week){const o=s?.filmSession305;return !!(o&&o.key===`${s.year}:${week}`)}
+function notes(g){const o=safe(()=>window.SDF_V113_TEST?.stableOpponent?.(g));if(!o)return null;return{tendency:o.tendency,offense:o.offense,defense:o.defense,weakness:o.weakness,star:o.star,form:o.form}}
+function grant(source,s=S()){
+ if(reason(s))return false;const g=game(s),o=store(s);
+ o.key=weekKey(s);o.year=s.year;o.week=s.week;o.opp=g.opponent;o.source=source;o.notes=notes(g);o.count++;o.at=Date.now();
+ s.news??=[];s.news.push(`Film session: your staff broke down ${g.opponent} film. +${BONUS} offensive and defensive execution for Week ${s.week}.`);
+ applyToLive(s);window.SDF_RELEASE_TEST?.scheduleSave?.('Film session',0,false);return true
+}
+// A Game Center game already created for this week (paused, then exited) gets the edge on its stored ratings.
+function applyToLive(s=S()){const L=s.liveGame;if(!L||L.finalized||L.film305||!L.cfg||L.contextType&&L.contextType!=='REGULAR'||Number(L.year)!==Number(s.year)||Number(L.week)!==Number(s.week)||!active(s,L.week))return false;
+ L.cfg.ourOff=Number(L.cfg.ourOff||0)+BONUS;L.cfg.ourDef=Number(L.cfg.ourDef||0)+BONUS;L.film305=true;return true}
+
+// ---------- Reward registration (existing rewarded flow, existing ad unit) ----------
+const M=window.SDF_MONETIZATION;
+safe(()=>M?.registerReward?.(KIND,{configKey:'rewardedPreparationId',
+ capture:()=>reason()?null:{owner:S(),key:weekKey()},
+ valid:c=>S()===c.owner&&weekKey()===c.key&&!reason(),
+ grant:c=>S()===c.owner&&weekKey()===c.key&&grant('ad'),
+ unavailable:'The film session is no longer available for this week.',
+ success:`Film session complete: +${BONUS} offensive and defensive execution this game.`}));
+async function watch(){
+ if(pending||reason())return;
+ if(adFree()){if(grant('perk'))window.toast?.(`Supporter perk: film session complete. +${BONUS} execution this game.`);safe(render);return}
+ if(!native()||typeof M?.showReward!=='function')return;
+ pending=true;safe(render);
+ try{await M.showReward(KIND,'gameday')}finally{pending=false;safe(render)}
+}
+
+// ---------- Applying the edge ----------
+// Game Center: newLiveGame builds its ratings when the game opens; add the edge right after.
+const baseOpen=window.openLiveGameCenter;
+if(typeof baseOpen==='function')window.openLiveGameCenter=function(...a){const out=baseOpen.apply(this,a);safe(()=>applyToLive());return out};
+// Any quick-sim path (simGame) reads teamRatings(); during that call only, the user's offense/defense carry the edge.
+let simBoost=false;
+const baseRatings=window.teamRatings;
+if(typeof baseRatings==='function')window.teamRatings=function(...a){const r=baseRatings.apply(this,a);if(!simBoost||!r||typeof r!=='object')return r;return{...r,offense:Number(r.offense||0)+BONUS,defense:Number(r.defense||0)+BONUS}};
+const baseSim=window.simGame;
+if(typeof baseSim==='function')window.simGame=function(w,...a){const s=S(),g=s?.schedule?.[Number(w)-1];const on=!!(g&&!g.bye&&!g.result&&s.phase==='REGULAR'&&!s.liveGameContext&&active(s,w));simBoost=on;try{return baseSim.call(this,w,...a)}finally{simBoost=false}};
+if(typeof baseSim==='function'&&baseSim._v12Wrapped)window.simGame._v12Wrapped=true;
+
+// ---------- Game Day card ----------
+const STYLE=`.film305{margin-top:12px;padding:12px;border:1px solid #2f5163;border-radius:12px;background:#0c1f2b;color:#e8f2f7}
+.film305 .film305-head{display:flex;align-items:center;justify-content:space-between;gap:8px}.film305 small{display:block;font-size:11px;letter-spacing:.06em;color:#9fb6c4;font-weight:750}
+.film305 .film305-tag{font-size:11px;font-weight:800;letter-spacing:.04em;padding:3px 8px;border-radius:999px;background:#2a2410;color:#f3d585;border:1px solid #7a6a2a;white-space:nowrap}
+.film305 p{margin:6px 0 0;font-size:13px;color:#cfe0ea;line-height:1.4}.film305 .btn{width:100%;min-height:46px;margin-top:10px;text-transform:none;letter-spacing:0}
+.film305 ul{list-style:none;margin:8px 0 0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.film305 li{padding:7px 9px;border-radius:9px;background:#ffffff0d;font-size:12px;min-width:0;overflow-wrap:anywhere}.film305 li b{display:block;font-size:13px;color:#eff7fc}
+.film305 .film305-done{color:#9ff0b8;font-weight:800}`;
+function ensureStyle(){if(!document.head||$('film305Style'))return;const st=document.createElement('style');st.id='film305Style';st.textContent=STYLE;document.head.append(st)}
+function card(s=S()){
+ const o=store(s),done=claimed(s);
+ if(done){const n=o.notes;return`<div class="film305-head"><div><small>FILM SESSION · WEEK ${esc(s.week)}</small><b class="film305-done">✓ Edge ready: +${BONUS} OFF / +${BONUS} DEF execution</b></div>${o.source==='perk'?'<span class="film305-tag">Supporter perk</span>':''}</div>
+${n?`<ul aria-label="Opponent film notes"><li><small>OFFENSE</small><b>${esc(n.tendency||'Balanced')}</b>${esc(n.offense||'')}</li><li><small>DEFENSE</small><b>${esc(n.defense||'—')}</b>Base front</li><li><small>WEAK SPOT</small><b>${esc(n.weakness||'—')}</b>Attack it</li><li><small>WATCH OUT</small><b>${esc(n.star||'—')}</b>Form: ${esc(n.form||'—')}</li></ul>`:''}<p>Applies to this game only.</p>`}
+ const perk=adFree();
+ return`<div class="film305-head"><div><small>OPTIONAL · ONCE PER GAME WEEK</small><b>Film Session</b></div>${perk?'<span class="film305-tag">Supporter perk</span>':'<span class="film305-tag">Short video</span>'}</div>
+<p>Break down ${esc(game(s)?.opponent||'the opponent')}’s film: +${BONUS} offensive and defensive execution for this game and their tendencies. No guaranteed win.</p>
+<button type="button" class="btn primary" data-film305 ${pending?'disabled':''}>${pending?'Video in progress…':perk?'Start Film Session (Supporter perk)':'▶ Watch a short video: Film Session'}</button>`}
+function visible(s=S()){
+ if(!native()||!s?.school)return false;// browser build: no ads, no button
+ if(s.phase!=='REGULAR'||s.seasonDone||s.liveGameContext)return false;const g=game(s);return !!(g&&!g.result)
+}
+function render(){
+ const s=S(),host=$('gameDayMatchup');let el=$('film305');
+ if(!host||!visible(s)){if(el)el.hidden=true;return}
+ ensureStyle();
+ if(!el){el=document.createElement('section');el.id='film305';el.className='film305';el.setAttribute('aria-label','Film session')}
+ if(el.parentElement!==host.parentElement||el.previousElementSibling!==host)host.after(el);
+ el.hidden=false;el.innerHTML=card(s);
+ const b=el.querySelector('[data-film305]');if(b)b.onclick=()=>watch()
+}
+const baseRender=window.renderAll;
+if(typeof baseRender==='function')window.renderAll=function(...a){const out=baseRender.apply(this,a);safe(render);return out};
+const baseTab=window.showTab;
+if(typeof baseTab==='function')window.showTab=function(name,...a){const out=baseTab.call(this,name,...a);if(name==='gameday')safe(render);return out};
+window.SDF_FILM305={reason,claimed,active,grant,watch,render,applyToLive,notes,visible,BONUS,KIND};
+})();
+
+(()=>{
+'use strict';
+// Build 305: Offseason Hub. The whole offseason on one Home screen: one section per step (Spring Practice, Player
+// Development, Coaching Carousel, Pro Draft, Transfer Portal, Position Battles), each showing the staff's default
+// plan and a status (Done / Needs you / Staff will handle), a "What changed" recap (departures, biggest progression
+// jumps from the v105/v302 progression rows, incoming class) and one Start Year button.
+// Start Year runs the steps that are still open, in order, through the EXISTING step functions:
+//   prep steps -> SDF_V217_OFFSEASON.autoResolve(key)            (same calls as the old "staff handle" path)
+//   portal     -> SDF_V217_OFFSEASON.openPortal() + window.advanceWeek() once per portal week (week 4 closes it)
+//   battles    -> SDF_POST_PORTAL_V269.openBattles() + window.finishBattles(), which calls finishOffseason
+//   new year   -> window.finishOffseason() (v114 runHeavyStartup) when it has not already started
+// Every step is skipped when the save says it is already done, so a double tap, a reload mid-run or a step the
+// coach finished by hand never runs twice. The step-by-step path (header Advance, the v217 checklist and modals)
+// still works unchanged; the hub only replaces the automatic Spring Practice popup as the entry point.
+const BUILD=305,KEY='offseasonHub305',PACE=320;
+const $=id=>document.getElementById(id);
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num=(v,d=0)=>v!==null&&v!==''&&Number.isFinite(Number(v))?Number(v):d;
+const S=()=>{try{return typeof state!=='undefined'?state:window.state}catch{return window.state}};
+const flow=()=>window.SDF_V217_OFFSEASON;
+const battlesApi=()=>window.SDF_POST_PORTAL_V269;
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+const building=()=>!!document.body?.classList?.contains('app-building');
+const forcedMove=()=>{try{return!!window.SDF_V193?.mustLeaveCurrentJob?.()}catch{return false}};
+let running=null,run=null,fromHub=null,entryScroll=false;
+
+function save(reason){try{window.SDF_RELEASE_TEST?.saveNow?.(reason,false,true)}catch{}}
+function tasks(s=S()){return s?.offseasonTasks||{}}
+function fl(s=S()){return s?.offseasonFlow217||{}}
+function data(s=S()){
+ if(!s?.school)return null;let d=s[KEY];
+ if(!d||typeof d!=='object'||num(d.year)!==num(s.year))d=s[KEY]={year:num(s.year,1),departures:null,incoming:null,run:null};
+ return d
+}
+function active(s=S()){return!!s?.school&&s.phase==='PORTAL'}
+
+// ---- capture what changed at the moment the offseason opens ------------------------------------------------
+const brief=p=>({id:p.id,name:p.name,pos:p.pos,ovr:num(p.ovr),pot:num(p.pot),year:num(p.year),stars:num(p.signedStars??p.stars),walkOn:!!p.walkOn,origin:p.rosterOrigin||''});
+const baseOffseason=window.offseason;
+if(typeof baseOffseason==='function')window.offseason=function(...args){
+ const s=S(),year=num(s?.year,1),before=new Map((s?.roster||[]).map(p=>[String(p.id),brief(p)]));
+ const out=baseOffseason.apply(this,args);
+ try{
+  const now=S();
+  if(now?.phase==='PORTAL'&&num(now.year)===year){
+   const after=new Set((now.roster||[]).map(p=>String(p.id))),transfers=new Set((now.portalDepartures||[]).map(d=>String(d?.player?.id)));
+   const departures=[...before.values()].filter(p=>!after.has(String(p.id))).map(p=>({...p,why:transfers.has(String(p.id))?'transfer':'graduated'}));
+   const incoming=(now.roster||[]).filter(p=>!before.has(String(p.id))).map(brief);
+   now[KEY]={year,departures,incoming,run:null};
+  }
+ }catch(e){console.warn('Offseason hub snapshot skipped',e)}
+ return out
+};
+
+function departures(s=S()){
+ const d=data(s);if(Array.isArray(d?.departures))return d.departures;
+ // Older saves opened the offseason before Build 305: rebuild from the v163 senior list and the portal departures.
+ const out=(s.departingClass||[]).map(p=>({...brief(p),why:'graduated'}));
+ for(const x of s.portalDepartures||[])if(x?.player)out.push({...brief(x.player),why:'transfer'});
+ return out
+}
+function transferDestination(p,s=S()){const d=(s.portalDepartures||[]).find(x=>String(x?.player?.id)===String(p.id));return d?.resolvedTo||null}
+function incoming(s=S()){
+ const d=data(s);if(Array.isArray(d?.incoming))return d.incoming;
+ return(s.roster||[]).filter(p=>num(p.year)===1&&(p.progressionHistory||[]).some(x=>x?.arrival&&num(x.year)===num(s.year))&&/recruit|walk/i.test(String(p.rosterOrigin||(p.walkOn?'walk-on':'')))).map(brief)
+}
+function leaders(s=S()){
+ const year=num(s.year),rows=Array.isArray(s.lastProgressionReport)?s.lastProgressionReport.filter(r=>num(r.dynastyYear,year)===year):[];
+ let list=rows;
+ if(!list.length)list=(s.roster||[]).map(p=>{const r=(p.progressionHistory||[]).filter(x=>!x?.arrival&&num(x.dynastyYear)===year).at(-1);return r?{id:p.id,name:p.name,pos:p.pos,...r}:null}).filter(Boolean);
+ return list.filter(r=>num(r.gain)>0).sort((a,b)=>num(b.gain)-num(a.gain)||num(b.to)-num(a.to)).slice(0,3)
+}
+function drafted(s=S()){const r=s.currentDraftResults;return r&&num(r.year)===num(s.year)&&Array.isArray(r.drafted)?r.drafted:null}
+
+// ---- the steps -----------------------------------------------------------------------------------------------
+function springPlan(s){try{return flow()?.chooseSpringFocus?.()||'Conditioning'}catch{return'Conditioning'}}
+function carouselPlan(s){
+ const offers=(s.jobOffers||[]).filter(o=>num(o.year,num(s.year))===num(s.year));
+ const deps=offers.filter(o=>o.type==='STAFF_DEPARTURE'),jobs=offers.filter(o=>o.type==='HEAD_JOB'&&o.status==='PENDING');
+ if(forcedMove())return'You must take a new head-coaching job. Pick your next program.';
+ const bits=[];if(deps.length)bits.push(`${deps.length} coordinator${deps.length===1?'':'s'} to retain or replace within budget`);else bits.push('Keep your coordinators where the budget allows');
+ if(jobs.length)bits.push(`decline ${jobs.length} outside offer${jobs.length===1?'':'s'}`);else bits.push('decline outside offers');
+ return bits.join(' · ')
+}
+function staffLine(s){const st=s.staff||{},n=c=>c?.name?esc(c.name):'—';return`OC ${n(st.oc)} · DC ${n(st.dc)}`}
+function portalDone(s){return!!fl(s).portalClosed||!!fl(s).postPortalBattleComplete}
+function signedCount(s){return(s.portal||[]).filter(p=>p.portalCommitted).length}
+function steps(s=S()){
+ const t=tasks(s),f=fl(s),auto=f.autoHandled||{},prepLeft=['spring','progression','staff','draft'].filter(k=>!t[k]).length,dr=drafted(s);
+ const by=k=>auto[k]?'Staff plan':'Your call';
+ const portalOpen=f.stage==='PORTAL'&&!portalDone(s);
+ return[
+  {key:'spring',n:1,title:'Spring Practice',done:!!t.spring,
+   plan:t.spring?`${esc(s.springFocus||'Team')} focus · ${by('spring')}`:`Staff pick: <b>${esc(springPlan(s))}</b> focus`,
+   action:t.spring?null:'Choose focus'},
+  {key:'progression',n:2,title:'Player Development',done:!!t.progression,
+   plan:t.progression?`Development plan locked in · ${by('progression')}`:`Staff plan: standard development for all ${(s.roster||[]).length} players`,
+   action:t.progression?null:'Assign focuses'},
+  {key:'staff',n:3,title:'Coaching Carousel',done:!!t.staff,needs:!t.staff&&forcedMove(),
+   plan:t.staff?`${staffLine(s)} · ${by('staff')}`:`Staff plan: ${esc(carouselPlan(s))}`,
+   action:t.staff?null:forcedMove()?'Choose a job':'Review staff'},
+  {key:'draft',n:4,title:'Pro Draft',done:!!t.draft,
+   plan:t.draft?(dr?`${dr.length} player${dr.length===1?'':'s'} drafted`:'Draft complete'):'Automatic: results post when the draft runs',
+   action:t.draft?'See results':'Run draft'},
+  {key:'portal',n:5,title:'Transfer Portal',done:portalDone(s),
+   plan:portalDone(s)?`Window closed · ${signedCount(s)} signed`:portalOpen?`Week ${num(s.portalWeek,1)} of 4 · ${signedCount(s)} signed so far · staff plays out the remaining weeks`:`Staff plan: play out all 4 weeks · ${(s.portal||[]).length} players in the portal`,
+   action:portalDone(s)?null:prepLeft?'Work the portal':'Open portal'},
+  {key:'battles',n:6,title:'Position Battles',done:!!f.postPortalBattleComplete,
+   plan:f.postPortalBattleComplete?'Starters confirmed':'Staff plan: best eligible OVR starts at every position',
+   action:f.postPortalBattleComplete?null:portalDone(s)?'Review starters':null,
+   note:!f.postPortalBattleComplete&&!portalDone(s)?'Opens after the portal closes':''}
+ ]
+}
+function statusOf(step){
+ if(run?.states?.[step.key]==='working')return['working','Working…'];
+ if(step.done)return['done','Done'];
+ if(step.needs||run?.blocked===step.key||data()?.run?.blocked===step.key)return['needs','Needs you'];
+ return['staff','Staff will handle']
+}
+
+// ---- rendering -----------------------------------------------------------------------------------------------
+function changedHtml(s){
+ const deps=departures(s),inc=incoming(s),lead=leaders(s),dr=drafted(s);
+ const grads=deps.filter(p=>p.why!=='transfer'),outs=deps.filter(p=>p.why==='transfer');
+ const top=(list,n=3)=>list.slice().sort((a,b)=>num(b.ovr)-num(a.ovr)).slice(0,n);
+ const row=(main,sub)=>`<li><b>${main}</b><span>${sub}</span></li>`;
+ const depList=top(deps).map(p=>row(`${esc(p.name)}`,`${esc(p.pos)} · ${num(p.ovr)} OVR · ${p.why==='transfer'?`Transfer${transferDestination(p,s)?` → ${esc(transferDestination(p,s))}`:''}`:'Graduated'}`)).join('');
+ const leadList=lead.map(r=>row(`${esc(r.name)} <em class="oh305-gain">+${num(r.gain)}</em>`,`${esc(r.pos)} · ${num(r.from)} → ${num(r.to)} OVR`)).join('');
+ const recruits=inc.filter(p=>!p.walkOn),stars=recruits.length?(recruits.reduce((a,p)=>a+num(p.stars),0)/recruits.length):0;
+ const incList=top(inc).map(p=>row(`${esc(p.name)}`,`${esc(p.pos)} · ${num(p.ovr)} OVR${p.stars?` · ${'★'.repeat(Math.min(5,num(p.stars)))}`:p.walkOn?' · Walk-on':''}`)).join('');
+ return`<div class="oh305-changed" aria-label="What changed this offseason">
+<article class="oh305-tile out"><small>DEPARTURES</small><strong>${deps.length}</strong><p>${grads.length} graduated · ${outs.length} transferred${dr?` · ${dr.length} drafted`:''}</p><ul>${depList||'<li class="muted">No departures.</li>'}</ul></article>
+<article class="oh305-tile up"><small>BIGGEST JUMPS</small><strong>${lead.length?`+${num(lead[0].gain)}`:'—'}</strong><p>Offseason progression leaders</p><ul>${leadList||'<li class="muted">Progression posts when the offseason opens.</li>'}</ul></article>
+<article class="oh305-tile in"><small>INCOMING CLASS</small><strong>${inc.length}</strong><p>${recruits.length?`${recruits.length} signee${recruits.length===1?'':'s'} · ${stars.toFixed(1)}★ average`:'No signees this cycle'}</p><ul>${incList||'<li class="muted">No new players yet.</li>'}</ul></article>
+</div>`
+}
+function hubHtml(s=S()){
+ const list=steps(s),done=list.filter(x=>x.done).length,left=list.length-done,next=num(s.year)+1,d=data(s),resume=!!d?.run?.active&&!running;
+ const needs=list.find(x=>statusOf(x)[0]==='needs');
+ const cards=list.map(x=>{const[cls,label]=statusOf(x);return`<article class="oh305-step ${cls}" data-step="${x.key}">
+<span class="oh305-num" aria-hidden="true">${cls==='done'?'✓':x.n}</span>
+<div class="oh305-step-body"><div class="oh305-step-head"><h4>${x.title}</h4><span class="oh305-pill ${cls}">${label}</span></div><p>${x.plan}</p>${x.note?`<small class="muted">${x.note}</small>`:''}</div>
+${x.action?`<button type="button" class="btn neutral oh305-open" data-hub-open="${x.key}">${x.action}</button>`:''}
+</article>`}).join('');
+ const sub=needs?`${needs.title} needs you first. Everything else is covered.`:left?`${left} step${left===1?'':'s'} left · your staff handles ${left===1?'it':'them'} in order`:'Everything is set. Kick off the new season.';
+ return`<div class="oh305-head"><div><span class="eyebrow">OFFSEASON HUB · YEAR ${num(s.year)} → ${next}</span><h3>Your offseason, one screen</h3><p class="muted">Your staff has a plan for every step. Change anything you like, or start the new season now.</p></div>
+<div class="oh305-ring" style="--p:${Math.round(done/list.length*100)}" aria-label="${done} of ${list.length} steps done"><b>${done}</b><small>of ${list.length}</small></div></div>
+${resume?`<p class="oh305-resume" role="status">Picked up where you left off. ${left} step${left===1?'':'s'} to go.</p>`:''}
+<h4 class="oh305-sec">What changed</h4>${changedHtml(s)}
+<h4 class="oh305-sec">Offseason steps</h4><div class="oh305-steps">${cards}</div>
+<div class="oh305-cta"><button type="button" class="btn primary oh305-start" data-hub-start ${running?'disabled':''}>${running?'Working…':resume?`Continue to Year ${next} →`:`Start Year ${next} →`}</button><small>${sub}</small></div>`
+}
+function host(){
+ let h=$('offseasonHub305');
+ if(!h){h=document.createElement('section');h.id='offseasonHub305';h.className='oh305';h.setAttribute('aria-label','Offseason hub');h.addEventListener('click',onClick)}
+ const cc=$('gameCommandCenterV219'),dash=$('dashboardTab');
+ if(cc?.parentElement){if(cc.nextElementSibling!==h)cc.after(h)}else if(dash&&h.parentElement!==dash)dash.prepend(h);
+ return h
+}
+function render(){
+ const s=S(),root=document.documentElement,on=active(s);
+ root.classList.toggle('sdf305-offseason',on);
+ const existing=$('offseasonHub305');
+ if(!on){if(existing){existing.hidden=true;existing.innerHTML='';existing.dataset.sig=''}return}
+ const h=host(),html=hubHtml(s);h.hidden=false;
+ if(h.dataset.sig!==html){h.innerHTML=html;h.dataset.sig=html}
+ if(entryScroll){entryScroll=false;setTimeout(()=>h.scrollIntoView?.({behavior:'smooth',block:'start'}),80)}
+}
+
+// ---- opening a single step from the hub ----------------------------------------------------------------------
+function openStep(key){
+ const s=S();if(!active(s)||running)return false;const f=flow();
+ if(['spring','progression','staff'].includes(key)){fromHub=key;return f?.runTask?.(key)}
+ if(key==='draft'){if(!tasks(s).draft)f?.autoResolve?.('draft');render();setTimeout(()=>$('offseasonResults')?.scrollIntoView?.({behavior:'smooth',block:'start'}),60);return true}
+ if(key==='portal'){
+  if(f?.missing?.().length)return startYear({until:'portal'});
+  return f?.openPortal?.()
+ }
+ if(key==='battles')return battlesApi()?.openBattles?.({user:true});
+ return false
+}
+// v217's "Use Staff Plan & Continue" button calls this: a step opened from the hub returns to the hub instead of
+// popping the next step's window.
+function returnFromStep(key){
+ if(fromHub!==key)return false;fromHub=null;window.showTab?.('dashboard');render();
+ setTimeout(()=>$('offseasonHub305')?.querySelector(`[data-step="${key}"]`)?.scrollIntoView?.({behavior:'smooth',block:'center'}),60);return true
+}
+// v217 calls this instead of auto-opening the Spring Practice window when the offseason begins.
+function claimEntry(){
+ if(!active())return false;window.showTab?.('dashboard');entryScroll=true;render();
+ // No toast: it would sit on top of the Start Year button, and the hub itself is the announcement.
+ return true
+}
+function onClick(e){
+ const open=e.target?.closest?.('[data-hub-open]');if(open){openStep(open.dataset.hubOpen);return}
+ if(e.target?.closest?.('[data-hub-start]'))startYear()
+}
+
+// ---- the run overlay -----------------------------------------------------------------------------------------
+const RUN_STEPS=[['spring','Spring Practice'],['progression','Player Development'],['staff','Coaching Carousel'],['draft','Pro Draft'],['portal','Transfer Portal'],['battles','Position Battles'],['year','New season']];
+function overlay(){
+ let o=$('offseasonRun305');
+ if(!o){o=document.createElement('div');o.id='offseasonRun305';o.className='oh305-run';o.setAttribute('role','dialog');o.setAttribute('aria-modal','true');o.setAttribute('aria-labelledby','offseasonRun305Title');document.body.append(o)}
+ return o
+}
+function drawRun(){
+ if(!run)return;const o=overlay(),list=run.keys,doneCount=list.filter(k=>run.states[k]==='done').length,pct=Math.round(doneCount/list.length*100);
+ o.innerHTML=`<div class="oh305-run-card"><span class="eyebrow">OFFSEASON HUB</span><h2 id="offseasonRun305Title">${run.until==='portal'?'Wrapping up offseason prep':`Building Year ${run.year+1}`}</h2>
+<div class="oh305-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><i style="width:${Math.max(4,pct)}%"></i></div>
+<ol>${list.map(k=>{const st=run.states[k]||'todo',label=RUN_STEPS.find(x=>x[0]===k)?.[1]||k;return`<li class="${st}"><span aria-hidden="true">${st==='done'?'✓':st==='working'?'●':'○'}</span><b>${label}</b><small>${esc(run.notes[k]||'')}</small></li>`}).join('')}</ol>
+<p class="muted" role="status">${esc(run.message||'')}</p></div>`;
+ o.hidden=false
+}
+function hideRun(){const o=$('offseasonRun305');if(o){o.hidden=true;o.innerHTML=''}}
+function note(key,text){if(run){run.notes[key]=text;drawRun()}}
+function setState(key,st,msg){if(!run)return;run.states[key]=st;if(msg!=null)run.message=msg;drawRun();render()}
+
+async function settle(v,ms=20000){if(v&&typeof v.then==='function'){let t;await Promise.race([v.catch(()=>{}),new Promise(r=>t=setTimeout(r,ms))]);clearTimeout(t)}}
+async function until(pred,ms=60000,step=60){const end=Date.now()+ms;while(Date.now()<end){if(pred())return true;await wait(step)}return pred()}
+function hideStepModal(){if(!running)return;const m=$('modal');if(m&&!m.classList.contains('hidden'))m.classList.add('hidden')}
+
+// Each step: done(s) says whether the save already has it; exec() runs it through the existing functions.
+function sequence(startYearNo){
+ const sameYear=()=>active()&&num(S().year)===startYearNo;
+ const prep=key=>({key,done:s=>!!tasks(s)[key],async exec(){
+  if(key==='staff'&&forcedMove())return{blocked:true};
+  flow()?.autoResolve?.(key);hideStepModal();
+  if(key==='spring')note(key,`${S().springFocus||'Team'} focus`);
+  if(key==='progression')note(key,'Standard development plan');
+  if(key==='staff')note(key,staffLine(S()).replace(/&amp;/g,'&'));
+  if(key==='draft'){const d=drafted(S());note(key,d?`${d.length} drafted`:'Results posted')}
+ }});
+ return[prep('spring'),prep('progression'),prep('staff'),prep('draft'),
+  {key:'portal',done:s=>portalDone(s),async exec(){
+   const f=fl();
+   if(f.stage!=='PORTAL'){flow()?.openPortal?.();window.showTab?.('dashboard')}
+   for(let guard=0;guard<8&&sameYear()&&!portalDone(S());guard++){
+    const before=`${S().portalWeek}:${fl().portalClosed}:${fl().stage}`;
+    note('portal',`Week ${num(S().portalWeek,1)} of 4`);
+    await settle(window.advanceWeek?.());hideStepModal();await wait(PACE);
+    const dig=window.SDF299_PORTAL?.race?.()?.digests?.slice?.(-1)?.[0];
+    if(dig)note('portal',`${dig.final?'Closed':`Week ${dig.week}`} · ${dig.signed.length} signed · ${dig.departed.length} lost · ${dig.aiCount} AI moves`);
+    if(`${S().portalWeek}:${fl().portalClosed}:${fl().stage}`===before)break
+   }
+  }},
+  {key:'battles',done:s=>!!fl(s).postPortalBattleComplete||!active(s),async exec(){
+   const f=fl();if(!portalDone(S()))return{blocked:true};
+   if(!f.postPortalDepthSet)battlesApi()?.openBattles?.({user:true});
+   note('battles','Best eligible OVR starts');setState('battles','done','Starting the new season…');
+   // finishBattles marks the review complete and calls finishOffseason (the Year N+1 build) itself.
+   hideRun();window.finishBattles?.();
+  }},
+  {key:'year',done:s=>!sameYear()&&!building(),async exec(){
+   hideRun();
+   if(!building()&&sameYear()){const out=window.finishOffseason?.();await settle(out,90000)}
+   await until(()=>!building()&&(!sameYear()),90000)
+  }}
+ ]
+}
+async function execute(opts={}){
+ const s=S(),startYearNo=num(s.year),d=data(s),seq=sequence(startYearNo),stopAt=opts.until;
+ const keys=seq.map(x=>x.key).filter(k=>!stopAt||RUN_STEPS.findIndex(r=>r[0]===k)<RUN_STEPS.findIndex(r=>r[0]===stopAt));
+ run={year:startYearNo,until:stopAt||null,keys,states:{},notes:{},message:'Your staff is working through the offseason…',blocked:null};
+ for(const x of seq)if(keys.includes(x.key)&&x.done(S()))run.states[x.key]='done';
+ d.run={active:true,year:startYearNo,started:d.run?.started||Date.now(),until:stopAt||null,blocked:null};save('Offseason hub run started');
+ drawRun();await wait(PACE);
+ let result={ok:true};
+ for(const step of seq){
+  if(!keys.includes(step.key))continue;
+  if(step.done(S())){run.states[step.key]='done';continue}
+  setState(step.key,'working');
+  let out;try{out=await step.exec()}catch(e){console.error('Offseason hub step failed',step.key,e);out={error:e}}
+  if(step.key!=='year')await wait(PACE);
+  if(!step.done(S())){
+   if(step.key==='year'&&!active())break;
+   run.blocked=step.key;const live=data();if(live?.run)live.run.blocked=step.key;
+   result={ok:false,blocked:step.key,error:out?.error?.message||null};break
+  }
+  setState(step.key,'done')
+ }
+ return result
+}
+// Start Year: runs every open step in order. A second tap while it runs returns the same promise.
+function startYear(opts={}){
+ if(running)return running;
+ if(!active()||building())return Promise.resolve({ok:false,reason:'not_offseason'});
+ const startYearNo=num(S().year);
+ running=(async()=>{
+  let result;
+  try{result=await execute(opts)}
+  catch(e){console.error('Offseason hub run failed',e);result={ok:false,error:e.message}}
+  finally{
+   hideRun();const s=S(),d=s?.[KEY];
+   if(d?.run&&num(d.year)===startYearNo)d.run.active=!(result?.ok||result?.blocked)
+   running=null;run=result?.ok?null:run;
+  }
+  const s=S();
+  if(result?.ok&&opts.until==='portal'&&active(s)){flow()?.openPortal?.();save('Offseason hub prep finished');render();return result}
+  if(result?.ok&&num(s?.year)>startYearNo){window.toast?.(`Welcome to Year ${num(s.year)}! Your offseason is in the books.`,'success');save('Offseason hub finished')}
+  else if(result&&!result.ok&&result.blocked){
+   const step=steps(s).find(x=>x.key===result.blocked);
+   window.toast?.(`${step?.title||'A step'} needs you before Year ${startYearNo+1}.`,'warning');
+   render();if(result.blocked==='staff')openStep('staff');
+  }
+  run=null;render();return result
+ })();
+ render();return running
+}
+
+// ---- wiring --------------------------------------------------------------------------------------------------
+const baseRenderAll=window.renderAll;
+window.renderAll=function(...args){const out=baseRenderAll?.apply(this,args);try{render()}catch(e){console.warn('Offseason hub render failed',e)}return out};
+const STYLE=`
+/* Not a .surface: the v219/v220 Home section switcher would treat it as its own tab. It follows the Overview card. */
+.oh305{display:grid;gap:12px;min-width:0;scroll-margin-top:76px;padding:16px;margin-bottom:14px;border-radius:18px;border:1px solid rgba(34,211,238,.28);box-shadow:var(--shadow);background:radial-gradient(circle at 100% 0,rgba(34,211,238,.12),transparent 46%),linear-gradient(180deg,rgba(20,34,48,.98),rgba(10,20,31,.98))}
+#gameCommandCenterV219[hidden]+.oh305,#gameCommandCenterV219.ui219-panel-hidden+.oh305{display:none!important}
+.oh305[hidden]{display:none!important}
+.oh305-head{display:flex;gap:12px;align-items:flex-start;justify-content:space-between}.oh305-head h3{margin:4px 0;font-size:1.3rem}.oh305-head p{margin:0;font-size:.86rem;line-height:1.45}
+.oh305-ring{--p:0;flex:0 0 64px;width:64px;height:64px;border-radius:50%;display:grid;place-content:center;text-align:center;background:radial-gradient(closest-side,#0c1824 78%,transparent 80% 100%),conic-gradient(var(--green) calc(var(--p)*1%),rgba(255,255,255,.1) 0)}
+.oh305-ring b{font-size:1.25rem;line-height:1}.oh305-ring small{font-size:.62rem;color:var(--muted)}
+.oh305-sec{margin:4px 0 -4px;font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.oh305-resume{margin:0;padding:8px 10px;border-radius:10px;background:rgba(250,204,21,.12);border:1px solid rgba(250,204,21,.35);font-size:.84rem}
+.oh305-changed{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.oh305-tile{min-width:0;padding:10px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)}
+.oh305-tile small{font-size:.62rem;letter-spacing:.12em;font-weight:900;color:var(--muted)}.oh305-tile strong{display:block;font-size:1.6rem;line-height:1.1;margin:2px 0}
+.oh305-tile.out strong{color:var(--red)}.oh305-tile.up strong{color:var(--green)}.oh305-tile.in strong{color:var(--cyan)}
+.oh305-tile p{margin:0 0 6px;font-size:.74rem;color:var(--muted)}.oh305-tile ul{list-style:none;margin:0;padding:0;display:grid;gap:5px}
+.oh305-tile li{display:grid;font-size:.78rem;min-width:0}.oh305-tile li b,.oh305-tile li span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.oh305-tile li span{color:var(--muted);font-size:.7rem}
+.oh305-gain{font-style:normal;color:var(--green);font-weight:900}
+.oh305-steps{display:grid;gap:8px}
+.oh305-step{display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px;border-radius:14px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08)}
+.oh305-step.done{border-color:rgba(74,222,128,.28)}.oh305-step.needs{border-color:rgba(250,204,21,.55);background:rgba(250,204,21,.07)}.oh305-step.working{border-color:rgba(34,211,238,.6)}
+.oh305-num{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:.85rem;background:rgba(255,255,255,.08)}
+.oh305-step.done .oh305-num{background:rgba(74,222,128,.18);color:var(--green)}.oh305-step.needs .oh305-num{background:rgba(250,204,21,.2);color:var(--yellow)}
+.oh305-step-head{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center}.oh305-step h4{margin:0;font-size:.95rem}
+.oh305-step p{margin:3px 0 0;font-size:.8rem;color:var(--muted);line-height:1.35;overflow-wrap:anywhere}.oh305-step p b{color:var(--text)}.oh305-step small{font-size:.72rem}
+.oh305-pill{font-size:.62rem;font-weight:900;letter-spacing:.06em;text-transform:uppercase;border-radius:999px;padding:2px 8px;background:rgba(59,130,246,.18);color:#93c5fd}
+.oh305-pill.done{background:rgba(74,222,128,.16);color:var(--green)}.oh305-pill.needs{background:rgba(250,204,21,.2);color:var(--yellow)}.oh305-pill.working{background:rgba(34,211,238,.18);color:var(--cyan)}
+.oh305-open{min-height:38px;padding:6px 10px!important;font-size:.74rem!important;white-space:nowrap}
+.oh305-cta{position:sticky;bottom:calc(76px + env(safe-area-inset-bottom));z-index:5;display:grid;gap:6px;padding:10px;margin:0 -6px;border-radius:16px;background:rgba(6,16,25,.94);border:1px solid rgba(74,222,128,.3);box-shadow:0 -8px 30px rgba(0,0,0,.35);text-align:center}
+.oh305-start{width:100%;min-height:54px;font-size:1.05rem!important;font-weight:900;background:linear-gradient(135deg,#16a34a,#22c55e)!important;border-color:transparent!important;color:#fff!important}
+.oh305-cta small{color:var(--muted);font-size:.76rem}
+html.sdf305-offseason #sdf299Hero .ui-next-game-stage{display:none!important}
+/* The v242 "Where you are in the season" card repeats the hub's job (and its own staff shortcut) during the offseason. */
+html.sdf305-offseason #seasonFlow242{display:none!important}
+.oh305-run{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:16px;background:rgba(3,10,17,.9);backdrop-filter:blur(8px)}.oh305-run[hidden]{display:none}
+.oh305-run-card{width:min(440px,100%);padding:20px;border-radius:20px;background:linear-gradient(180deg,#132436,#0b1723);border:1px solid rgba(34,211,238,.3);box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.oh305-run-card h2{margin:4px 0 12px}.oh305-bar{height:10px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden}.oh305-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--cyan),var(--green));transition:width .3s ease}
+.oh305-run-card ol{list-style:none;margin:14px 0 6px;padding:0;display:grid;gap:7px}.oh305-run-card li{display:grid;grid-template-columns:20px minmax(0,1fr);column-gap:8px;font-size:.9rem;color:var(--muted)}
+.oh305-run-card li small{grid-column:2;font-size:.74rem;overflow-wrap:anywhere}.oh305-run-card li.done{color:var(--text)}.oh305-run-card li.done span{color:var(--green)}.oh305-run-card li.working{color:var(--text)}.oh305-run-card li.working span{color:var(--cyan);animation:oh305pulse 1s infinite}
+@keyframes oh305pulse{50%{opacity:.3}}
+@media (max-width:520px){.oh305-changed{grid-template-columns:1fr}.oh305-tile li:nth-child(n+3){display:none}.oh305-step{scroll-margin-top:76px}.oh305-tile{display:grid;grid-template-columns:auto 1fr;column-gap:10px;align-items:baseline}.oh305-tile small{grid-column:1/-1}.oh305-tile ul{grid-column:1/-1}.oh305-step{grid-template-columns:30px minmax(0,1fr)}.oh305-open{grid-column:2;justify-self:start}}
+@media (min-width:761px){.oh305-cta{bottom:12px}}
+@media (prefers-reduced-motion:reduce){.oh305-bar i{transition:none}.oh305-run-card li.working span{animation:none}}`;
+function ensureStyle(){if(!document.head||$('offseasonHub305Style'))return;const st=document.createElement('style');st.id='offseasonHub305Style';st.textContent=STYLE;document.head.append(st)}
+ensureStyle();
+window.SDF_OFFSEASON_HUB305={BUILD,KEY,steps,statusOf,departures,incoming,leaders,startYear,openStep,returnFromStep,claimEntry,render,hubHtml,get running(){return!!running}};
+})();
+
+(()=>{
+'use strict';
+// Build 305: Living AI programs.
+// Each AI program carries a rating that moves every offseason. Year one is the fixed table every earlier
+// build used (prestige+recent)/2, so a new dynasty opens exactly as before. After that, three things move it:
+//  drift: results against expectation, recruiting class against expectation, head-coach quality vs. the
+//         program's level, a pull back toward the program's historic level, and a rare breakout or collapse;
+//  tide:  how much the program's persistent AI roster has actually improved or declined since the dynasty began,
+//         so the whole league keeps pace with real roster growth instead of standing still while the user improves.
+// The user's schedule, live games and quick sims read the living rating through g.oppPower. The board already
+// rates opponents by their AI roster (which carries the tide), so its targets add the drift only. AI-vs-AI weeks
+// add half the drift so a rising program actually wins more and the story holds together.
+const BUILD=305,SCHEMA=1,DRIFT_MIN=-11,DRIFT_MAX=11,STEP_MAX=6,TIDE_MAX=6;
+const n=(v,d=0)=>Number.isFinite(Number(v))?Number(v):d;
+const clip=(v,a,b)=>Math.max(a,Math.min(b,n(v,a)));
+const r1=v=>Math.round(n(v)*10)/10;
+function hash(text){let h=2166136261;for(const ch of String(text||'')){h^=ch.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
+function f(seed){return(hash(seed)%100000)/100000}
+function S(){try{return typeof state!=='undefined'?state:window.state}catch(e){return window.state}}
+function list(){try{return typeof schools!=='undefined'&&Array.isArray(schools)?schools:(window.schools||[])}catch(e){return window.schools||[]}}
+function school(id){return list().find(s=>Number(s.id)===Number(id))||null}
+function userId(){return Number(S()?.school?.id)}
+function worldTeam(id){return(S()?.world||[]).find(t=>Number(t.id)===Number(id))||null}
+function base(id){const s=school(id);if(!s)return null;return Math.round((n(s.prestige,50)+n(s.recent,50))/2)}
+function rosterOverall(id){try{const r=window.SDF_AI_ROSTERS?.get?.(id),t=r?.length?window.SDF_AI_ROSTERS?.teamRatings?.(r):null;if(n(t?.overall)>0)return n(t.overall)}catch(e){}const w=worldTeam(id);return n(w?.rosterPower)>0?n(w.rosterPower):null}
+
+function root(){
+ const st=S();if(!st)return null;
+ const r=st.livingPrograms305&&typeof st.livingPrograms305==='object'?st.livingPrograms305:(st.livingPrograms305={});
+ r.schema=SCHEMA;r.programs&&typeof r.programs==='object'||(r.programs={});
+ r.stories=Array.isArray(r.stories)?r.stories:[];r.pendingNews=Array.isArray(r.pendingNews)?r.pendingNews:[];
+ if(r.startYear==null)r.startYear=n(st.year,1);
+ // Per-dynasty seed so each save writes its own risers and fallers (not the same programs in every dynasty).
+ if(!r.seed)r.seed=Math.floor(((window.SDF_SEEDS?.random?.()??Math.random()))*1e9).toString(36)||'s';
+ return r;
+}
+function entry(id){
+ const r=root();if(!r)return null;const key=String(Number(id));let e=r.programs[key];
+ if(!e||typeof e!=='object')e=r.programs[key]={drift:0,tide:0,anchor:null,last:0,history:[]};
+ e.drift=clip(e.drift,DRIFT_MIN,DRIFT_MAX);e.tide=clip(e.tide,-TIDE_MAX,TIDE_MAX);e.last=r1(e.last);e.history=Array.isArray(e.history)?e.history:[];
+ return e;
+}
+// Old saves (and new dynasties) start every program at zero drift and anchor the roster tide on today's roster,
+// so the season in progress plays exactly as it would have on Build 304.
+function ensure(){
+ const st=S();if(!st?.school||!list().length)return null;const r=root(),key=`${n(st.year)}:${userId()}:${list().length}`;
+ if(r.ensuredKey===key)return r;r.ensuredKey=key;
+ for(const s of list()){if(Number(s.id)===userId())continue;const e=entry(s.id);if(e.anchor==null){const ro=rosterOverall(s.id);if(ro!=null)e.anchor=ro}}
+ return r;
+}
+function parts(id){const e=S()?.livingPrograms305?.programs?.[String(Number(id))];return{drift:clip(e?.drift,DRIFT_MIN,DRIFT_MAX),tide:clip(e?.tide,-TIDE_MAX,TIDE_MAX)}}
+function rating(id){
+ if(id==null)return null;
+ if(Number(id)===userId()){try{return n(window.teamRatings?.().overall,null)}catch(e){return null}}
+ const b=base(id);if(b==null){const w=worldTeam(id);return w?Math.round((n(w.prestige,50)+n(w.recent,50))/2):null}
+ const p=parts(id),total=p.drift+p.tide;if(!total)return b;
+ return clip(Math.round(b+total),30,99);
+}
+function boardDelta(id){if(id==null||Number(id)===userId())return 0;return Math.round(parts(id).drift)}
+function worldMomentum(id){if(id==null||Number(id)===userId())return 0;return clip(parts(id).drift*.5,-4,4)}
+function trend(id){
+ const b=base(id),e=S()?.livingPrograms305?.programs?.[String(Number(id))],now=rating(id);
+ if(b==null||!e)return{rating:now,base:b,drift:0,tide:0,change:0,direction:'steady',arrow:'•',label:'Steady',story:null};
+ const change=r1(e.last),direction=change>=1.5?'up':change<=-1.5?'down':'steady',story=(S()?.livingPrograms305?.stories||[]).filter(x=>Number(x.id)===Number(id)).slice(-1)[0]||null;
+ return{rating:now,base:b,drift:r1(e.drift),tide:r1(e.tide),change,direction,arrow:direction==='up'?'▲':direction==='down'?'▼':'•',label:direction==='up'?'Rising':direction==='down'?'Falling':'Steady',story,history:e.history.slice(-6)};
+}
+
+// ---- offseason drift -------------------------------------------------------------------------------------
+function coachAvg(c){return c?(n(c.recruiting,60)+n(c.development,60)+n(c.game,60))/3:null}
+function coachById(cid){return cid?S()?.aiCoachWorldV201?.coaches?.[cid]||null:null}
+// Coach quality is judged against what a program of that level normally employs (a least-squares line of coach
+// rating on program base across the league), so elite programs do not drift upward just for having good coaches.
+function coachLine(rows,fallback=60){const pts=rows.filter(x=>x.coach!=null);if(pts.length<4)return{a:fallback,b:0};const mx=pts.reduce((s,x)=>s+x.base,0)/pts.length,my=pts.reduce((s,x)=>s+x.coach,0)/pts.length;let sxy=0,sxx=0;for(const x of pts){sxy+=(x.base-mx)*(x.coach-my);sxx+=(x.base-mx)**2}const b=sxx?sxy/sxx:0;return{a:my-b*mx,b}}
+const RISE=['a breakout recruiting class','a new indoor facility and NIL collective','a quarterback transfer who changed everything','a staff overhaul that clicked'];
+const FALL=['an exodus to the transfer portal','NCAA sanctions over booster payments','a wave of early NFL departures','a locker-room split after a coordinator walked out'];
+function processSeason(snapshot={}){
+ const st=S(),r=ensure();if(!r)return null;const year=n(st.year,1);
+ if(Number(r.processedYear)===year)return r.lastSummary||null;
+ const ids=list().map(s=>Number(s.id)).filter(id=>id!==userId());if(!ids.length)return null;
+ const ranks=new Map((st.classRankings||[]).map(x=>[Number(x.id),n(x.rank,0)]).filter(x=>x[1]>0)),N=Math.max(ranks.size,ids.length,1);
+ const rows=ids.map(id=>{const w=worldTeam(id)||{},rec=snapshot.records?.[id]||w.record||{},oldCid=snapshot.teamCoach?.[String(id)],newCid=S()?.aiCoachWorldV201?.teamCoach?.[String(id)];
+  return{id,base:base(id),rating:rating(id),wins:n(rec.w),losses:n(rec.l),classRank:ranks.get(id)||null,coach:coachAvg(coachById(oldCid)||coachById(newCid)),newCoach:coachAvg(coachById(newCid)),changed:!!(oldCid&&newCid&&oldCid!==newCid),style:coachById(newCid)?.branch||coachById(oldCid)?.branch||''}});
+ const line=coachLine(rows);
+ // Expected win rate for a program of this rating is read off this season's own league results (least squares of
+ // win% on rating), so the results term is centred on zero and does not grind elite programs down just because the
+ // AI-vs-AI simulator compresses records more than the rating spread suggests.
+ const played=rows.filter(x=>x.wins+x.losses>0).map(x=>({base:n(x.rating,65),coach:x.wins/(x.wins+x.losses)})),winLine=coachLine(played,.5);
+ // Expected class rank for a program's rating is fitted the same way, so the rank-1 ceiling does not turn every
+ // ordinary year into a recruiting 'miss' for the elite programs.
+ const recruitLine=coachLine(rows.filter(x=>x.classRank).map(x=>({base:n(x.rating,65),coach:x.classRank})),N/2);
+ const out=[];
+ for(const x of rows){
+  const e=entry(x.id),games=x.wins+x.losses,expPct=clip(winLine.a+winLine.b*n(x.rating,65),.05,.95),pct=games?x.wins/games:expPct;
+  let results=clip((pct-expPct)*12*.55,-3.5,3.5);
+  let recruit=x.classRank?clip(((recruitLine.a+recruitLine.b*n(x.rating,65))-x.classRank)/N*4,-2,2):0;
+  const fitFor=c=>c==null?0:clip((c-(line.a+line.b*n(x.base,65)))*.18,-2,2);
+  let coach=x.changed?fitFor(x.coach)*.5+fitFor(x.newCoach)*.5-.6:fitFor(x.coach);
+  if(x.style==='Recruiter')recruit*=1.3;if(x.style==='Strategist')coach*=1.2;
+  const regression=-.28*e.drift,noise=(f(`lp305-noise-${r.seed}-${year}-${x.id}`)-.5)*1.6,roll=f(`lp305-story-${r.seed}-${year}-${x.id}`);
+  let story=0,storyText=null;
+  if(roll<.045){story=3+Math.round(f(`lp305-amt-${r.seed}-${year}-${x.id}`)*2);storyText=RISE[hash(`lp305-why-${r.seed}-${year}-${x.id}`)%RISE.length]}
+  else if(roll>.955){story=-(3+Math.round(f(`lp305-amt-${r.seed}-${year}-${x.id}`)*2));storyText=FALL[hash(`lp305-why-${r.seed}-${year}-${x.id}`)%FALL.length]}
+  const change=clip(results+recruit+coach+regression+noise+story,-STEP_MAX,STEP_MAX),before=n(x.rating,65);
+  e.drift=r1(clip(e.drift+change,DRIFT_MIN,DRIFT_MAX));
+  const after=rating(x.id);e.last=r1(n(after)-before);
+  const row={year,rating:after,change:e.last,results:r1(results),recruit:r1(recruit),coach:r1(coach),regression:r1(regression),story:story||0};
+  e.history.push(row);e.history=e.history.slice(-12);
+  if(storyText)r.stories.push({year,id:x.id,kind:story>0?'RISER':'FALLER',text:storyText,change:e.last});
+  out.push({id:x.id,change:e.last,story:storyText,storyUp:story>0});
+ }
+ r.stories=r.stories.slice(-40);r.processedYear=year;
+ const name=id=>school(id)?.name||`Program ${id}`;
+ const risers=out.filter(x=>x.change>=2).sort((a,b)=>b.change-a.change),fallers=out.filter(x=>x.change<=-2).sort((a,b)=>a.change-b.change);
+ const news=[];
+ for(const x of out.filter(x=>x.story).slice(0,2))news.push(x.storyUp?`📈 Program Watch: ${name(x.id)} is on the rise after ${x.story}.`:`📉 Program Watch: ${name(x.id)} is sliding after ${x.story}.`);
+ const top=risers.filter(x=>!x.story).slice(0,2),down=fallers.filter(x=>!x.story).slice(0,2);
+ if(top.length)news.push(`📈 Rising programs: ${top.map(x=>`${name(x.id)} (+${Math.round(x.change)})`).join(', ')}.`);
+ if(down.length)news.push(`📉 Programs slipping: ${down.map(x=>`${name(x.id)} (${Math.round(x.change)})`).join(', ')}.`);
+ r.pendingNews.push(...news.map(text=>({forYear:year+1,text})));r.pendingNews=r.pendingNews.slice(-12);
+ r.lastSummary={year,risers:risers.length,fallers:fallers.length,stories:out.filter(x=>x.story).length};
+ return r.lastSummary;
+}
+// The roster tide is read when the new season's schedule is built, after the AI rosters have rolled over.
+function refreshTide(){
+ const st=S(),r=ensure();if(!r)return;const year=n(st.year,1);if(Number(r.tideYear)===year)return;
+ for(const s of list()){const id=Number(s.id);if(id===userId())continue;const e=entry(id),now=rosterOverall(id);if(now==null)continue;if(e.anchor==null){e.anchor=now;continue}
+  // Year one (and the first season an old save sees this build) keeps tide at zero by construction: anchor==now.
+  e.tideRaw=now-e.anchor}
+ // League-wide roster growth moves everyone (the world keeps pace with the user). A single program's own roster
+ // swing barely counts: the AI roster model pulls elite rosters toward the middle every year (a 7-season run had
+ // top-10 rosters ~14 OVR lower), and importing that would flatten the world. Program stories come from drift.
+ const raws=Object.values(r.programs).map(e=>e.tideRaw).filter(Number.isFinite),league=raws.length?raws.reduce((a,b)=>a+b,0)/raws.length:0;
+ for(const e of Object.values(r.programs))if(Number.isFinite(e.tideRaw))e.tide=r1(clip(league*.6+(e.tideRaw-league)*.05,-TIDE_MAX,TIDE_MAX));
+ r.tideYear=year;
+}
+function applyToSchedule(schedule){
+ if(!Array.isArray(schedule))return schedule;
+ for(const g of schedule){if(!g||g.bye||g.oppId==null||g.living305)continue;const b=base(g.oppId);
+  // Only games built from the fixed prestige table are re-rated; roster-rated games (dynamic rivalries, custom
+  // schedule picks) already track the program's real roster.
+  if(b==null||Number(g.oppPower)!==b)continue;const live=rating(g.oppId);g.basePower305=b;g.living305=true;if(live!=null)g.oppPower=live}
+ return schedule;
+}
+
+// ---- board consistency -----------------------------------------------------------------------------------
+function adjustExpectations(){
+ const st=S(),e=st?.seasonExpectations,V=window.SDF_V170;
+ if(!e||!st.school||Number(e.year)!==Number(st.year)||e.evaluated||Number(e.living305)===Number(st.year)||!V?.probabilityFromEdge||!V.opponentRating)return false;
+ const games=(st.schedule||[]).filter(g=>V.isRealGame?V.isRealGame(g):!g?.bye);if(!games.length)return false;
+ e.living305=Number(st.year);const deltas=games.map(g=>boardDelta(g.oppId)),last=V.lastSeasonWins?.();
+ // First season at a school: Build 304's board (roster-rated opponents) plus any drift, which is zero in year one.
+ // From the second season on the board rates each opponent exactly as the game will play it (g.oppPower, the
+ // living rating) and gives a quarter of the weight to last season's wins, so a rebuilding program that has
+ // turned into an 8- or 9-win team is no longer told to aim for 3 or 4. Byes stay excluded (Build 302 fix).
+ if(last==null&&deltas.every(d=>!d))return false;
+ // Never move a target mid-season (an old save loaded after kickoff keeps the target it was given).
+ if(games.some(g=>g.result))return false;
+ let ours;try{ours=n(window.teamRatings?.().overall,0)||n(st.school.prestige,65)}catch(err){ours=n(st.school.prestige,65)}
+ const idH=n(window.SDF_V190?.homeFieldEdge?.(),0),fanH=n(window.SDF_V193?.homeFieldEdge?.(),0),variance=n(st.realismSettings?.upsetVariance,1);
+ const opp=(g,i)=>last==null?n(V.opponentRating(g),65)+deltas[i]:n(g.oppPower,0)>0?n(g.oppPower):n(V.opponentRating(g),65)+deltas[i];
+ const probs=games.map((g,i)=>V.probabilityFromEdge(ours-opp(g,i)+(g.home?1.8+idH+fanH:-1.8),variance));
+ const sum=probs.reduce((a,b)=>a+n(b),0),raw=last==null?sum:Math.min(sum*.75+n(last)*(games.length/12)*.25,n(last)+2);
+ const expectedWins=clip(Math.round(raw),3,11),cg=games.filter(g=>g.conference).length,expectedConferenceWins=clip(Math.round(raw*((cg||8)/Math.max(1,games.length))),2,cg||8);
+ if(expectedWins!==e.expectedWins||expectedConferenceWins!==e.expectedConferenceWins){
+  e.preLiving305={expectedWins:e.expectedWins,expectedConferenceWins:e.expectedConferenceWins};
+  e.expectedWins=expectedWins;e.expectedConferenceWins=expectedConferenceWins;
+  e.postseason=expectedWins>=10?'Reach the playoff conversation':expectedWins>=8?'Compete for a conference title':expectedWins>=6?'Earn a bowl bid':'Show measurable improvement';
+ }
+ return true;
+}
+function flushNews(){
+ const st=S(),r=st?.livingPrograms305;if(!r?.pendingNews?.length||st.phase!=='REGULAR')return;
+ const due=r.pendingNews.filter(x=>n(x.forYear)<=n(st.year));if(!due.length)return;
+ st.news=Array.isArray(st.news)?st.news:[];for(const x of due)if(n(x.forYear)===n(st.year))st.news.push(x.text);
+ r.pendingNews=r.pendingNews.filter(x=>n(x.forYear)>n(st.year));
+}
+
+// ---- wiring ----------------------------------------------------------------------------------------------
+function wrapV201(){
+ const V=window.SDF_V201;if(!V||V._living305)return;
+ const process=V.processAiCoachSeason;
+ if(typeof process==='function')V.processAiCoachSeason=function(...args){
+  const st=S(),records={},w=st?.aiCoachWorldV201,teamCoach={...(w?.teamCoach||{})};
+  for(const t of st?.world||[])records[Number(t.id)]={w:n(t.record?.w),l:n(t.record?.l)};
+  const out=process.apply(this,args);
+  try{processSeason({records,teamCoach})}catch(e){console.warn('Living programs 305 offseason skipped',e)}
+  return out;
+ };
+ const adj=V.gamePowerAdjustment;
+ if(typeof adj==='function')V.gamePowerAdjustment=function(teamId,...rest){return n(adj.call(this,teamId,...rest))+worldMomentum(teamId)};
+ V._living305=true;
+}
+wrapV201();
+const priorSchedule=window.genSchedule;
+if(typeof priorSchedule==='function')window.genSchedule=function(...args){const out=priorSchedule.apply(this,args);try{ensure();refreshTide();applyToSchedule(out)}catch(e){console.warn('Living programs 305 schedule skipped',e)}return out};
+const priorFinish=window.finishOffseason;
+if(typeof priorFinish==='function')window.finishOffseason=function(...args){const out=priorFinish.apply(this,args);try{adjustExpectations();flushNews()}catch(e){}return out};
+const priorRender=window.renderAll;
+if(typeof priorRender==='function')window.renderAll=function(...args){try{wrapV201();if(S()?.school){ensure();adjustExpectations();flushNews()}}catch(e){}return priorRender.apply(this,args)};
+
+window.SDF_PROGRAMS305=Object.assign(window.SDF_PROGRAMS305||{},{
+ build:BUILD,rating,trend,base,boardDelta,worldMomentum,ensure,
+ coach:window.SDF_PROGRAMS305?.coach||(id=>window.SDF_V201?.summaryForTeam?.(id)||null),
+ _test:{processSeason,refreshTide,applyToSchedule,adjustExpectations,flushNews,root,entry,coachLine}
+});
+})();
+
+(()=>{
+'use strict';
+// Build 305: Rival head coaches with personalities.
+// The AI head coaches themselves (names, ratings, job security, firings, hires and poaching between programs)
+// have lived in v201 since Build 201. This module gives them a public face: a coaching style, a single overall
+// rating, a hot-seat label, named carousel headlines, the occasional late flip of one of your soft commits by a
+// recruiter, and a rivalry-week quote on the pre-game card. Everything persists in state.rivalCoaches305 and is
+// generated on demand, so old saves pick it up on load.
+const BUILD=305,SCHEMA=1;
+const n=(v,d=0)=>Number.isFinite(Number(v))?Number(v):d;
+const clip=(v,a,b)=>Math.max(a,Math.min(b,n(v,a)));
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function hash(text){let h=2166136261;for(const ch of String(text||'')){h^=ch.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
+function f(seed){return(hash(seed)%100000)/100000}
+function pick(seed,arr){return arr[hash(seed)%arr.length]}
+function S(){try{return typeof state!=='undefined'?state:window.state}catch(e){return window.state}}
+function list(){try{return typeof schools!=='undefined'&&Array.isArray(schools)?schools:(window.schools||[])}catch(e){return window.schools||[]}}
+function school(id){return list().find(s=>Number(s.id)===Number(id))||null}
+function userId(){return Number(S()?.school?.id)}
+const $=id=>typeof document!=='undefined'&&document.getElementById?document.getElementById(id):null;
+
+const STYLES={
+ Recruiter:{icon:'🎯',blurb:'Lives on the road. Wins living rooms and flips commits late.'},
+ Tactician:{icon:'🧠',blurb:'Game-plan specialist. Dangerous with a week to prepare.'},
+ Motivator:{icon:'📣',blurb:'Players run through walls for him. Big in big games.'},
+ 'Old School':{icon:'🪖',blurb:'Run the ball, play defense, develop seniors.'},
+ 'Program Builder':{icon:'🏗',blurb:'CEO type. Facilities, staff and long-term plans.'}
+};
+function root(){
+ const st=S();if(!st)return null;const r=st.rivalCoaches305&&typeof st.rivalCoaches305==='object'?st.rivalCoaches305:(st.rivalCoaches305={});
+ r.schema=SCHEMA;r.styles&&typeof r.styles==='object'||(r.styles={});r.quotes&&typeof r.quotes==='object'||(r.quotes={});
+ r.poaches=Array.isArray(r.poaches)?r.poaches:[];r.feed=Array.isArray(r.feed)?r.feed:[];r.pendingNews=Array.isArray(r.pendingNews)?r.pendingNews:[];
+ r.checkedWeeks=Array.isArray(r.checkedWeeks)?r.checkedWeeks.slice(-30):[];
+ if(!r.seed)r.seed=Math.floor(((window.SDF_SEEDS?.random?.()??Math.random()))*1e9).toString(36)||'s';
+ return r;
+}
+function rawCoach(id){if(id==null||Number(id)===userId())return null;try{return window.SDF_V201?.coachForTeam?.(id)||null}catch(e){return null}}
+function styleFor(c){
+ if(!c)return null;const r=root();if(r?.styles[c.id])return r.styles[c.id];
+ const b=c.branch;let style=b==='Recruiter'?'Recruiter':b==='Strategist'?'Tactician':b==='Culture'?'Motivator':b==='CEO'?'Program Builder':b==='Developer'?(n(c.age)>=52||f(`${c.id}-os`)<.4?'Old School':'Tactician'):pick(`${c.id}-style`,Object.keys(STYLES));
+ if(r)r.styles[c.id]=style;return style;
+}
+function overall(c){return c?Math.round((n(c.recruiting,60)+n(c.development,60)+n(c.game,60))/3):null}
+function hotSeat(c){const s=n(c?.jobSecurity,60);return s<=25?{level:'hot',label:'Hot seat',icon:'🔥'}:s<=42?{level:'warm',label:'Warm seat',icon:'♨'}:{level:'secure',label:'Secure',icon:''}}
+function coach(id){
+ const c=rawCoach(id);if(!c)return null;const style=styleFor(c),seat=hotSeat(c);
+ return{id:c.id,teamId:Number(id),team:school(id)?.name||'',name:c.name,style,icon:STYLES[style]?.icon||'',blurb:STYLES[style]?.blurb||'',rating:overall(c),age:n(c.age),tenure:n(c.tenure),record:`${n(c.careerWins)}-${n(c.careerLosses)}`,jobSecurity:n(c.jobSecurity,60),hotSeat:seat.level,hotSeatLabel:seat.label,hotSeatIcon:seat.icon};
+}
+
+// ---- coaching carousel headlines -------------------------------------------------------------------------
+function carouselHeadlines(year){
+ const w=S()?.aiCoachWorldV201;if(!w)return[];const rows=(w.history||[]).filter(x=>Number(x.year)===Number(year));if(!rows.length)return[];
+ const st=S(),relevant=new Set([Number(st.rivalId),...(st.schedule||[]).map(g=>Number(g.oppId))]),conf=st.school?.conference;
+ const weight=x=>(relevant.has(Number(x.teamId))?3:0)+(school(x.teamId)?.conference===conf?2:0)+n(school(x.teamId)?.prestige,50)/50;
+ const out=[];
+ for(const x of rows.filter(x=>x.type==='FIRED'||x.type==='RETIRE').sort((a,b)=>weight(b)-weight(a)).slice(0,3)){
+  const c=w.coaches?.[x.coachId],style=styleFor(c);
+  out.push({w:weight(x)+1,text:x.type==='FIRED'?`🔥 ${x.team} fires ${x.coach}${style?` (${style})`:''} after a ${x.record||'losing'} season.`:`👋 ${x.coach} retires at ${x.team}.`});
+ }
+ for(const x of rows.filter(x=>x.type==='HIRE').sort((a,b)=>weight(b)-weight(a)).slice(0,3)){
+  const c=w.coaches?.[x.coachId],style=styleFor(c),prev=(c?.jobs||[]).filter(j=>j.endYear!=null&&Number(j.teamId)!==Number(x.teamId)).slice(-1)[0];
+  const from=prev&&prev.reason==='POACHED'?` away from ${prev.school}`:prev?`, formerly of ${prev.school}`:'';
+  out.push({w:weight(x),text:`✍️ ${x.team} hires ${x.coach}${style?`, a ${style.toLowerCase()}`:''}${from}.`});
+ }
+ return out.sort((a,b)=>b.w-a.w).slice(0,4).map(x=>x.text);
+}
+function hotSeatWatch(){
+ const st=S(),ids=[...new Set((st.schedule||[]).filter(g=>!g.bye&&g.oppId!=null).map(g=>Number(g.oppId)))];
+ const hot=ids.map(coach).filter(c=>c&&c.hotSeat==='hot').sort((a,b)=>a.jobSecurity-b.jobSecurity).slice(0,2);
+ return hot.length?`🔥 Hot seat watch: ${hot.map(c=>`${c.name} (${c.team})`).join(' and ')} could be coaching for ${hot.length>1?'their jobs':'his job'} on your schedule this fall.`:null;
+}
+function afterCarousel(){
+ const st=S(),r=root();if(!r||!st?.school)return;const year=n(st.year);if(Number(r.carouselYear)===year)return;r.carouselYear=year;
+ const lines=carouselHeadlines(year);r.feed.push(...lines.map(text=>({year,text})));r.feed=r.feed.slice(-30);
+ r.pendingNews.push(...lines.map(text=>({forYear:year+1,text})));r.pendingNews=r.pendingNews.slice(-12);
+}
+function flushNews(){
+ const st=S(),r=st?.rivalCoaches305;if(!r||st.phase!=='REGULAR')return;st.news=Array.isArray(st.news)?st.news:[];
+ const due=(r.pendingNews||[]).filter(x=>n(x.forYear)<=n(st.year));
+ if(due.length){for(const x of due)if(n(x.forYear)===n(st.year))st.news.push(x.text);r.pendingNews=r.pendingNews.filter(x=>n(x.forYear)>n(st.year))}
+ if(Number(r.hotSeatYear)!==n(st.year)&&st.schedule?.length){r.hotSeatYear=n(st.year);const line=hotSeatWatch();if(line)st.news.push(line)}
+}
+
+// ---- recruit poaching ------------------------------------------------------------------------------------
+// Once in a while a recruiter-type head coach flips one of your soft commits. It reuses the recruiting engine's
+// own decommitment record (decommitment277), so the existing flip notices and the sponsor Win Back option apply.
+const POACH_CHANCE=.08;
+function poachCandidate(){
+ const st=S(),R=window.SDF_RECRUITING_V2,uid=userId();if(!R||!Array.isArray(st.recruits))return null;
+ const type=r=>{try{return R.commitmentType?R.commitmentType(r):r.commitmentType277}catch(e){return r.commitmentType277}};
+ const ours=st.recruits.filter(r=>Number(r.committedTo)===uid&&type(r)==='SOFT'&&!r.poach305&&!r.winBack283&&Number(r.committedWeek||0)<Number(st.week)).sort((a,b)=>n(b.stars)-n(a.stars)||n(b.ovr)-n(a.ovr));
+ const limit=n(R.CLASS_SIGNING_LIMIT,25);
+ for(const r of ours.slice(0,6)){
+  let entries=[];try{entries=(R.race?.(r)?.entries||[]).filter(e=>Number(e.id)!==uid)}catch(e){entries=[]}
+  const options=entries.map(e=>({e,c:coach(e.id)})).filter(x=>x.c&&(x.c.style==='Recruiter'||n(rawCoach(x.e.id)?.recruiting)>=74)&&n(R.aiClassCount?.(x.e.id))<limit&&n(x.e.score)>=45).sort((a,b)=>n(b.e.score)-n(a.e.score));
+  if(options.length)return{r,e:options[0].e,c:options[0].c};
+ }
+ return null;
+}
+function maybePoach(){
+ const st=S(),r=root();if(!r||!st?.school||st.phase!=='REGULAR'||st.seasonDone||st.signingDayResolved)return null;
+ const week=n(st.week),year=n(st.year),key=`${year}-${week}`;if(week<4||week>13||r.checkedWeeks.includes(key))return null;r.checkedWeeks.push(key);
+ if(r.poaches.some(p=>Number(p.year)===year))return null;
+ if(f(`rc305-poach-${r.seed}-${year}-${week}-${userId()}`)>=POACH_CHANCE)return null;
+ const pickd=poachCandidate();if(!pickd)return null;
+ const {r:rec,e,c}=pickd,R=window.SDF_RECRUITING_V2,uid=userId(),to=school(e.id);
+ rec.committedTo=Number(e.id);rec.committedWeek=week;rec.commitmentType277='SOFT';rec.onBoard=true;
+ st.commits=(st.commits||[]).filter(x=>x.id!==rec.id);
+ st.aiSigningCounts??={};st.aiSigningCounts[e.id]=n(st.aiSigningCounts[e.id])+1;
+ try{const d=R.ensureDecisionProfile?.(rec);if(d){d.lastLeader=Number(e.id);d.stableWeeks=0}}catch(err){}
+ const reason=`${c.name} (${c.style}) made a late in-home visit and flipped him.`;
+ const event={recruitId:rec.id,name:rec.name,position:rec.pos,fromSchoolId:uid,fromSchool:st.school.name,toSchoolId:Number(e.id),toSchool:to?.name||c.team,year,week,ourInterest:null,newInterest:n(e.score),reason,poach305:true,coach:c.name};
+ rec.decommitment277=event;rec.poach305={year,week,teamId:Number(e.id),coach:c.name};
+ st.recruitingNotifications277??=[];st.recruitingNotifications277.push(event);st.recruitingNotifications277=st.recruitingNotifications277.slice(-30);
+ const text=`📣 Recruiting: ${c.name} of ${event.toSchool} flipped your ${n(rec.stars)}★ ${rec.pos} commit ${rec.name}. He can still be won back before Signing Day.`;
+ st.news=Array.isArray(st.news)?st.news:[];st.news.push(text);r.poaches.push({year,week,recruitId:rec.id,name:rec.name,teamId:Number(e.id),coach:c.name});r.poaches=r.poaches.slice(-20);
+ try{window.toast?.(`${rec.name} flipped to ${event.toSchool}`)}catch(err){}
+ return event;
+}
+
+// ---- rivalry week ----------------------------------------------------------------------------------------
+const QUOTES={
+ Recruiter:['Half their depth chart had us in their top three. We know exactly who we are playing.','Every kid in this state is watching Saturday. We plan to give them something to remember.','We will be recruiting off this game for the next five years.'],
+ Tactician:['We have had this one circled since the spring. They will see some things they have not seen on film.','They are predictable. That is not trash talk, that is the tape.','Talent is talent. Saturday is about who adjusts at halftime.'],
+ Motivator:['Our guys do not need a pep talk this week. They have been waiting 364 days.','Throw the records out. This is a street fight and we like street fights.','I told our seniors: nobody remembers the other eleven games.'],
+ 'Old School':['We are going to line up and run the ball right at them. They know it is coming.','No tricks. Four quarters of football and we will see who is still standing.','Our seniors have been here before. Some of theirs have not.'],
+ 'Program Builder':['This rivalry is bigger than one game, but we intend to win it anyway.','We have built this program to win games like this. Saturday is a measuring stick.','Good program over there. We think ours is better, and it is time to show it.']
+};
+const HOT_QUOTES=['I am not worried about my job. I am worried about their quarterback.','Everybody has an opinion about my seat. Saturday is the only opinion that matters.'];
+function rivalryGame(){
+ const st=S();if(!st?.school||st.phase!=='REGULAR'||st.seasonDone)return null;let g=null;
+ try{g=typeof currentGame==='function'?currentGame():null}catch(e){g=null}
+ g=g||(st.schedule||[])[n(st.week)-1]||null;return g&&!g.bye&&!g.result&&g.rivalry&&g.oppId!=null?g:null;
+}
+function rivalryQuote(){
+ const st=S(),r=root(),g=rivalryGame();if(!r||!g)return null;const key=`${n(st.year)}-${n(g.week)}-${Number(g.oppId)}`;
+ if(r.quotes[key])return r.quotes[key];const c=coach(g.oppId);if(!c)return null;
+ const seed=`rc305-q-${r.seed}-${key}-${c.id}`,pool=c.hotSeat==='hot'&&f(seed)<.5?HOT_QUOTES:(QUOTES[c.style]||QUOTES.Motivator);
+ const q={year:n(st.year),week:n(g.week),teamId:Number(g.oppId),team:c.team,coach:c.name,style:c.style,text:pick(seed,pool)};
+ r.quotes[key]=q;const keys=Object.keys(r.quotes);if(keys.length>12)for(const k of keys.slice(0,keys.length-12))delete r.quotes[k];
+ st.news=Array.isArray(st.news)?st.news:[];st.news.push(`🎙️ Rivalry week: ${q.coach} on ${st.school.name}: "${q.text}"`);
+ return q;
+}
+
+// ---- pre-game card decoration ----------------------------------------------------------------------------
+const STYLE=`
+.rc305-strip{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin:2px 0 0;padding:8px 10px;border:1px solid #2e4859;border-radius:10px;background:#0b1924;font-size:12.5px;line-height:1.35;color:#c9dbe6;text-align:left}
+.rc305-strip b{color:#eff7fc;font-weight:750}
+.rc305-strip .rc305-tag{padding:1px 7px;border-radius:999px;background:#16303f;color:#a9c4d3;font-size:11px;font-weight:700;letter-spacing:.02em;white-space:nowrap}
+.rc305-strip .rc305-tag.hot{background:#3d1a16;color:#ff9b8a}.rc305-strip .rc305-tag.warm{background:#3a3016;color:#f4d780}
+.rc305-strip .rc305-tag.up{background:#123326;color:#7fe0bd}.rc305-strip .rc305-tag.down{background:#3d1a16;color:#ff9b8a}
+.rc305-strip button.rc305-name{background:none;border:0;padding:0;color:#eff7fc;font:inherit;font-weight:750;text-decoration:underline dotted;cursor:pointer;min-height:24px}
+.rc305-quote{grid-column:1/-1;margin:6px 0 0;padding:9px 12px;border-left:3px solid #f4d780;border-radius:6px;background:#141f14;color:#eff7fc;font-size:13.5px;line-height:1.4;text-align:left}
+.rc305-quote small{display:block;margin-bottom:3px;font-size:10.5px;letter-spacing:.08em;color:#f4d780;font-weight:800}
+.rc305-quote cite{display:block;margin-top:4px;font-style:normal;font-size:12px;color:#a9bfcc}`;
+function ensureStyle(){if(typeof document==='undefined'||!document.head||$('rivalCoaches305Style'))return;const st=document.createElement('style');st.id='rivalCoaches305Style';st.textContent=STYLE;document.head.append(st)}
+function stripHtml(g){
+ const c=coach(g.oppId);if(!c)return'';const t=window.SDF_PROGRAMS305?.trend?.(g.oppId);
+ const trend=t&&t.direction!=='steady'?`<span class="rc305-tag ${t.direction}">${t.arrow} ${t.label} ${t.change>0?'+':''}${Math.round(t.change)}</span>`:'';
+ const seat=c.hotSeat!=='secure'?`<span class="rc305-tag ${c.hotSeat}">${c.hotSeatIcon} ${c.hotSeatLabel}</span>`:'';
+ return`<div class="rc305-strip" data-rc305="${c.teamId}"><span>HC</span><button type="button" class="rc305-name" data-rc305-profile="${c.teamId}">${esc(c.name)}</button><span class="rc305-tag">${c.icon} ${esc(c.style)} · ${c.rating}</span>${seat}${trend}</div>`;
+}
+function quoteHtml(q){return q?`<blockquote class="rc305-quote"><small>RIVALRY WEEK</small>“${esc(q.text)}”<cite>— ${esc(q.coach)}, ${esc(q.team)}</cite></blockquote>`:''}
+function bindProfile(host){host.querySelectorAll?.('[data-rc305-profile]').forEach(b=>{b.onclick=()=>{try{window.openAiCoachProfile?.(Number(b.dataset.rc305Profile));$('modal')?.classList.remove('hidden')}catch(e){}}})}
+function decorate(){
+ const st=S();if(!st?.school||st.phase!=='REGULAR'||typeof document==='undefined')return;let g=null;
+ try{g=typeof currentGame==='function'?currentGame():null}catch(e){}g=g||(st.schedule||[])[n(st.week)-1];if(!g||g.bye||g.result||g.oppId==null)return;
+ ensureStyle();const q=g.rivalry?rivalryQuote():null,html=stripHtml(g)+quoteHtml(q);if(!html)return;
+ // The Build 299 layout moves the Next Up stage into its own hero, so decorate every stage on the page.
+ const hosts=[...(document.querySelectorAll?.('.ui-next-game-stage')||[]),document.getElementById('gameDayMatchup')].filter(Boolean);
+ for(const host of hosts){host.querySelectorAll('.rc305-strip,.rc305-quote').forEach(x=>x.remove());
+  const tmp=document.createElement('div');tmp.innerHTML=html;const actions=host.querySelector('.ui-stage-actions');
+  const after=host.querySelector('.game-day-matchup');
+  let anchor=after;for(const node of [...tmp.children]){if(actions)host.insertBefore(node,actions);else if(anchor){anchor.after(node);anchor=node}else host.append(node)}
+  bindProfile(host);
+ }
+}
+
+// ---- wiring ----------------------------------------------------------------------------------------------
+function wrapV201(){
+ const V=window.SDF_V201;if(!V||V._rival305||typeof V.processAiCoachSeason!=='function')return;const process=V.processAiCoachSeason;
+ V.processAiCoachSeason=function(...args){const out=process.apply(this,args);try{afterCarousel()}catch(e){console.warn('Rival coaches 305 carousel skipped',e)}return out};V._rival305=true;
+}
+wrapV201();
+const priorRender=window.renderAll;
+if(typeof priorRender==='function')window.renderAll=function(...args){
+ try{wrapV201();if(S()?.school){root();flushNews();maybePoach();rivalryQuote()}}catch(e){console.warn('Rival coaches 305',e)}
+ const out=priorRender.apply(this,args);try{decorate();setTimeout(()=>{try{decorate()}catch(e){}},0)}catch(e){}return out;
+};
+const priorShowTab=window.showTab;
+if(typeof priorShowTab==='function')window.showTab=function(...args){const out=priorShowTab.apply(this,args);try{decorate()}catch(e){}return out};
+
+window.SDF_PROGRAMS305=Object.assign(window.SDF_PROGRAMS305||{},{coach,coachStyles:STYLES,
+ _rival:{root,styleFor,hotSeat,carouselHeadlines,afterCarousel,flushNews,maybePoach,poachCandidate,rivalryQuote,decorate,QUOTES}});
 })();
 
 // Build 299 module: layout. Slim phone chrome, one primary "play this week" action per screen, a cleaner Home,
@@ -14872,6 +17102,21 @@ function recommended(list=candidates()){
  return picks;
 }
 function brand(s){try{const base=(typeof TEAM_BRANDING!=='undefined'&&TEAM_BRANDING?.[s?.id])||{};return window.SDF_LEAGUE292?.creationBrand?.(s,base)||base||{}}catch{return{}}}
+// Build 306: custom leagues were only reachable from a collapsed box under all 128 teams. A compact card
+// right under the picker header opens the existing Import League dialog (Community Downloads tab).
+function leaguePromo(league){
+ const head=document.querySelector('#newDynastyTeamPickerV221>.ui221-team-picker-head');let card=$('ndLeaguePromo306');
+ const blocked=!!(window.SDF_SEEDS?.pending?.()||window.SDF_DYNASTY_STORY?.pending?.());
+ if(!head||!league||!window.SDF_LEAGUE294?.open||blocked){card?.remove();return}
+ if(!card){card=document.createElement('section');card.id='ndLeaguePromo306';card.className='nd-league-promo306';card.setAttribute('aria-label','Custom leagues');
+  card.innerHTML='<div class="nd-league-copy306"><small>CUSTOM LEAGUES · FREE</small><strong>Play a custom league</strong><span></span></div><button type="button" class="btn">Browse leagues</button>';
+  card.querySelector('button').onclick=()=>{const old=$('creationImport294');if(old)old.click();else window.SDF_LEAGUE294.open({mode:'creation',onSelect:(pack,title)=>window.SDF_LEAGUE292.selectCreation(pack,title)})}}
+ if(card.previousElementSibling!==head)head.after(card);
+ const status=$('creationStatus293')?.textContent?.trim()||'',custom=!!status&&!/^Default/i.test(status);
+ card.classList.toggle('active306',custom);
+ setText(card.querySelector('span'),custom?status:'Browse community leagues: real teams, custom rosters.');
+ setText(card.querySelector('button'),custom?'Change league':'Browse leagues');
+}
 function teamSelect(){
  const grid=$('schoolGrid');if(!grid)return;
  const league=$('creationLeague293');
@@ -14880,6 +17125,7 @@ function teamSelect(){
   const status=$('creationStatus293')?.textContent?.trim()||'',custom=!!status&&!/^Default/i.test(status);
   setText(box.querySelector('summary'),custom?`Custom league · ${status}`:'Advanced: custom league (optional) · import a shared league');
   if(custom&&!box.dataset.autoOpened){box.dataset.autoOpened='1';box.open=true}else if(!custom&&box.dataset.autoOpened)delete box.dataset.autoOpened}
+ leaguePromo(league);
  const picks=recommended(),sig=picks.map(s=>s.id+':'+s.name).join('|');let rec=$('sdf299Recommended');
  if(!picks.length){rec?.remove();return}
  if(!rec){rec=document.createElement('section');rec.id='sdf299Recommended';rec.className='panel sdf299-recommended';rec.setAttribute('aria-label','Recommended rebuilds')}
@@ -14903,5 +17149,6 @@ if(observer&&document.body)new MutationObserver(watch).observe(document.body,{ch
 if(typeof addEventListener==='function')addEventListener('resize',schedule);
 document.addEventListener('click',()=>setTimeout(schedule,0),true);
 watch();schedule();
+if(document.head&&!$('ndLeaguePromo306Style')){const st=document.createElement('style');st.id='ndLeaguePromo306Style';st.textContent='.nd-league-promo306{display:flex;align-items:center;gap:12px;margin:10px 0;padding:12px 14px;border:1px solid #5a4a8a;border-radius:14px;background:linear-gradient(160deg,#1b1f3d,#0e1828);color:#edf7ff}.nd-league-promo306.active306{border-color:#3fa77a;background:linear-gradient(160deg,#10302a,#0c1a25)}.nd-league-copy306{flex:1;min-width:0;display:grid;gap:2px}.nd-league-copy306 small{color:#e3b95a;font-weight:850;letter-spacing:.1em;font-size:11px}.nd-league-copy306 strong{font-size:17px;line-height:1.2}.nd-league-copy306 span{color:#a9c1d0;font-size:13px;line-height:1.35;overflow-wrap:anywhere}.nd-league-promo306 .btn{flex:none;min-height:44px;padding:10px 12px;font-size:13px;border:1px solid #884b9d;border-radius:10px;background:#652579;color:#fff;font-weight:800;white-space:nowrap;cursor:pointer}@media(max-width:359px){.nd-league-promo306{flex-wrap:wrap}.nd-league-promo306 .btn{width:100%}}';document.head.append(st)}
 window.SDF299_LAYOUT={refresh,recommended,keyActions,compactCard,lastResultHtml,shortLabel,expanded};
 })();
