@@ -18,6 +18,7 @@ if OUT.exists():
 shutil.copytree(SOURCE,OUT)
 shutil.copytree(ROOT/'play',OUT/'play')
 shutil.copytree(ROOT/'s',OUT/'s')
+shutil.copytree(ROOT/'install',OUT/'install')
 BROWSER=['cloud-config.js','web-shell.js','browser-save-bridge.js','browser-editors.js','browser-commerce-bridge.js','browser-team-editor-v195.js','browser-feedback.js','browser-shell.css','browser-bootstrap.js','browser-community-config.js','browser-growth.js','browser-growth-analytics.js','browser-landing.js','ad-config.js','_headers','icon.svg','manifest.webmanifest']
 for f in BROWSER:shutil.copy2(ROOT/f,OUT/f)
 shutil.copy2(ROOT/'browser-usage-privacy.html',OUT/'usage-privacy.html')
@@ -69,16 +70,23 @@ seo='''<meta name="description" content="Recruit, develop players and rebuild a 
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Saturday Dynasty Football | Build Your Dynasty">
 <meta name="twitter:description" content="Recruit, develop and rebuild your college football program.">
-<meta name="twitter:image" content="https://saturdaydynasty.ctoolis.workers.dev/icon-512.png">'''
+<meta name="twitter:image" content="https://saturdaydynasty.ctoolis.workers.dev/icon-512.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Saturday Dynasty">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">'''
 html=html.replace('</head>',seo+'\n</head>')
 html=re.sub(r'<script src="(?:ad-config|app-bundle)\.js[^\"]*"></script>','',html)
 html=html.replace('</head>',f'<link rel="stylesheet" href="browser-shell.css?v={BUILD}">\n</head>')
 html=html.replace('</body>',f'<script src="browser-bootstrap.js?v={BUILD}"></script>\n</body>')
 (OUT/'index.html').write_text(html,encoding='utf-8',newline='')
 (OUT/'app-ads.txt').write_text('google.com, pub-9690546015672361, DIRECT, f08c47fec0942fa0\nvungle.com, 6ad810575f9902f697752bfd, DIRECT, c107d686becd2d77\n',encoding='utf-8',newline='')
-manifest=json.loads((OUT/'manifest.webmanifest').read_text());manifest['icons']=[{'src':'icon-192.png','sizes':'192x192','type':'image/png'},{'src':'icon-512.png','sizes':'512x512','type':'image/png'}]
+manifest=json.loads((OUT/'manifest.webmanifest').read_text());manifest.setdefault('id','/');manifest.setdefault('categories',['games','sports']);manifest['icons']=[{'src':'icon-192.png','sizes':'192x192','type':'image/png'},{'src':'icon-512.png','sizes':'512x512','type':'image/png'}]
 (OUT/'manifest.webmanifest').write_text(json.dumps(manifest,indent=2),encoding='utf-8',newline='')
-core=['./','./index.html','./play/','./play/index.html','./play/gameplay-phone.jpg','./manifest.webmanifest']+['./'+p.name for p in OUT.iterdir() if p.suffix in {'.js','.css','.png','.svg'} and p.name!='sw.js']
+SITE='https://saturdaydynasty.ctoolis.workers.dev'
+(OUT/'robots.txt').write_text(f'User-agent: *\nAllow: /\nSitemap: {SITE}/sitemap.xml\n',encoding='utf-8',newline='')
+(OUT/'sitemap.xml').write_text('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'+''.join(f'  <url><loc>{SITE}{path}</loc></url>\n' for path in ['/','/play/','/install/'])+'</urlset>\n',encoding='utf-8',newline='')
+core=['./','./index.html','./play/','./play/index.html','./install/','./install/index.html','./play/gameplay-phone.jpg','./manifest.webmanifest']+['./'+p.name for p in OUT.iterdir() if p.suffix in {'.js','.css','.png','.svg'} and p.name!='sw.js']
 sw="""const CACHE='sdf-web-build__BUILD__-growth39';
 const CORE=__CORE__;
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting())));
@@ -90,6 +98,7 @@ self.addEventListener('fetch',event=>{
   const cached=await caches.match(request,{ignoreSearch:true});
   if(cached)return cached;
   if(request.mode==='navigate'&&(url.pathname==='/play'||url.pathname==='/play/'))return caches.match('./play/index.html');
+  if(request.mode==='navigate'&&(url.pathname==='/install'||url.pathname==='/install/'))return caches.match('./install/index.html');
   if(request.mode==='navigate')return caches.match('./index.html');
   return Response.error();
  }));
