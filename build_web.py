@@ -49,6 +49,7 @@ for target in ['window','document']:
  web_bundle=web_bundle.replace(target+".addEventListener('DOMContentLoaded',",'sdfWebOnReady('+target+',')
 # Do not rewrite the helper itself.
 web_bundle=web_bundle.replace("target.addEventListener('DOMContentLoaded',listener,options)","target.addEventListener('DOMContentLoaded',listener,options)")
+web_bundle=web_bundle.replace('https://saturdaydynasty.ctoolis.workers.dev','https://saturdaydynasty.dynastysportsstudios.com')
 (OUT/'app-bundle.js').write_text(web_bundle,encoding='utf-8',newline='')
 # Install account scoping before any IndexedDB reads.
 config=(ROOT/'cloud-config.js').read_text(encoding='utf-8')
@@ -59,18 +60,18 @@ html=(OUT/'index.html').read_text(encoding='utf-8')
 html=re.sub(r'Android V[0-9.]+',f'Web V{VERSION}',html).replace('href="manifest.json"','href="manifest.webmanifest"')
 html=re.sub(r'<title>[^<]+</title>','<title>Saturday Dynasty Football | Play College Football Dynasty Online</title>',html,count=1)
 seo='''<meta name="description" content="Recruit, develop players and rebuild a fictional college football program. Play Saturday Dynasty Football on desktop, iPhone or Android browsers.">
-<link rel="canonical" href="https://saturdaydynasty.ctoolis.workers.dev/">
+<link rel="canonical" href="https://saturdaydynasty.dynastysportsstudios.com/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Saturday Dynasty Football">
 <meta property="og:title" content="Saturday Dynasty Football | Build Your Dynasty">
 <meta property="og:description" content="Recruit, develop and compete in a college football management simulation. Play free in your browser.">
-<meta property="og:url" content="https://saturdaydynasty.ctoolis.workers.dev/">
-<meta property="og:image" content="https://saturdaydynasty.ctoolis.workers.dev/icon-512.png">
+<meta property="og:url" content="https://saturdaydynasty.dynastysportsstudios.com/">
+<meta property="og:image" content="https://saturdaydynasty.dynastysportsstudios.com/icon-512.png">
 <meta property="og:image:alt" content="Saturday Dynasty Football logo">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Saturday Dynasty Football | Build Your Dynasty">
 <meta name="twitter:description" content="Recruit, develop and rebuild your college football program.">
-<meta name="twitter:image" content="https://saturdaydynasty.ctoolis.workers.dev/icon-512.png">
+<meta name="twitter:image" content="https://saturdaydynasty.dynastysportsstudios.com/icon-512.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Saturday Dynasty">
@@ -83,7 +84,7 @@ html=html.replace('</body>',f'<script src="browser-bootstrap.js?v={BUILD}"></scr
 (OUT/'app-ads.txt').write_text('google.com, pub-9690546015672361, DIRECT, f08c47fec0942fa0\nvungle.com, 6ad810575f9902f697752bfd, DIRECT, c107d686becd2d77\n',encoding='utf-8',newline='')
 manifest=json.loads((OUT/'manifest.webmanifest').read_text());manifest.setdefault('id','/');manifest.setdefault('categories',['games','sports']);manifest['icons']=[{'src':'icon-192.png','sizes':'192x192','type':'image/png'},{'src':'icon-512.png','sizes':'512x512','type':'image/png'}]
 (OUT/'manifest.webmanifest').write_text(json.dumps(manifest,indent=2),encoding='utf-8',newline='')
-SITE='https://saturdaydynasty.ctoolis.workers.dev'
+SITE='https://saturdaydynasty.dynastysportsstudios.com'
 (OUT/'robots.txt').write_text(f'User-agent: *\nAllow: /\nSitemap: {SITE}/sitemap.xml\n',encoding='utf-8',newline='')
 (OUT/'sitemap.xml').write_text('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'+''.join(f'  <url><loc>{SITE}{path}</loc></url>\n' for path in ['/','/play/','/install/'])+'</urlset>\n',encoding='utf-8',newline='')
 core=['./','./index.html','./play/','./play/index.html','./install/','./install/index.html','./play/gameplay-phone.jpg','./manifest.webmanifest']+['./'+p.name for p in OUT.iterdir() if p.suffix in {'.js','.css','.png','.svg'} and p.name!='sw.js']

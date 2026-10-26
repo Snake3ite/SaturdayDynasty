@@ -44,7 +44,7 @@
   if(!permitted()){purge();return false}if(busy||navigator.onLine===false||!context()||!data.queue.length)return false;
   const batch=data.queue.slice(0,25);busy=true;active=new AbortController();const controller=active,timeout=setTimeout(()=>controller.abort(),10000);
   try{
-   const response=await fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},credentials:'omit',referrerPolicy:'no-referrer',signal:controller.signal,body:JSON.stringify({consent:true,qa:location.hostname!=='saturdaydynasty.ctoolis.workers.dev',events:batch})});
+   const response=await fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},credentials:'omit',referrerPolicy:'no-referrer',signal:controller.signal,body:JSON.stringify({consent:true,qa:!['saturdaydynasty.dynastysportsstudios.com','saturdaydynasty.ctoolis.workers.dev'].includes(location.hostname),events:batch})});
    if(!response.ok||(await response.json()).ok!==true)return false;if(!permitted()){purge();return false}
    const ids=new Set(batch.map(e=>e.id));data.queue=data.queue.filter(e=>!ids.has(e.id));persist();return true;
   }catch{return false}finally{clearTimeout(timeout);active=null;busy=false}

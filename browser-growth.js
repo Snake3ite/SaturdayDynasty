@@ -4,7 +4,7 @@
   'use strict';
   if(window.SDF_GROWTH_QA)return;
 
-  const GAME_URL='https://saturdaydynasty.ctoolis.workers.dev/';
+  const GAME_URL='https://saturdaydynasty.dynastysportsstudios.com/';
   const APP_URL='https://play.google.com/store/apps/details?id=com.coreytoolis.saturdaydynastyfootball';
   const params=new URLSearchParams(location.search);
   const debug=params.get('sdf_growth_debug')==='1';
