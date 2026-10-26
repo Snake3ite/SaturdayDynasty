@@ -3,6 +3,11 @@
   "name": "saturdaydynasty",
   "main": "worker.js",
   "compatibility_date": "2026-08-18",
+  "workers_dev": true,
+  "preview_urls": true,
+  "routes": [
+    { "pattern": "saturdaydynasty.dynastysportsstudios.com", "custom_domain": true }
+  ],
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
