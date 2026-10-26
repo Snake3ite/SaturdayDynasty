@@ -2,7 +2,7 @@ import { withSupabase } from 'npm:@supabase/server@^1'
 
 const DESTINATION = 'ctoolis@gmail.com'
 const FROM = 'Saturday Dynasty Feedback <onboarding@resend.dev>'
-const SITE_URL = 'https://saturdaydynasty.ctoolis.workers.dev'
+const SITE_URLS = ['https://saturdaydynasty.dynastysportsstudios.com', 'https://saturdaydynasty.ctoolis.workers.dev']
 const MAX_FILE_BYTES = 4 * 1024 * 1024
 const ALLOWED_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp'])
 
@@ -37,7 +37,7 @@ export default {
     }
 
     const origin = req.headers.get('origin') || ''
-    if (origin && origin !== SITE_URL && !/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+    if (origin && !SITE_URLS.includes(origin) && !/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
       return Response.json({ error: 'Origin not allowed' }, { status: 403 })
     }
 

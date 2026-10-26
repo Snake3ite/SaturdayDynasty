@@ -6,7 +6,7 @@
  const ENDPOINT='https://fwnvwkffxazwsmaiqayj.supabase.co/functions/v1/browser-growth-ingest';
  const EVENTS=new Set(['landing_view','play_click','game_ready','dynasty_created','first_recruit','game_completed','return','community_shown','community_opened','share_opened','share_completed']);
  const CONTEXTS=new Set(['landing','startup','dashboard','season_recap','discord','facebook']);
- const SOURCES=new Set(['facebook','facebook_personal','discord','youtube','google','direct','other']);
+ const SOURCES=new Set(['facebook','facebook_personal','discord','youtube','google','reddit','operation_sports','tiktok','instagram','itchio','gamejolt','studio_site','share','direct','other']);
  const MEDIUMS=new Set(['organic_social','community','organic_video','paid_social','cpc','referral','direct','other']);
  const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
  let data=null,session=null,busy=false,timer=null,active=null;

@@ -7,7 +7,7 @@ create table if not exists public.sdf_browser_growth_events (
  received_at timestamptz not null default now(),
  cohort_hash text not null check (cohort_hash ~ '^[0-9a-f]{64}$'),
  session_hash text not null check (session_hash ~ '^[0-9a-f]{64}$'),
- utm_source text not null check (utm_source in ('facebook','facebook_personal','discord','youtube','google','direct','other')),
+ utm_source text not null check (utm_source in ('facebook','facebook_personal','discord','youtube','google','reddit','operation_sports','tiktok','instagram','itchio','gamejolt','studio_site','share','direct','other')),
  utm_medium text not null check (utm_medium in ('organic_social','community','organic_video','paid_social','cpc','referral','direct','other')),
  utm_campaign text not null default '' check (utm_campaign ~ '^[a-z0-9_-]{0,48}$'),
  context text not null default '' check (context in ('','landing','startup','dashboard','season_recap','discord','facebook')),

@@ -3,7 +3,9 @@ import { withSupabase } from 'npm:@supabase/server@^1'
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!)
 
-const SITE_URL = 'https://saturdaydynasty.ctoolis.workers.dev'
+// The game is served from both addresses; checkout returns to the one the player used.
+const SITE_URLS = ['https://saturdaydynasty.dynastysportsstudios.com', 'https://saturdaydynasty.ctoolis.workers.dev']
+const siteFor = (req: Request) => { const o = req.headers.get('origin') || ''; return SITE_URLS.includes(o) ? o : SITE_URLS[0] }
 
 // Live Stripe products. We resolve each product's active default one-time price
 // server-side so prices are never trusted from the browser.
@@ -97,8 +99,8 @@ export default {
       const session = await stripe.checkout.sessions.create({
         mode: 'payment',
         line_items: [{ price: price.id, quantity: 1 }],
-        success_url: `${SITE_URL}/?purchase=success&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${SITE_URL}/?purchase=cancelled`,
+        success_url: `${siteFor(req)}/?purchase=success&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${siteFor(req)}/?purchase=cancelled`,
         client_reference_id: userId,
         customer_email: email,
         metadata: {

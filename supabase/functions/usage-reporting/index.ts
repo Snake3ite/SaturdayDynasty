@@ -1,5 +1,5 @@
 // Server-side only. No database credentials or email API keys enter the game bundle.
-const SITE='https://saturdaydynasty.ctoolis.workers.dev';
+const SITE='https://saturdaydynasty.dynastysportsstudios.com',SITES=['https://saturdaydynasty.dynastysportsstudios.com','https://saturdaydynasty.ctoolis.workers.dev'];
 const EVENTS=new Set(['reporting_started','session','dynasty_started','game_completed','season_completed','first_recruit','practice_chosen','first_game','second_season','guide_started','guide_dismissed','guide_completed','shop_opened','preview_opened','checkout_started','checkout_canceled','checkout_failed','checkout_pending','purchase_confirmed','reward_shown','reward_impression','reward_earned','reward_failed','interstitial_shown','interstitial_impression','scenario_started','scenario_completed','scenario_ended','first_season_finished','first_game_under_5m','first_game_under_15m','first_game_over_15m','ad_clicked','ad_requested','ad_loaded','ad_load_failed','ad_show_failed','ad_closed','ad_canceled','ad_blocked','ad_deferred','resource_prompt_shown','resource_prompt_dismissed','reward_offer_seen','first_offseason','recruiting_opened','portal_opened','facilities_opened','gameplan_opened','live_started','live_resume_attempt','live_resumed','live_resume_failed','save_failed','save_recovered','simulation_failed','runtime_error','reporting_recovered','reporting_queue_dropped','halftime_reviewed','halftime_adjusted','community_opened','resource_summary']);
 const PRODUCTS=new Set(['','all_access_pass','commissioner_mode','remove_ads','player_editor','team_editor','scenario_impossible_rebuilds','scenario_championship_pressure','scenario_recruiting_nightmares','recruiting_boost','program_rescue','season_booster','supporter_rookie','supporter_all_american','supporter_legend']);
 const REWARDED_AD_EVENTS=new Set(['reward_shown','reward_impression','reward_earned','reward_failed']);
@@ -65,7 +65,7 @@ function formatReport(p:any){
 }
 Deno.serve(async(req)=>{
  const origin=req.headers.get('origin')||'';
- const allowed=!origin||origin===SITE||/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+ const allowed=!origin||SITES.includes(origin)||/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
  const headers={'Access-Control-Allow-Origin':allowed?(origin||SITE):SITE,'Access-Control-Allow-Headers':'content-type,apikey,authorization','Access-Control-Allow-Methods':'POST, OPTIONS','Vary':'Origin'};
  const reply=(body:unknown,status=200)=>Response.json(body,{status,headers});
  if(!allowed)return reply({error:'Origin not allowed'},403);

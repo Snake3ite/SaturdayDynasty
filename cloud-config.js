@@ -149,6 +149,8 @@ window.SDF_CLOUD_CONFIG={
    let data=null;try{data=await r.json()}catch{}
    if(!r.ok)throw new Error(data?.error||data?.message||`Checkout request failed (${r.status})`);
    if(!data?.url)throw new Error('Checkout URL missing.');
+   // Stripe Checkout cannot run inside a frame (itch.io / Game Jolt embeds): use a new tab there.
+   if(window.top!==window){const reset=()=>{b.disabled=false;b.textContent=`BUY ${b.closest('.sdfProd').dataset.p}`};const w=window.open(data.url,'_blank');reset();if(w){try{w.opener=null}catch{}return status('Finish checkout in the new tab, then reload this page.','good')}sessionStorage.removeItem('sdfCheckout236');return status('Your browser blocked the checkout tab. To buy, open saturdaydynasty.dynastysportsstudios.com directly.','bad')}
    location.assign(data.url)
   }catch(x){window.SDF_JOURNEY?.record('checkout_failed',k);sessionStorage.removeItem('sdfCheckout236');console.error(x);b.disabled=false;b.textContent=`BUY ${b.closest('.sdfProd').dataset.p}`;status(`Checkout failed: ${x?.message==='NOT_SIGNED_IN'?'sign in required':x?.message||'Unknown error'}`,'bad')}
  }
