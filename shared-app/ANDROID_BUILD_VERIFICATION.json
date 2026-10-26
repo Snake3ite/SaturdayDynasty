@@ -1,7 +1,7 @@
 {
-  "version": "27.6.2",
-  "release": "Android V27.6.2 · Build 307 · Big Moments Update",
-  "versionCode": 307,
+  "version": "27.6.3",
+  "release": "Android V27.6.3 · Build 308 · Big Moments Update",
+  "versionCode": 308,
   "fileCount": 177,
   "files": [
     {
@@ -11,8 +11,8 @@
     },
     {
       "path": "app-bundle.js",
-      "sha256": "55e286fdca4c7e443a194f3260e8e49407dc5ecac98edb351363522611172d3d",
-      "bytes": 2200444
+      "sha256": "fe393eaa3b554c17a0673e5275a09971ef962784562bc9fc3df7489e8a2e0695",
+      "bytes": 2212148
     },
     {
       "path": "app-shell.css",
@@ -716,7 +716,7 @@
     },
     {
       "path": "index.html",
-      "sha256": "dbf16ea127ad23e559ef175e135d472ef3a6cd8d6b6a4eb36b930e90f319bc81",
+      "sha256": "189bb6ca441ed51f819a7c0d01778cc451ec6ea28b6a37dd0de83320310d739c",
       "bytes": 47818
     },
     {
