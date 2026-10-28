@@ -1,7 +1,7 @@
 {
-  "version": "27.6.3",
-  "release": "Android V27.6.3 · Build 308 · Big Moments Update",
-  "versionCode": 308,
+  "version": "27.6.5",
+  "release": "Android V27.6.5 · Build 310 · Program Money Update",
+  "versionCode": 310,
   "fileCount": 177,
   "files": [
     {
@@ -11,8 +11,8 @@
     },
     {
       "path": "app-bundle.js",
-      "sha256": "fe393eaa3b554c17a0673e5275a09971ef962784562bc9fc3df7489e8a2e0695",
-      "bytes": 2212148
+      "sha256": "1537047376d539b23aecf632c7c09ba6b4c3c6c13697370fab72c1b956ec0000",
+      "bytes": 2220138
     },
     {
       "path": "app-shell.css",
@@ -716,8 +716,8 @@
     },
     {
       "path": "index.html",
-      "sha256": "189bb6ca441ed51f819a7c0d01778cc451ec6ea28b6a37dd0de83320310d739c",
-      "bytes": 47818
+      "sha256": "094ef19f064dcae99b455482a7b271a7863942ae0745d490cc9b2f13c0c8126b",
+      "bytes": 47820
     },
     {
       "path": "live-game.css",

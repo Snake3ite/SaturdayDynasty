@@ -1517,7 +1517,7 @@ window.SDF_BROWSER_SAVES={enabled,ready,get pending(){return pending},get settle
 // Build 307: save-slot cards show the save's renamed conference (Commissioner / custom league), not the canonical name.
 function slotConference(school,data){const raw=school?.conference||'';if(school?.conferenceDisplay)return String(school.conferenceDisplay);try{return raw&&window.SDF_CONFERENCES?.name?window.SDF_CONFERENCES.name(school.conferenceId||raw,data)||raw:raw}catch{return raw}}
 
-const RELEASE='Android V27.6.3 · Build 308 · Big Moments Update';
+const RELEASE='Android V27.6.5 · Build 310 · Program Money Update';
 const SAVE_PREFIX='SaturdayDynastyFootballAndroidV1';
 const LEGACY_PREFIXES=['SaturdayArchitectAndroidV1','SaturdayArchitectCompleteV9','SaturdayArchitectStatsV82','SaturdayArchitectDynastyV81','SaturdayArchitectRealignmentV74','SaturdayArchitectRecruitingV73','SaturdayArchitect128V72','SaturdayArchitectMobileV71'];
 const ui={activeTab:'dashboard',recruitPage:1,recruitPageSize:window.innerWidth<=760?30:75,rosterQuery:'',recruitQuery:''};
@@ -1681,11 +1681,18 @@ function compactState(){
   return out
  });
  copy.roster=(copy.roster||[]).map(p=>({...p,gameLog:(p.gameLog||[]).filter(g=>Number(g.year||copy.year)===Number(copy.year)).slice(-28)}));
- if(copy.aiRosters){for(const [teamId,roster] of Object.entries(copy.aiRosters)){copy.aiRosters[teamId]=(roster||[]).map(p=>{const out={id:p.id,name:p.name,pos:p.pos,arch:p.arch,hometown:p.hometown,year:Number(p.year||1),ovr:Number(p.ovr||60),pot:Number(p.pot||p.ovr||60),dev:p.dev||'Normal',morale:Number(p.morale??75)};if(p.personality)out.personality=p.personality;if(p.attrs)out.attributeData293=['speed','strength','skill','awareness'].map(k=>Number.isFinite(Number(p.attrs[k]))?Number(p.attrs[k]):out.ovr);if(p.injury)out.injury=p.injury;if(p.student272)out.student272=p.student272;if(p.recruitCharacter272)out.recruitCharacter272=p.recruitCharacter272;if(p.redshirt)out.redshirt=true;if(p.redshirtUsed)out.redshirtUsed=true;if(p.walkOn)out.walkOn=true;if(p.signedYear)out.signedYear=p.signedYear;if(Number(p.stars)>0)out.stars=Number(p.stars);if(Number(p.recruitRank)>0)out.recruitRank=Number(p.recruitRank);if((p.statHistory||[]).length)out.statHistory=(p.statHistory||[]).slice(-4);const ss=p.seasonStats||{},seasonData=SAVE_STAT_FIELDS_V181.map(k=>Number(ss[k]||0));if(seasonData.some(v=>v!==0)){const sparse=SAVE_STAT_FIELDS_V181.map((k,i)=>[k,seasonData[i]]).filter(([,v])=>v!==0);out.seasonData=JSON.stringify(sparse).length<JSON.stringify(seasonData).length?sparse:seasonData;}if((p.gameLog||[]).length)out.gameLog=(p.gameLog||[]).filter(g=>Number(g.year||copy.year)===Number(copy.year)).slice(-24).map(g=>packAiGameLogV181(g,copy.year));return out})}}
+ if(copy.aiRosters){for(const [teamId,roster] of Object.entries(copy.aiRosters)){copy.aiRosters[teamId]=(roster||[]).map(p=>{const out={id:p.id,name:p.name,pos:p.pos,arch:p.arch,hometown:p.hometown,year:Number(p.year||1),ovr:Number(p.ovr||60),pot:Number(p.pot||p.ovr||60),dev:p.dev||'Normal',morale:Number(p.morale??75)};if(p.personality)out.personality=p.personality;if(p.attrs)out.attributeData293=['speed','strength','skill','awareness'].map(k=>Number.isFinite(Number(p.attrs[k]))?Number(p.attrs[k]):out.ovr);if(p.injury)out.injury=p.injury;packStudent309(out,p);if(p.redshirt)out.redshirt=true;if(p.redshirtUsed)out.redshirtUsed=true;if(p.walkOn)out.walkOn=true;if(p.signedYear)out.signedYear=p.signedYear;if(Number(p.stars)>0)out.stars=Number(p.stars);if(Number(p.recruitRank)>0)out.recruitRank=Number(p.recruitRank);if((p.statHistory||[]).length)out.statHistory=(p.statHistory||[]).slice(-4);const ss=p.seasonStats||{},seasonData=SAVE_STAT_FIELDS_V181.map(k=>Number(ss[k]||0));if(seasonData.some(v=>v!==0)){const sparse=SAVE_STAT_FIELDS_V181.map((k,i)=>[k,seasonData[i]]).filter(([,v])=>v!==0);out.seasonData=JSON.stringify(sparse).length<JSON.stringify(seasonData).length?sparse:seasonData;}if((p.gameLog||[]).length)out.gameLog=(p.gameLog||[]).filter(g=>Number(g.year||copy.year)===Number(copy.year)).slice(-24).map(g=>packAiGameLogV181(g,copy.year));return out})}}
  // Identity overrides are the canonical logo store; presentation rows do not need copies.
  for(const list of [copy.world,copy.rankings,copy.cfpRankings,copy.playoff,copy.standings,[copy.school]])for(const team of list||[]){const logo=copy.teamIdentityOverrides?.[String(team?.id)]?.logoData;if(!logo)continue;for(const key of ['logo','logoData'])if(team[key]===logo)delete team[key]}
  return copy
 }
+// Build 309: AI players' student and recruit-character records are packed into short arrays (about 2 MB less per save).
+// Only records with exactly the known keys and no history are packed, so anything unusual is saved as it is.
+const STUDENT_KEYS309=['gpa','responsibility','teamwork','incidents','suspendedGames','tutoringWeeks','lightPracticeWeeks'];
+function packStudent309(out,p){const st=p.student272,rc=p.recruitCharacter272;let packed=false;
+ if(st&&typeof st==='object'&&Array.isArray(st.history)&&!st.history.length&&Object.keys(st).every(k=>STUDENT_KEYS309.includes(k)||k==='history'||k==='eligibilityMigrated272')&&STUDENT_KEYS309.every(k=>Number.isFinite(st[k]))){out.studentData309=STUDENT_KEYS309.map(k=>st[k]);if(st.eligibilityMigrated272)out.studentData309.push(1);packed=true}else if(st)out.student272=st;
+ if(rc&&typeof rc==='object'){const keys=Object.keys(rc);if(packed&&keys.length===3&&Number.isFinite(rc.highSchoolGpa)&&rc.responsibility===st.responsibility&&rc.teamwork===st.teamwork&&keys.every(k=>['highSchoolGpa','responsibility','teamwork'].includes(k)))out.characterData309=rc.highSchoolGpa;else out.recruitCharacter272=rc}}
+function unpackStudent309(p){if(Array.isArray(p.studentData309)){const d=p.studentData309,st=Object.fromEntries(STUDENT_KEYS309.map((k,i)=>[k,d[i]]));st.history=[];if(d[7])st.eligibilityMigrated272=true;p.student272=st;if(p.characterData309!=null)p.recruitCharacter272={highSchoolGpa:p.characterData309,responsibility:st.responsibility,teamwork:st.teamwork}}delete p.studentData309;delete p.characterData309}
 function hydrateState(data){
  state=data;ensureExpansionState?.();ensureV9State?.();state.saveSlot=state.saveSlot||$('saveSlotPicker')?.value||'1';state.news=state.news||[];state.scoutingReports=state.scoutingReports||{};
  const persistentRecruiting=Number(state.recruitingPersistenceVersion||0)>=181;
@@ -1696,7 +1703,7 @@ function hydrateState(data){
   if(!persistentRecruiting&&r.shortlist){let set=new Set(r.shortlist);r.lockedOut=schools.filter(s=>!set.has(s.id)).map(s=>s.id);delete r.shortlist}else r.lockedOut=r.lockedOut||[];
  });
  if(!persistentRecruiting)state.recruitingNeedsRecalcAll=true;
- if(state.aiRosters){for(const roster of Object.values(state.aiRosters)){for(const p of roster||[]){if(Array.isArray(p.attributeData293)){p.attrs=Object.fromEntries(['speed','strength','skill','awareness'].map((k,i)=>[k,Number(p.attributeData293[i]??p.ovr)]));delete p.attributeData293}if(!p.seasonStats&&Array.isArray(p.seasonData)){if(p.seasonData.length&&Array.isArray(p.seasonData[0]))p.seasonStats=Object.fromEntries(p.seasonData);else p.seasonStats=Object.fromEntries(SAVE_STAT_FIELDS_V181.map((k,i)=>[k,Number(p.seasonData[i]||0)]));delete p.seasonData}p.gameLog=Array.isArray(p.gameLog)?p.gameLog.map(g=>unpackAiGameLogV181(g,state.year)):[];p.statHistory??=[];const ss=p.seasonStats||{};p.stats={games:Number(ss.games||0),yards:Number(ss.passYds||0)+Number(ss.rushYds||0)+Number(ss.recYds||0),td:Number(ss.passTD||0)+Number(ss.rushTD||0)+Number(ss.recTD||0),tackles:Number(ss.tackles||0),sacks:Number(ss.sacks||0),int:Number(ss.defINT||0)}}}}
+ if(state.aiRosters){for(const roster of Object.values(state.aiRosters)){for(const p of roster||[]){unpackStudent309(p);if(Array.isArray(p.attributeData293)){p.attrs=Object.fromEntries(['speed','strength','skill','awareness'].map((k,i)=>[k,Number(p.attributeData293[i]??p.ovr)]));delete p.attributeData293}if(!p.seasonStats&&Array.isArray(p.seasonData)){if(p.seasonData.length&&Array.isArray(p.seasonData[0]))p.seasonStats=Object.fromEntries(p.seasonData);else p.seasonStats=Object.fromEntries(SAVE_STAT_FIELDS_V181.map((k,i)=>[k,Number(p.seasonData[i]||0)]));delete p.seasonData}p.gameLog=Array.isArray(p.gameLog)?p.gameLog.map(g=>unpackAiGameLogV181(g,state.year)):[];p.statHistory??=[];const ss=p.seasonStats||{};p.stats={games:Number(ss.games||0),yards:Number(ss.passYds||0)+Number(ss.rushYds||0)+Number(ss.recYds||0),td:Number(ss.passTD||0)+Number(ss.rushTD||0)+Number(ss.recTD||0),tackles:Number(ss.tackles||0),sacks:Number(ss.sacks||0),int:Number(ss.defINT||0)}}}}
  (state.roster||[]).forEach(p=>ensurePlayerStats?.(p));window.SDF_V195?.applyIdentityOverrides?.(state);window.migrateDynastyCore?.();window.SDF_V165?.migrateState?.();window.SDF_AI_ROSTERS?.ensureAll?.();initializeDepthChartSafe();applyBrand();window.SDF_V175?.rehydrate?.();
 }
 function saveKey(slot=state.saveSlot||'1'){return `${SAVE_PREFIX}_slot${slot}`}
@@ -1914,7 +1921,7 @@ state.school=null;
 showDynastyPicker();
 window.addEventListener('beforeunload',event=>{if(window.SDF_BROWSER_SAVES?.enabled&&state.school&&(saveTimer||saveIdleHandle!=null||window.SDF_BROWSER_SAVES.pending||$('autosaveStatus')?.classList.contains('error'))){event.preventDefault();event.returnValue=''}});
 window.SDF_BROWSER_SAVES?.ready.then(()=>renderSaveManager()).catch(()=>{});
-window.SDF_RELEASE_TEST={compactState,hydrateState,saveNow,scheduleSave,filteredRecruits,ui,readSlotSummary,deleteSlotCompletely,renderSaveManager,loadReleaseSave};
+window.SDF_RELEASE_TEST={compactState,hydrateState,unpackStudent309,saveNow,scheduleSave,filteredRecruits,ui,readSlotSummary,deleteSlotCompletely,renderSaveManager,loadReleaseSave};
 })();
 
 (()=>{
@@ -2863,15 +2870,17 @@ const priorStart=window.start;
 window.start=function(...args){
  const result=priorStart.apply(this,args);ensureRosterFields();state.nilBudget=annualNilAllocation();state._nilAllocationYear=state.year;window.renderAll();saveV105('Separate budgets initialized');return result
 };
-const NIL_RESERVE308=6000000,NIL_SWEEP_MAX308=2000000,FACILITY_UPKEEP308=60000;
+const NIL_RESERVE308=25000000,NIL_SWEEP_MAX308=500000,NIL_SWEEP_RATE308=.10,FACILITY_UPKEEP308=60000,NIL_BIG_BANK309=50000000,NIL_BIG_RATE309=.05,NIL_SWEEP_CEILING309=2000000;
+// Build 309: above $50M the yearly booster share grows by 5% of the extra (up to $2M a year), so a huge bank keeps draining.
+const nilSweepCap309=budget=>Math.min(NIL_SWEEP_CEILING309,NIL_SWEEP_MAX308+Math.max(0,budget-NIL_BIG_BANK309)*NIL_BIG_RATE309);
 const priorBegin=window.beginYear;
 window.beginYear=function(...args){
  const priorYear=state._nilAllocationYear,result=priorBegin.apply(this,args);ensureRosterFields();
  if(state.school&&priorYear!==state.year){const allocation=annualNilAllocation(),carry=Math.min(Number(state.nilBudget||0),Math.round(allocation*.5));state.nilBudget=allocation+carry;state._nilAllocationYear=state.year;state.news.push(`The NIL collective allocated ${money5(allocation)} for this recruiting cycle. Program funds remain separate.`);
-  // Build 308: unspent program money no longer piles up forever. Each upgraded facility level costs $60k a year in
-  // upkeep, then boosters move 25% of the budget above a $6M reserve into the NIL collective (at most $2M a year).
+  // Build 308/309: each upgraded facility level costs $60k a year in upkeep. Schools keep their program money for
+  // facilities and staff; only a very large pile feeds NIL: boosters move 10% of the budget above $25M (at most $500k a year).
   const levels=Object.values(state.facilities||{}).reduce((n,v)=>n+Math.max(0,Number(v||1)-1),0),upkeep=Math.min(Math.max(0,Number(state.budget||0)),levels*FACILITY_UPKEEP308);if(upkeep>0){state.budget-=upkeep;state.lastFacilityUpkeep308={year:state.year,amount:upkeep};state.news.push(`Facility upkeep cost ${money5(upkeep)} this year.`)}
-  const surplus=Math.max(0,Number(state.budget||0)-NIL_RESERVE308),boost=Math.min(NIL_SWEEP_MAX308,Math.round(surplus*.25/1000)*1000);if(boost>=10000){state.budget-=boost;state.nilBudget+=boost;state.lastNilSweep308={year:state.year,amount:boost};state.news.push(`Boosters moved ${money5(boost)} of unspent program money into the NIL collective.`)}}
+  const surplus=Math.max(0,Number(state.budget||0)-NIL_RESERVE308),boost=Math.round(Math.min(nilSweepCap309(Number(state.budget||0)),surplus*NIL_SWEEP_RATE308)/1000)*1000;if(boost>=10000){state.budget-=boost;state.nilBudget+=boost;state.lastNilSweep308={year:state.year,amount:boost};state.news.push(`Boosters moved ${money5(boost)} of unspent program money into the NIL collective.`)}}
  return result
 };
 
@@ -3261,8 +3270,9 @@ function buildNationalDraftBoard111(year=Number(state.year),force=false){
 }
 // Build 308: strong programs develop players a little past their listed potential, which keeps elite rosters near
 // 88-90 instead of everyone settling around 80. Weak programs get no bonus, so the gap between tiers stays real.
-function eliteDevelopment308(program){const prestige=Number(program?.prestige||50);return prestige>=90?8:prestige>=82?5:prestige>=72?2:0}
-function aiProgressGain111(p,program){const dev=p.dev==='Elite'?3:p.dev==='Star'?2:p.dev==='Impact'?1:0,coach=Number(program.coach||65)>=82?1:Number(program.coach||65)>=68&&seededFloat111(`coachgrow-${state.year}-${p.id}`)<.60?1:0,facility=Number(program.facilities||50)>=82?1:Number(program.facilities||50)>=65&&seededFloat111(`facgrow-${state.year}-${p.id}`)<.4?1:0,young=Number(p.year)<=2&&seededFloat111(`younggrow-${state.year}-${p.id}`)<.35?1:0,starter=p.starter&&seededFloat111(`startergrow-${state.year}-${p.id}`)<.25?1:0,speed=Number(state.realismSettings?.progression||1),elite=Number(program.prestige||50)>=85?1:0;return Math.max(1,Math.round((seededInt111(`basegrow-${state.year}-${p.id}`,1,2)+dev+coach+facility+young+starter+elite)*speed))}
+// Build 309: national powers (90+ prestige) grow a step faster and further, so the top doesn't drift toward the middle.
+function eliteDevelopment308(program){const prestige=Number(program?.prestige||50);return prestige>=90?10:prestige>=82?6:prestige>=72?2:0}
+function aiProgressGain111(p,program){const dev=p.dev==='Elite'?3:p.dev==='Star'?2:p.dev==='Impact'?1:0,coach=Number(program.coach||65)>=82?1:Number(program.coach||65)>=68&&seededFloat111(`coachgrow-${state.year}-${p.id}`)<.60?1:0,facility=Number(program.facilities||50)>=82?1:Number(program.facilities||50)>=65&&seededFloat111(`facgrow-${state.year}-${p.id}`)<.4?1:0,young=Number(p.year)<=2&&seededFloat111(`younggrow-${state.year}-${p.id}`)<.35?1:0,starter=p.starter&&seededFloat111(`startergrow-${state.year}-${p.id}`)<.25?1:0,speed=Number(state.realismSettings?.progression||1),elite=Number(program.prestige||50)>=90?2:Number(program.prestige||50)>=85?1:0;return Math.max(1,Math.round((seededInt111(`basegrow-${state.year}-${p.id}`,1,2)+dev+coach+facility+young+starter+elite)*speed))}
 function processAiOffseason111(){
  if(!state.school||!state.world?.length)return null;if(Number(state.aiRosterOffseasonYear)===Number(state.year))return state.aiRosterOffseasonSummary||null;ensureAiRosters();const year=Number(state.year),summary=[],board=buildNationalDraftBoard111(year),draftRows=board.rows||[],earlyEntries=board.earlyEntries||[];
  for(const school of schools){const id=Number(school.id);if(id===userId())continue;const program=program111(school),world=worldTeam111(id),schoolDraftRows=draftRows.filter(d=>Number(d.schoolId)===id),earlyIds=new Set(earlyEntries.filter(d=>Number(d.schoolId)===id).map(d=>d.playerId));let roster=cachedAiRoster111(id).map(p=>({...p})),graduates=0,earlyEntrants=0;
@@ -4041,7 +4051,7 @@ function renderFinal(game){
  $12('liveContinueBtn').onclick=()=>{$12('gameSimModal').classList.add('hidden');if(state.postseasonFlow?.pendingAdvance&&window.SDF_V16?.continuePostseasonFlow){window.SDF_V16.continuePostseasonFlow();return}window.showTab('dashboard')};
  $12('liveInjuryBtn').onclick=()=>{$12('gameSimModal').classList.add('hidden');window.showTab('roster');setTimeout(()=>{document.querySelector('#rosterTab .tab-section-btn[data-key="injuries"]')?.click()},60)};
  body.onkeydown=e=>{if(document.querySelector('#sdfContextHelp.open,#sdfHelpCenter.open,#tutorialPanel.sdf-guided-welcome:not(.hidden)'))return;if(e.key!=='Tab')return;const first=$12('liveContinueBtn'),last=$12('liveInjuryBtn');if(e.shiftKey&&(document.activeElement===first||document.activeElement===$12('gameSimTitle'))){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}};
- $12('gameSimTitle').focus({preventScroll:true});body.closest('.game-sim-card').scrollTop=0;tone(win?'win':'loss')
+ $12('gameSimTitle').focus({preventScroll:true});const simCard=body.closest('.game-sim-card');if(simCard)simCard.scrollTop=0;tone(win?'win':'loss')
 }
 
 function paintGameCenter(force=false){const gap=currentSpeed>=4?520:currentSpeed>=2?700:0,now=Date.now();if(force||gap===0||now-lastGameCenterPaint>=gap){lastGameCenterPaint=now;renderGameCenter();return true}return false}
@@ -6092,7 +6102,7 @@ function begin(){
  work=editorPreview?sampleEditorState():(rel()?.compactState?.()||null);
  // Editor drafts use live attributes. Keeping the packed save representation too
  // would let hydration replace newly edited AI attributes with their old values.
- for(const roster of Object.values(work?.aiRosters||{}))for(const p of roster||[]){if(Array.isArray(p.attributeData293)){p.attrs=Object.fromEntries(['speed','strength','skill','awareness'].map((key,i)=>[key,Number(p.attributeData293[i]??p.ovr)]));delete p.attributeData293}}
+ for(const roster of Object.values(work?.aiRosters||{}))for(const p of roster||[]){window.SDF_RELEASE_TEST?.unpackStudent309?.(p);if(Array.isArray(p.attributeData293)){p.attrs=Object.fromEntries(['speed','strength','skill','awareness'].map((key,i)=>[key,Number(p.attributeData293[i]??p.ovr)]));delete p.attributeData293}}
  return work
 }
 function current(){return work}
@@ -9112,7 +9122,7 @@ async function flush(){
  for(const item of data.queue){if(batch.length===(singleEventRetry?1:40)||item.trackingId!==trackingId)break;if(JSON.stringify(batch).length+JSON.stringify(item).length>13000&&batch.length)break;batch.push(item)}
  let timedOut=false,attemptCode=null;const controller=new AbortController(),timeout=setTimeout(()=>{timedOut=true;controller.abort()},10000);activeRequest=controller;
  try{
-  const payload={action:'events',platform:native()?'android':'browser',qa:!native()&&location.hostname!=='saturdaydynasty.ctoolis.workers.dev',events:batch.map(({trackingId,...e})=>e)};
+  const payload={action:'events',platform:native()?'android':'browser',qa:!native()&&!['saturdaydynasty.dynastysportsstudios.com','saturdaydynasty.ctoolis.workers.dev'].includes(location.hostname),events:batch.map(({trackingId,...e})=>e)};
   if(BUILD!==null)payload.build=BUILD;
   if(trackingId)payload.device=trackingId;
   const response=await fetch(URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),signal:controller.signal,credentials:'omit',referrerPolicy:'no-referrer'});
@@ -9835,10 +9845,16 @@ function portalLabel(){const f=state.offseasonFlow217;if(f?.portalClosed)return 
 function label(){if(state.phase==='PORTAL'){const missing=window.SDF_V217_OFFSEASON?.missing?.()||[];return missing.length?`Offseason preparation · ${4-missing.length} of 4 complete`:portalLabel()}if(state.phase==='REGULAR')return`Year ${state.year} · Week ${state.week} of ${state.schedule?.length||12}${isBye()?' · Bye week':''}`;return`Year ${state.year} · ${{SIGNING:'Signing Day',CHAMP:'Conference championships',BOWLS:'Bowl / playoff',AWARDS:'Awards',POST:'Season complete'}[state.phase]||(window.sdfPhaseLabel||String)(state.phase)}`}
 function byeHtml(){return`<section class="playbook-truth" style="grid-column:1/-1"><span class="eyebrow">WEEK ${state.week} OF ${state.schedule.length}</span><h3>Bye week · Rest. Recruit. Prepare.</h3><p>No game this week. Recruit, set your practice focus, and check your roster. Advancing refreshes recruiting hours and gives injured players a recovery week without counting a missed game.</p><button class="btn primary" onclick="advanceWeek()">Advance bye week →</button></section>`}
 function advanceBye(){const g=state.schedule?.[Number(state.week)-1];if(!isBye()||g.completed)return false;window.resolveRecruiting?.();window.healInjuries?.();window.applyYoungPlayerPracticeDevelopment?.();window.SDF_V103_TEST?.progressFacilityProject?.();window.SDF_DISCIPLINE?.processWeek?.();g.completed=true;state.news.push(`Week ${state.week}: bye week completed. No game was played; the team recovered and recruiting continued.`);state.week++;window.resetHours?.();window.SDF_V103_TEST?.applyWeeklyFacilityBenefits?.();window.renderAll();window.SDF_RELEASE_TEST?.saveNow?.('Bye week completed',false,true);return true}
-let pending=null;
-function advance(next){if(pending)return pending;let finish;pending=new Promise(resolve=>finish=resolve);const result=pending;const before=label();let overlay=document.createElement('div');overlay.id='weekTransition243';overlay.setAttribute('role','status');overlay.setAttribute('aria-live','polite');overlay.setAttribute('aria-busy','true');overlay.style.cssText='position:fixed;inset:0;z-index:2147483000;display:grid;place-content:center;text-align:center;background:#04101feb;color:#fff;padding:28px;font-size:20px;';overlay.textContent='Advancing… '+before;document.body.append(overlay);
- // Yield through a paint, so long simulation work cannot hide the acknowledgement.
- requestAnimationFrame(()=>requestAnimationFrame(async()=>{try{const value=isBye()?advanceBye():await next();render();try{window.SDF_FLOW242?.render?.()}catch{}if(label()!==before)window.toast?.(label());finish(value)}catch(error){console.error('Week transition failed',error);window.toast?.('Could not finish advancing. Your current stage is still available.','error');finish(false)}finally{overlay.remove();pending=null}}));return result}
+let pending=null,running=false;
+function advance(next){if(pending)return pending;if(running){window.toast?.('Still finishing the last step. Give it a moment, or restart the app if it stays stuck.','error');return Promise.resolve(false)}let finish;pending=new Promise(resolve=>finish=resolve);const result=pending;const before=label();let overlay=document.createElement('div');overlay.id='weekTransition243';overlay.setAttribute('role','status');overlay.setAttribute('aria-live','polite');overlay.setAttribute('aria-busy','true');overlay.style.cssText='position:fixed;inset:0;z-index:2147483000;display:grid;place-content:center;text-align:center;background:#04101feb;color:#fff;padding:28px;font-size:20px;';overlay.textContent='Advancing… '+before;document.body.append(overlay);
+ // Yield through a paint, so long simulation work cannot hide the acknowledgement. A timer backs up the
+ // paint in case the WebView stops delivering frames, and a 15-second watchdog releases the full-screen cover
+ // so a stuck step can never swallow every tap. While a step is still running, new advances are refused.
+ const job={started:false,cancelled:false},timer=typeof setTimeout==='function'?setTimeout:null;let settled=false;
+ const release=()=>{if(settled)return;settled=true;overlay.remove();if(pending===result)pending=null};
+ const watchdog=timer&&timer(()=>{if(settled)return;if(!job.started)job.cancelled=true;console.error('Week transition timed out');window.toast?.('Advancing is taking longer than usual. You can keep playing.','error');release();finish(false)},15000);
+ const run=async()=>{if(job.started||job.cancelled)return;job.started=true;running=true;try{const value=isBye()?advanceBye():await next();if(settled)return;try{render()}catch(error){console.error('Week label refresh failed',error)}try{window.SDF_FLOW242?.render?.()}catch{}try{if(label()!==before)window.toast?.(label())}catch{}finish(value)}catch(error){console.error('Week transition failed',error);if(!settled)window.toast?.('Could not finish advancing. Your current stage is still available.','error');finish(false)}finally{running=false;if(watchdog)clearTimeout(watchdog);release()}};
+ requestAnimationFrame(()=>requestAnimationFrame(run));if(timer)timer(run,1000);return result}
 function render(){if(!state?.school)return;let progress=$('seasonProgress243');const host=$('gameScreen');if(host){if(!progress){progress=document.createElement('div');progress.id='seasonProgress243';progress.className='playbook-truth';progress.setAttribute('role','status');host.prepend(progress)}progress.textContent=label()}
  if(!isBye())return;
  for(const id of ['gameDayMatchup','nextGameCard']){const e=$(id);if(e)e.innerHTML=byeHtml()}
@@ -14361,7 +14377,7 @@ const $=id=>document.getElementById(id),num=(v,d=0)=>Number.isFinite(Number(v))?
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const current=()=>typeof state!=='undefined'&&state?.school?state:null;
 const PLAY='https://play.google.com/store/apps/details?id=com.coreytoolis.saturdaydynastyfootball';
-const SITE='https://saturdaydynasty.ctoolis.workers.dev';
+const SITE='https://saturdaydynasty.dynastysportsstudios.com';
 const link=kind=>`${PLAY}&referrer=${encodeURIComponent(`utm_source=share&utm_medium=${kind}`)}`;
 const CAREER_WINS=[25,50,100,150,200,300];
 
@@ -17033,6 +17049,36 @@ if(typeof priorShowTab==='function')window.showTab=function(...args){const out=p
 
 window.SDF_PROGRAMS305=Object.assign(window.SDF_PROGRAMS305||{},{coach,coachStyles:STYLES,
  _rival:{root,styleFor,hotSeat,carouselHeadlines,afterCarousel,flushNews,maybePoach,poachCandidate,rivalryQuote,decorate,QUOTES}});
+})();
+
+// Build 309 module: install prompt for the browser build. PC Chrome/Edge players get an Install button when the
+// browser offers one; iPhone and iPad Safari players get a one-time card with the Add to Home Screen steps. Never shown
+// inside the Android app or once the game already runs installed.
+(()=>{
+'use strict';
+const KEY='sdfInstallPrompt309',DELAY=45000;
+const native=()=>!!(window.Capacitor?.isNativePlatform?.()||window.Capacitor?.getPlatform?.()==='android');
+const installed=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch{return false}};
+const ios=()=>/iPad|iPhone|iPod/.test(navigator.userAgent||'')||(navigator.platform==='MacIntel'&&Number(navigator.maxTouchPoints)>1);
+const safari=()=>/Safari/.test(navigator.userAgent||'')&&!/CriOS|FxiOS|EdgiOS/.test(navigator.userAgent||'');
+// "Not now" asks again after a week; "Don't show again" and an install never ask again.
+const read=()=>{try{const v=localStorage.getItem(KEY)||'',later=/^later:(\d+)$/.exec(v);return later&&Date.now()-Number(later[1])>7*864e5?'':v}catch{return''}};
+const save=v=>{try{localStorage.setItem(KEY,v)}catch{}};
+let deferred=null,shown=false,timer=null;
+function busy(){return!!(document.querySelector('.modal:not(.hidden),#modal:not(.hidden),.live-game-open')||(typeof state!=='undefined'&&state?.liveGameContext))}
+function close(choice){document.getElementById('sdfInstall309')?.remove();if(choice)save(choice==='later'?'later:'+Date.now():choice)}
+function card(html){if(shown||document.getElementById('sdfInstall309'))return;shown=true;const el=document.createElement('div');el.id='sdfInstall309';el.className='sdf-install309';el.setAttribute('role','dialog');el.setAttribute('aria-label','Install Saturday Dynasty');el.innerHTML=html;document.body.appendChild(el);el.querySelector('[data-install309="later"]')?.addEventListener('click',()=>close('later'));el.querySelector('[data-install309="never"]')?.addEventListener('click',()=>close('never'));el.querySelector('[data-install309="go"]')?.addEventListener('click',install)}
+async function install(){const p=deferred;deferred=null;if(!p){close('later');return}try{p.prompt();const r=await p.userChoice;close(r?.outcome==='accepted'?'installed':'later')}catch{close('later')}}
+function offer(){if(native()||installed()||shown||read())return;if(busy()){timer=setTimeout(offer,15000);return}
+ if(deferred)card(`<div><b>Play from your desktop</b><p>Install Saturday Dynasty for its own window and icon. Your saves stay the same.</p></div><div class="sdf-install309-actions"><button type="button" data-install309="go">Install</button><button type="button" class="ghost" data-install309="later">Not now</button></div>`);
+ else if(ios()&&safari())card(`<div><b>Add Saturday Dynasty to your Home Screen</b><p>Tap <span aria-label="Share">Share</span> at the bottom of Safari, then <b>Add to Home Screen</b>. It opens full screen like an app.</p><a href="/install/#iphone" target="_blank" rel="noopener">See the steps</a></div><div class="sdf-install309-actions"><button type="button" class="ghost" data-install309="later">Not now</button><button type="button" class="ghost" data-install309="never">Don't show again</button></div>`)}
+function start(){if(native()||installed()||read())return;clearTimeout(timer);timer=setTimeout(offer,DELAY)}
+addEventListener('beforeinstallprompt',e=>{if(native()||read())return;e.preventDefault();deferred=e});
+addEventListener('appinstalled',()=>{save('installed');close()});
+const style=document.createElement('style');style.textContent=`.sdf-install309{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:9000;max-width:460px;margin:0 auto;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:12px 14px;border-radius:14px;background:#0d1d2e;color:#eaf2fb;border:1px solid #29425e;box-shadow:0 10px 30px rgba(0,0,0,.45);font-size:14px;line-height:1.35}.sdf-install309 p{margin:4px 0 0;color:#b9c8d8}.sdf-install309 a{color:#7cc4ff;display:inline-block;margin-top:6px}.sdf-install309-actions{display:flex;gap:8px;flex-wrap:wrap}.sdf-install309 button{min-height:40px;padding:0 14px;border-radius:10px;border:0;background:#2f8cff;color:#fff;font-weight:700}.sdf-install309 button.ghost{background:transparent;border:1px solid #3a5676;color:#d6e4f2}`;
+(document.head||document.documentElement).appendChild(style);
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
+window.SDF_INSTALL309={offer,close,native,installed,ios,get pending(){return!!deferred}};
 })();
 
 // Build 299 module: layout. Slim phone chrome, one primary "play this week" action per screen, a cleaner Home,
