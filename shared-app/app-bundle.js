@@ -1521,7 +1521,7 @@ window.SDF_BROWSER_SAVES={enabled,ready,get pending(){return pending},get settle
 // Build 307: save-slot cards show the save's renamed conference (Commissioner / custom league), not the canonical name.
 function slotConference(school,data){const raw=school?.conference||'';if(school?.conferenceDisplay)return String(school.conferenceDisplay);try{return raw&&window.SDF_CONFERENCES?.name?window.SDF_CONFERENCES.name(school.conferenceId||raw,data)||raw:raw}catch{return raw}}
 
-const RELEASE='Android V27.6.6 · Build 311 · Program Money Update';
+const RELEASE='Android V27.6.7 · Build 312 · Program Money Update';
 const SAVE_PREFIX='SaturdayDynastyFootballAndroidV1';
 const LEGACY_PREFIXES=['SaturdayArchitectAndroidV1','SaturdayArchitectCompleteV9','SaturdayArchitectStatsV82','SaturdayArchitectDynastyV81','SaturdayArchitectRealignmentV74','SaturdayArchitectRecruitingV73','SaturdayArchitect128V72','SaturdayArchitectMobileV71'];
 const ui={activeTab:'dashboard',recruitPage:1,recruitPageSize:window.innerWidth<=760?30:75,rosterQuery:'',recruitQuery:''};
@@ -1685,6 +1685,8 @@ function compactState(){
   if(out.aiVisitWeeks){out.aiVisitData=Object.entries(out.aiVisitWeeks).map(([k,v])=>[Number(k),v]);delete out.aiVisitWeeks;if(!out.aiVisitData.length)delete out.aiVisitData}
   // Keep full current-season action history/trends because these are part of the race state.
   delete out.recruitingNeedsRecalc;
+  // Build 312: lastInterestSnapshot is written each week but never read (interestTrend holds the change), ~6% of a big save.
+  delete out.lastInterestSnapshot;
   if(!out.entryWeek||out.entryWeek===1)delete out.entryWeek;if(!out.committedWeek)delete out.committedWeek;if(!out.attrs)delete out.attrs;if(!out.pitchHistory||!Object.keys(out.pitchHistory).length)delete out.pitchHistory;if(!out.promise)delete out.promise;if(!out.committedTo)delete out.committedTo;if(out.stage==='Open')delete out.stage;if(out.weeklyPlan==='NONE')delete out.weeklyPlan;if(!out.scouted)delete out.scoutConfidence;
   return out
  });
@@ -1723,6 +1725,7 @@ let saveFailurePending285=false,saveFailedSlot285=null;
 function saveFailureKey292(){return saveKey()+'_pending_failure'}
 function markSaveFailure285(){saveFailurePending285=true;saveFailedSlot285=String(state.saveSlot||'1');try{localStorage.setItem(saveFailureKey292(),'1')}catch{}}
 function saveRecovered285(){let persisted=false;try{persisted=localStorage.getItem(saveFailureKey292())==='1'}catch{}if(persisted||(saveFailurePending285&&saveFailedSlot285===String(state.saveSlot||'1'))){saveFailurePending285=false;saveFailedSlot285=null;try{localStorage.removeItem(saveFailureKey292())}catch{}window.SDF_USAGE?.record('save_recovered',undefined,undefined,{reason:'storage'})}}
+let saveBytes311=0;
 function saveNow(reason='Autosaved',manual=false,backup=false){
  if(!state.school||isHydrating||deletionInProgress||deletedSlots.has(String(state.saveSlot||'1')))return false;
  cancelScheduledSave();setSaveStatus('Saving…','saving');const request=++saveRequest;let saveStage285='save_serialize';
@@ -1730,7 +1733,7 @@ function saveNow(reason='Autosaved',manual=false,backup=false){
   let key=saveKey(),payload=compactState();
   // Keep saves well below Android WebView localStorage limits by trimming only
   // derived/rebuildable history when a dynasty has become very large.
-  let json=JSON.stringify(payload);
+  let json=JSON.stringify(payload);saveBytes311=json.length;
   if(json.length>4_200_000){
    payload.news=(payload.news||[]).slice(-60);payload.conferenceScheduleResults=(payload.conferenceScheduleResults||[]).slice(-160);payload.scoutingReports={};
    payload.roster=(payload.roster||[]).map(p=>({...p,gameLog:(p.gameLog||[]).slice(-10),statHistory:(p.statHistory||[]).slice(-4),progressionHistory:(p.progressionHistory||[]).slice(-6)}));
@@ -1740,7 +1743,7 @@ function saveNow(reason='Autosaved',manual=false,backup=false){
   }
   saveStage285='save_native_write';const slot=String(state.saveSlot||'1'),nativeResult=nativeWriteSlot(slot,json);let verified;
   if(nativeResult!==null){
-   if(!nativeResult){const code=window.SDFNative?.lastSaveFailureCode?.();if(code==='quota')saveStage285='save_quota';throw new Error(code==='quota'?'Not enough free device storage to save. Free some space and try again.':code==='permission'?'Android blocked access to the save file.':'Android save file could not be written. Your previous committed save is retained.');}
+   if(!nativeResult){const code=window.SDFNative?.lastSaveFailureCode?.();if(code==='quota')saveStage285='save_quota';else if(['backup','commit','memory','permission','empty'].includes(code))saveStage285='save_native_'+code;throw new Error(code==='quota'?'Not enough free device storage to save. Free some space and try again.':code==='permission'?'Android blocked access to the save file.':'Android save file could not be written. Your previous committed save is retained.');}
    // A successful native write is enough for routine autosaves. Reading and
    // parsing the entire multi-megabyte dynasty immediately after every write
    // caused visible UI stalls. Manual/backup saves and a periodic integrity
@@ -1763,7 +1766,7 @@ function saveNow(reason='Autosaved',manual=false,backup=false){
    verified=localStorage.getItem(key);if(!verified||verified.length!==json.length)throw new Error('Save verification failed');JSON.parse(verified);
   }
   saveRecovered285();lastSaveAt=Date.now();setSaveStatus(`Saved ${new Date(lastSaveAt).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}`,'saved');if(manual)toast('Dynasty saved and verified.');return true
- }catch(err){console.error('Autosave failed',err);markSaveFailure285();window.SDF_USAGE?.technical?.('save_failed','storage',{context:err?.name==='QuotaExceededError'?'save_quota':saveStage285});setSaveStatus('Save failed','error');if(manual)toast(`Save failed: ${err?.message||'storage error'}. Export a backup from Dynasty.`,'error');return false}
+ }catch(err){console.error('Autosave failed',err);markSaveFailure285();window.SDF_USAGE?.technical?.('save_failed','storage',{context:err?.name==='QuotaExceededError'?'save_quota':saveStage285,save_mb:saveBytes311?Math.round(saveBytes311/104857.6)/10:undefined});setSaveStatus('Save failed','error');if(manual)toast(`Save failed: ${err?.message||'storage error'}. Export a backup from Dynasty.`,'error');return false}
 }
 function scheduleSave(reason='Autosaved',delay=550,backup=false){if(!state.school||isHydrating)return;cancelScheduledSave();setSaveStatus('Saving…','saving');saveTimer=setTimeout(()=>{saveTimer=null;if(typeof window.requestIdleCallback==='function'){saveIdleHandle=window.requestIdleCallback(()=>{saveIdleHandle=null;saveNow(reason,false,backup)},{timeout:1200})}else saveNow(reason,false,backup)},delay)}
 

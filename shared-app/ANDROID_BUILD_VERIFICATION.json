@@ -1,7 +1,7 @@
 {
-  "version": "27.6.6",
-  "release": "Android V27.6.6 · Build 311 · Program Money Update",
-  "versionCode": 311,
+  "version": "27.6.7",
+  "release": "Android V27.6.7 · Build 312 · Program Money Update",
+  "versionCode": 312,
   "fileCount": 177,
   "files": [
     {
@@ -11,8 +11,8 @@
     },
     {
       "path": "app-bundle.js",
-      "sha256": "f6f93257a3935eb926efc2c297954985fd93480cbb8f7342f1130103b1ef493a",
-      "bytes": 2228535
+      "sha256": "7ecca3bad34a00705292166dfaf66700716f32725d4f5f0f739c448660cd098b",
+      "bytes": 2228918
     },
     {
       "path": "app-shell.css",
@@ -716,7 +716,7 @@
     },
     {
       "path": "index.html",
-      "sha256": "c10bc33039139fe0751405982e95ea91f19abf1230e6f3efccad68356558432d",
+      "sha256": "0ae21f7527de388b17bafa812721a67e5186a2165cae9bdf370dda2149fa111e",
       "bytes": 47820
     },
     {
