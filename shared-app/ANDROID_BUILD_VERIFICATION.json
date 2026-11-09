@@ -1,7 +1,7 @@
 {
-  "version": "27.6.7",
-  "release": "Android V27.6.7 · Build 312 · Program Money Update",
-  "versionCode": 312,
+  "version": "27.7.3",
+  "release": "Android V27.7.3 · Build 318 · Program Money Update",
+  "versionCode": 318,
   "fileCount": 177,
   "files": [
     {
@@ -11,8 +11,8 @@
     },
     {
       "path": "app-bundle.js",
-      "sha256": "7ecca3bad34a00705292166dfaf66700716f32725d4f5f0f739c448660cd098b",
-      "bytes": 2228918
+      "sha256": "117fd56c8681d1963b9c6fc1279b00dac15e97479f85abe9bdafad22efd455ca",
+      "bytes": 2309114
     },
     {
       "path": "app-shell.css",
@@ -716,8 +716,8 @@
     },
     {
       "path": "index.html",
-      "sha256": "0ae21f7527de388b17bafa812721a67e5186a2165cae9bdf370dda2149fa111e",
-      "bytes": 47820
+      "sha256": "f3fed83b25b488ffa016f48f9b547631c7ae38ea6a9b172d3bc6cbe838656fd1",
+      "bytes": 47461
     },
     {
       "path": "live-game.css",
@@ -746,8 +746,8 @@
     },
     {
       "path": "release.css",
-      "sha256": "35d4f72dedda03e6f09405c20de157547ffd832840d8204e6805265a195ab6b6",
-      "bytes": 16766
+      "sha256": "830b753d4436fee78c5b5034ae36fc58cb6bd84e4c77a83b3247015b177b9551",
+      "bytes": 21157
     },
     {
       "path": "styles.css",

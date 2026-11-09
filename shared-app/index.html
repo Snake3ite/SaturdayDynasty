@@ -44,7 +44,7 @@
 </head>
 <body class="ui221-startup-mode">
 <header class="topbar">
-  <div class="brand"><img id="appTeamLogo" class="logo-img" src="icon-192.png" alt="Saturday Dynasty Football"><div><h1>Saturday Dynasty Football</h1><p id="releaseLabel">Android V27.6.7 · Build 312 · Program Money Update</p></div></div>
+  <div class="brand"><img id="appTeamLogo" class="logo-img" src="icon-192.png" alt="Saturday Dynasty Football"><div><h1>Saturday Dynasty Football</h1><p id="releaseLabel">Android V27.7.3 · Build 318 · Program Money Update</p></div></div>
   <div class="broadcast-context"><small id="activeSectionKicker">DYNASTY FOOTBALL</small><strong id="activeSectionTitle">Select a Program</strong></div>
   <div class="top-status">
     <span>YEAR <b id="yearLabel">1</b></span>
@@ -557,27 +557,30 @@
       <div class="section-head"><div><span class="eyebrow">NATIONAL PICTURE</span><h2>Top 25 Rankings</h2></div></div>
       <div id="rankingGrid" class="ranking-grid"></div>
     </section>
-    <section id="rankingsPlayoffSection" class="surface national-section hidden" data-national-panel="playoff">
+    <section id="rankingsPlayoffSection" class="surface national-section" data-national-panel="playoff">
       <div class="section-head"><div><span class="eyebrow">POSTSEASON</span><h2>Playoff Projection</h2></div></div>
       <div id="playoffBracket" class="playoff-grid"></div>
     </section>
-    <section id="conferenceDirectorySection" class="surface national-section hidden" data-national-panel="conferences">
+    <section id="conferenceDirectorySection" class="surface national-section" data-national-panel="conferences">
       <div class="section-head"><div><span class="eyebrow">NATIONAL STRUCTURE</span><h2>Conference Alignment</h2></div></div>
       <div id="conferenceDirectory" class="conference-directory"></div>
     </section>
-    <section id="nationalRosterSection" class="surface national-section hidden" data-national-panel="rosters">
-      <div class="section-head"><div><span class="eyebrow">ALL 128 PROGRAMS</span><h2>National Team & Roster Browser</h2><p class="muted">Inspect every program's roster, classes, ratings and depth. Computer rosters are generated consistently from program strength for the current dynasty year.</p></div></div>
+    <section id="nationalRosterSection" class="surface national-section" data-national-panel="rosters">
+      <div class="section-head"><div><span class="eyebrow">EVERY PROGRAM</span><h2>All Teams</h2><p class="muted">Every team in your league: record, national rank and season stats. Tap a team to see its roster, then tap a player for his ratings and stats.</p></div></div>
       <div class="toolbar wrap national-roster-toolbar">
         <input id="nationalTeamSearch" type="search" placeholder="Search school, city or state">
         <select id="nationalConferenceFilter"><option value="ALL">All conferences</option></select>
+        <select id="nationalTeamSort" aria-label="Sort teams"><option value="conference">Sort: Conference</option><option value="rank">Sort: National rank</option><option value="record">Sort: Record</option><option value="name">Sort: Name</option></select>
         <select id="nationalRosterPosition"><option value="ALL">All positions</option></select>
       </div>
       <div id="nationalTeamPager" class="pager"></div>
       <div id="nationalTeamGrid" class="national-team-grid"></div>
+      <div id="nationalTeamPagerBottom" class="pager pager-bottom"></div>
       <div id="selectedNationalRoster" class="selected-national-roster">
         <div id="nationalTeamSummary" class="metric-grid"></div>
+        <div id="nationalTeamExtras" class="team-extras315"></div>
         <div id="nationalRosterCards" class="mobile-card-list"></div>
-        <div class="table-wrap desktop-data-table"><table><thead><tr><th>Player</th><th>Pos</th><th>Role</th><th>Class</th><th>OVR</th><th>POT</th><th>DEV</th><th>Hometown</th></tr></thead><tbody id="nationalRosterTable"></tbody></table></div>
+        <div class="table-wrap desktop-data-table"><table><thead><tr><th>Player</th><th>Pos</th><th>Role</th><th>Class</th><th>OVR</th><th>POT</th><th>DEV</th><th>Hometown</th><th>This Season</th></tr></thead><tbody id="nationalRosterTable"></tbody></table></div>
       </div>
     </section>
   </section>

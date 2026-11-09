@@ -942,7 +942,7 @@ function renderStats(){
  const team=state.roster.reduce((a,p)=>{let s=ensurePlayerStats(p);a.passYds+=s.passYds;a.rushYds+=s.rushYds;a.passTD+=s.passTD;a.rushTD+=s.rushTD;a.sacks+=s.sacks;a.ints+=s.defINT;return a},{passYds:0,rushYds:0,passTD:0,rushTD:0,sacks:0,ints:0});
  $("teamStatSummary").innerHTML=metric("Passing",team.passYds+" yds")+metric("Rushing",team.rushYds+" yds")+metric("Offensive TD",team.passTD+team.rushTD)+metric("Sacks",team.sacks)+metric("Takeaways",team.ints)+metric("Points/Game",state.schedule.filter(g=>g.score).length?Math.round(state.schedule.filter(g=>g.score).reduce((sum,g)=>sum+Number(g.score.split("-")[0]),0)/state.schedule.filter(g=>g.score).length):"—");
  const recent=state.roster.flatMap(p=>(p.gameLog||[]).map(g=>({player:p.name,pos:p.pos,...g}))).filter(g=>g.year===state.year).sort((a,b)=>b.week-a.week).slice(0,30);
- $("gameLogGrid").innerHTML=recent.map(g=>`<div class="game-log-card"><h4>${g.player} · ${g.pos}</h4><b>Week ${g.week} vs ${g.opponent}</b><span class="sub">${Object.entries(g).filter(([k])=>!["player","pos","year","week","opponent","result"].includes(k)).map(([k,v])=>`${k}: ${v}`).join(" · ")}</span></div>`).join("")||'<p class="muted">Game logs appear after games are played.</p>';
+ $("gameLogGrid").innerHTML=recent.map(g=>`<div class="game-log-card"><h4>${g.player} · ${g.pos}</h4><span class="game-when316">${window.SDF_STATLINE316?window.SDF_STATLINE316.when(g):`Week ${g.week} vs ${g.opponent}`}</span><b class="game-line316">${window.SDF_STATLINE316?window.SDF_STATLINE316.line(g,g.pos):''}</b></div>`).join("")||'<p class="muted">Game logs appear after games are played.</p>';
  renderAwardWatch();renderStatArchive()
 }
 function renderAwardWatch(){
@@ -1521,7 +1521,7 @@ window.SDF_BROWSER_SAVES={enabled,ready,get pending(){return pending},get settle
 // Build 307: save-slot cards show the save's renamed conference (Commissioner / custom league), not the canonical name.
 function slotConference(school,data){const raw=school?.conference||'';if(school?.conferenceDisplay)return String(school.conferenceDisplay);try{return raw&&window.SDF_CONFERENCES?.name?window.SDF_CONFERENCES.name(school.conferenceId||raw,data)||raw:raw}catch{return raw}}
 
-const RELEASE='Android V27.6.7 · Build 312 · Program Money Update';
+const RELEASE='Android V27.7.3 · Build 318 · Program Money Update';
 const SAVE_PREFIX='SaturdayDynastyFootballAndroidV1';
 const LEGACY_PREFIXES=['SaturdayArchitectAndroidV1','SaturdayArchitectCompleteV9','SaturdayArchitectStatsV82','SaturdayArchitectDynastyV81','SaturdayArchitectRealignmentV74','SaturdayArchitectRecruitingV73','SaturdayArchitect128V72','SaturdayArchitectMobileV71'];
 const ui={activeTab:'dashboard',recruitPage:1,recruitPageSize:window.innerWidth<=760?30:75,rosterQuery:'',recruitQuery:''};
@@ -3212,7 +3212,7 @@ ensure11();lastCommitCount=state.commits?.length||0;if(state.recruitingView==='p
 'use strict';
 const VERSION='1.7.5',INITIAL_POOL=3000,RECRUIT_BOARD_LIMIT=35,CLASS_SIGNING_LIMIT=25,AI_ROSTER_LIMIT=85,DRAFT_ROUNDS=7,DRAFT_PICKS_PER_ROUND=32,DRAFT_FIRST_ROUND_SCHOOL_CAP=6,DRAFT_TOTAL_SCHOOL_CAP=15;
 const $111=id=>document.getElementById(id);
-let rosterUi={section:'top25',query:'',conference:'ALL',position:'ALL',page:1,pageSize:24,teamId:null},aiEnsureCache={rosters:null,userId:null,count:0};
+let rosterUi={section:'top25',query:'',conference:'ALL',position:'ALL',sort:'conference',page:1,pageSize:24,teamId:null},aiEnsureCache={rosters:null,userId:null,count:0};
 function save111(reason){try{window.SDF_RELEASE_TEST?.saveNow?.(reason,false,false)}catch{}}
 function userId(){return Number(state.school?.id)}
 function rerankRecruits(){state.recruits.sort((a,b)=>b.stars-a.stars||(b.trueOvr||b.ovr)-(a.trueOvr||a.ovr)||a.name.localeCompare(b.name));state.recruits.forEach((r,i)=>r.rank=i+1)}
@@ -3313,17 +3313,26 @@ function processAiOffseason111(){
 function aiDraftSummary111(teamId,year=state.year){return(state.aiDraftSummaries||[]).find(x=>Number(x.schoolId)===Number(teamId)&&Number(x.year)===Number(year))||null}
 function generateNationalRoster(school){if(Number(school.id)===userId())return state.roster;ensureAiRosters();return cachedAiRoster111(school.id)}
 function teamRatings111(roster){const offense=new Set(['QB','RB','WR','TE','OT','IOL']),defense=new Set(['EDGE','DL','LB','CB','S']),top=(arr,n)=>arr.slice().sort((a,b)=>Number(b.ovr)-Number(a.ovr)).slice(0,n),avg111=a=>a.length?Math.round(a.reduce((n,x)=>n+Number(x.ovr||0),0)/a.length):0;return{overall:avg111(top(roster,44)),offense:avg111(top(roster.filter(p=>offense.has(p.pos)),22)),defense:avg111(top(roster.filter(p=>defense.has(p.pos)),22))}}
+// Build 314 All Teams: record, national rank and season team stats for any program, from data the game already keeps.
+function teamSeason314(){const map=new Map();try{for(const r of window.SDF_V175?.teamRows?.()||[])map.set(Number(r.teamId),r)}catch(err){console.warn('All Teams stats unavailable',err)}return map}
+function record314(id){if(Number(id)===userId())return{w:Number(state.record?.w||0),l:Number(state.record?.l||0)};const r=worldTeam111(id)?.record;return{w:Number(r?.w||0),l:Number(r?.l||0)}}
+function rank314(id){const r=(state.rankings||[]).find(t=>Number(t.id)===Number(id))?.rank;return Number(r)>0?Number(r):null}
+function confRecord314(id){const c=Number(id)===userId()?state.conferenceRecords?.[id]:((state.rankings||[]).find(t=>Number(t.id)===Number(id))?.conferenceRecord||worldTeam111(id)?.conferenceRecord);return c?`${Number(c.w||0)}-${Number(c.l||0)}`:null}
+function seasonLine314(p){try{const s=p.seasonStats;if(!s||!Number(s.games))return'No games played this season';return window.SDF_V175?.statSummary?.(p)||''}catch{return''}}
 function role111(p){if(p.starter)return'Starter';if(Number(p.depthIndex)<=2)return'Rotation';return p.walkOn?'Walk-on':'Reserve'}
-function filteredTeams(){const q=rosterUi.query.toLowerCase();return schools.filter(s=>{const p=program111(s);return(rosterUi.conference==='ALL'||p.conference===rosterUi.conference)&&(!q||`${s.name} ${s.city} ${s.state} ${p.conference}`.toLowerCase().includes(q))}).sort((a,b)=>program111(a).conference.localeCompare(program111(b).conference)||a.name.localeCompare(b.name))}
-function setNationalSection(section){rosterUi.section=section;document.querySelectorAll('[data-national-panel]').forEach(el=>el.classList.toggle('hidden',el.dataset.nationalPanel!==section));document.querySelectorAll('[data-national-section]').forEach(b=>b.classList.toggle('active',b.dataset.nationalSection===section));if(section==='rosters')renderNationalRosterBrowser();window.scrollTo({top:0,behavior:'smooth'})}
+function filteredTeams(){const q=rosterUi.query.toLowerCase();return schools.filter(s=>{const p=program111(s);return(rosterUi.conference==='ALL'||p.conference===rosterUi.conference)&&(!q||`${s.name} ${s.city} ${s.state} ${p.conference}`.toLowerCase().includes(q))}).sort((a,b)=>{if(rosterUi.sort==='rank')return(rank314(a.id)||999)-(rank314(b.id)||999)||a.name.localeCompare(b.name);if(rosterUi.sort==='record'){const x=record314(a.id),y=record314(b.id);return(y.w-y.l)-(x.w-x.l)||y.w-x.w||a.name.localeCompare(b.name)}if(rosterUi.sort==='name')return a.name.localeCompare(b.name);return program111(a).conference.localeCompare(program111(b).conference)||a.name.localeCompare(b.name)})}
+// Build 314: the shared section chips (v219) show one Rankings section at a time. Only the original buttons
+// hide panels themselves; once those are replaced, a hidden panel would also hide its chip, which left
+// Playoff, Conferences and Team Rosters unreachable.
+function setNationalSection(section){rosterUi.section=section;if(document.getElementById('rankingsSectionNav'))document.querySelectorAll('[data-national-panel]').forEach(el=>el.classList.toggle('hidden',el.dataset.nationalPanel!==section));else document.querySelectorAll('[data-national-panel].hidden').forEach(el=>el.classList.remove('hidden'));document.querySelectorAll('[data-national-section]').forEach(b=>b.classList.toggle('active',b.dataset.nationalSection===section));if(section==='rosters')renderNationalRosterBrowser();window.scrollTo({top:0,behavior:'smooth'})}
 window.setNationalSection=setNationalSection;
-function renderNationalTeamGrid(){const list=filteredTeams(),pages=Math.max(1,Math.ceil(list.length/rosterUi.pageSize));rosterUi.page=clamp(rosterUi.page,1,pages);const rows=list.slice((rosterUi.page-1)*rosterUi.pageSize,rosterUi.page*rosterUi.pageSize);$111('nationalTeamPager').innerHTML=`<div class="pager-info">Showing ${(rosterUi.page-1)*rosterUi.pageSize+1}-${Math.min(rosterUi.page*rosterUi.pageSize,list.length)} of ${list.length} programs</div><div class="pager-actions"><button class="btn neutral" onclick="changeNationalTeamPage(-1)" ${rosterUi.page<=1?'disabled':''}>Previous</button><span>${rosterUi.page}/${pages}</span><button class="btn neutral" onclick="changeNationalTeamPage(1)" ${rosterUi.page>=pages?'disabled':''}>Next</button></div>`;$111('nationalTeamGrid').innerHTML=rows.map(s=>{const p=program111(s),b=TEAM_BRANDING?.[s.id],active=Number(rosterUi.teamId)===Number(s.id),ratings=Number(s.id)===userId()?teamRatings():teamRatings111(cachedAiRoster111(s.id)),coach=Number(s.id)===userId()?null:window.SDF_V201?.summaryForTeam?.(s.id);return`<button class="national-team-card ${active?'active':''}" onclick="selectNationalTeam(${s.id})"><img src="${b?.logo||'icon-192.png'}" alt=""><div><h3>${s.name}</h3><span class="sub">${p.conference} · ${s.city}, ${s.state}</span><span class="sub">OVR ${ratings.overall} · Prestige ${Math.round(p.prestige)} · Recent ${Math.round(p.recent)}</span>${coach?`<span class="sub">HC ${coach.name} · L${coach.level} ${coach.branch}</span>`:''}</div></button>`}).join('')||'<p class="muted">No programs match this search.</p>'}
+function renderNationalTeamGrid(){const list=filteredTeams(),pages=Math.max(1,Math.ceil(list.length/rosterUi.pageSize));rosterUi.page=clamp(rosterUi.page,1,pages);const rows=list.slice((rosterUi.page-1)*rosterUi.pageSize,rosterUi.page*rosterUi.pageSize);const pager314=`<div class="pager-info">Showing ${(rosterUi.page-1)*rosterUi.pageSize+1}-${Math.min(rosterUi.page*rosterUi.pageSize,list.length)} of ${list.length} programs</div><div class="pager-actions"><button class="btn neutral" onclick="changeNationalTeamPage(-1)" ${rosterUi.page<=1?'disabled':''}>Previous</button><span>${rosterUi.page}/${pages}</span><button class="btn neutral" onclick="changeNationalTeamPage(1)" ${rosterUi.page>=pages?'disabled':''}>Next</button></div>`;$111('nationalTeamPager').innerHTML=pager314;if($111('nationalTeamPagerBottom'))$111('nationalTeamPagerBottom').innerHTML=pages>1?pager314:'';$111('nationalTeamGrid').innerHTML=rows.map(s=>{const p=program111(s),b=TEAM_BRANDING?.[s.id],active=Number(rosterUi.teamId)===Number(s.id),ratings=Number(s.id)===userId()?teamRatings():teamRatings111(cachedAiRoster111(s.id)),coach=Number(s.id)===userId()?null:window.SDF_V201?.summaryForTeam?.(s.id);const rk=rank314(s.id),rec=record314(s.id);return`<button class="national-team-card ${active?'active':''}" onclick="selectNationalTeam(${s.id})"><img src="${b?.logo||'icon-192.png'}" alt=""><div><h3>${rk&&rk<=25?`<span class="team-rank314">#${rk}</span> `:''}${s.name}</h3><span class="sub team-record314">${rec.w}-${rec.l}${rk?` · No. ${rk} nationally`:''}</span><span class="sub">${p.conference} · ${s.city}, ${s.state}</span><span class="sub">OVR ${ratings.overall} · Prestige ${Math.round(p.prestige)} · Recent ${Math.round(p.recent)}</span>${coach?`<span class="sub">HC ${coach.name} · L${coach.level} ${coach.branch}</span>`:''}</div></button>`}).join('')||'<p class="muted">No programs match this search.</p>'}
 window.changeNationalTeamPage=delta=>{rosterUi.page+=delta;renderNationalTeamGrid();$111('nationalTeamGrid')?.scrollIntoView({block:'start',behavior:'smooth'})};
 window.selectNationalTeam=id=>{rosterUi.teamId=Number(id);renderNationalTeamGrid();renderSelectedNationalRoster();$111('selectedNationalRoster')?.scrollIntoView({block:'start',behavior:'smooth'})};
-function renderSelectedNationalRoster(){let school=schools.find(s=>s.id===Number(rosterUi.teamId))||state.school;if(!school)return;const program=program111(school),roster=generateNationalRoster(school),coach=Number(school.id)===userId()?null:window.SDF_V201?.summaryForTeam?.(school.id),pos=rosterUi.position,players=roster.filter(p=>pos==='ALL'||p.pos===pos).sort((a,b)=>POSITIONS.indexOf(a.pos)-POSITIONS.indexOf(b.pos)||Number(b.starter)-Number(a.starter)||Number(b.ovr)-Number(a.ovr)),ratings=Number(school.id)===userId()?teamRatings():teamRatings111(roster),b=TEAM_BRANDING?.[school.id],draft=Number(school.id)===userId()?null:aiDraftSummary111(school.id,state.year-1);$111('nationalTeamSummary').innerHTML=`<div class="selected-roster-head"><img src="${b?.logo||'icon-192.png'}" alt=""><div><span class="eyebrow">${program.conference}</span><h2>${school.name}</h2><span class="sub">${school.city}, ${school.state} · ${Number(school.id)===userId()?'Your live dynasty roster':'Persistent dynasty roster'}</span></div></div>`+metric('Players',roster.length)+metric('Overall',ratings.overall)+metric('Offense',ratings.offense)+metric('Defense',ratings.defense)+metric('Prestige',Math.round(program.prestige))+metric('Recent Success',Math.round(program.recent))+metric('Seniors',roster.filter(p=>Number(p.year)===4).length)+metric('Freshmen',roster.filter(p=>Number(p.year)===1).length)+(draft?metric('Last Draft',draft.drafted):'')+(coach?metric('Head Coach',`<button class="link-button" onclick="openAiCoachProfile(${school.id})">${coach.name}</button>`)+metric('Coach Level',`L${coach.level} · ${coach.branch}`):'');$111('nationalRosterTable').innerHTML=players.map(p=>`<tr><td><button class="link-button" onclick="openNationalPlayerProfile(${school.id},'${p.id}')">${p.name}</button></td><td>${p.pos}</td><td><span class="roster-role-badge">${role111(p)}</span></td><td>${classLabel(p)}</td><td>${p.ovr}</td><td>${p.pot}</td><td>${p.dev}</td><td>${p.hometown}</td></tr>`).join('');$111('nationalRosterCards').innerHTML=players.map(p=>`<article class="mobile-data-card"><div class="mobile-data-head"><div><h3>${p.name}</h3><span class="sub">${p.pos} · ${p.arch} · ${classLabel(p)}</span></div><b>${p.ovr}</b></div><div class="mobile-data-grid"><div><small>ROLE</small><b>${role111(p)}</b></div><div><small>POT</small><b>${p.pot}</b></div><div><small>DEV</small><b>${p.dev}</b></div><div><small>MORALE</small><b>${p.morale}</b></div></div><button class="btn primary full" onclick="openNationalPlayerProfile(${school.id},'${p.id}')">Player Profile</button></article>`).join('')}
+function renderSelectedNationalRoster(){let school=schools.find(s=>s.id===Number(rosterUi.teamId))||state.school;if(!school)return;const program=program111(school),roster=generateNationalRoster(school),coach=Number(school.id)===userId()?null:window.SDF_V201?.summaryForTeam?.(school.id),pos=rosterUi.position,players=roster.filter(p=>pos==='ALL'||p.pos===pos).sort((a,b)=>POSITIONS.indexOf(a.pos)-POSITIONS.indexOf(b.pos)||Number(b.starter)-Number(a.starter)||Number(b.ovr)-Number(a.ovr)),ratings=Number(school.id)===userId()?teamRatings():teamRatings111(roster),b=TEAM_BRANDING?.[school.id],draft=Number(school.id)===userId()?null:aiDraftSummary111(school.id,state.year-1);$111('nationalTeamSummary').innerHTML=`<div class="selected-roster-head"><img src="${b?.logo||'icon-192.png'}" alt=""><div><span class="eyebrow">${program.conference}</span><h2>${school.name}</h2><span class="sub">${school.city}, ${school.state} · ${Number(school.id)===userId()?'Your live dynasty roster':'Persistent dynasty roster'}</span></div></div>`+(()=>{const rec=record314(school.id),rk=rank314(school.id),conf=confRecord314(school.id),t=teamSeason314().get(Number(school.id)),f=v=>Number(v||0).toFixed(1);return metric('Record',`${rec.w}-${rec.l}`)+(conf?metric('Conference',conf):'')+metric('National Rank',rk?`No. ${rk}`:'—')+(t&&t.games?metric('Points / Game',f(t.ppg))+metric('Allowed / Game',f(t.paPg))+metric('Yards / Game',f(t.offYpg))+metric('Yards Allowed',f(t.defYpg))+metric('Turnover Margin',(t.turnoverMargin>0?'+':'')+t.turnoverMargin):'')})()+metric('Players',roster.length)+metric('Overall',ratings.overall)+metric('Offense',ratings.offense)+metric('Defense',ratings.defense)+metric('Prestige',Math.round(program.prestige))+metric('Recent Success',Math.round(program.recent))+metric('Seniors',roster.filter(p=>Number(p.year)===4).length)+metric('Freshmen',roster.filter(p=>Number(p.year)===1).length)+(draft?metric('Last Draft',draft.drafted):'')+(coach?metric('Head Coach',`<button class="link-button" onclick="openAiCoachProfile(${school.id})">${coach.name}</button>`)+metric('Coach Level',`L${coach.level} · ${coach.branch}`):'');$111('nationalRosterTable').innerHTML=players.map(p=>`<tr><td><button class="link-button" onclick="openNationalPlayerProfile(${school.id},'${p.id}')">${p.name}</button></td><td>${p.pos}</td><td><span class="roster-role-badge">${role111(p)}</span></td><td>${classLabel(p)}</td><td>${p.ovr}</td><td>${p.pot}</td><td>${p.dev}</td><td>${p.hometown}</td><td class="season-line314">${seasonLine314(p)}</td></tr>`).join('');$111('nationalRosterCards').innerHTML=players.map(p=>`<article class="mobile-data-card"><div class="mobile-data-head"><div><h3>${p.name}</h3><span class="sub">${p.pos} · ${p.arch} · ${classLabel(p)}</span></div><b>${p.ovr}</b></div><div class="mobile-data-grid"><div><small>ROLE</small><b>${role111(p)}</b></div><div><small>POT</small><b>${p.pot}</b></div><div><small>DEV</small><b>${p.dev}</b></div><div><small>MORALE</small><b>${p.morale}</b></div></div><p class="sub season-line314">${seasonLine314(p)}</p><button class="btn primary full" onclick="openNationalPlayerProfile(${school.id},'${p.id}')">Player Profile &amp; Stats</button></article>`).join('');window.SDF_TEAM_DETAIL315?.render?.(school.id)}
 window.openNationalPlayerProfile=(teamId,playerId)=>{if(Number(teamId)===userId())return openPlayerProfile(playerId);const school=schools.find(s=>s.id===Number(teamId)),p=generateNationalRoster(school).find(x=>x.id===playerId);if(!p)return;$111('modalBody').innerHTML=`<span class="eyebrow">NATIONAL ROSTER PROFILE</span><h2>${p.name}</h2><p class="muted">${school.name} · ${p.pos} · ${p.arch}</p><div class="metric-grid">${metric('Class',classLabel(p))}${metric('OVR',p.ovr)}${metric('Potential',p.pot)}${metric('Development',p.dev)}${metric('Depth Role',role111(p))}${metric('Morale',p.morale)}${metric('Hometown',p.hometown)}${metric('Roster Status',p.walkOn?'Walk-on':'Scholarship')}</div><div class="ai-player-note"><b>Persistent computer-team player</b><span class="sub">This player remains on ${school.name}'s roster from week to week, develops in the offseason, can be replaced by signed recruits, and leaves through graduation or the pro draft.</span></div>`;$111('modal').classList.remove('hidden');$111('modal').querySelector('.modal-card').scrollTop=0};
 function renderNationalRosterBrowser(){if(!$111('nationalTeamGrid'))return;ensureAiRosters();if(rosterUi.teamId==null)rosterUi.teamId=userId();renderNationalTeamGrid();renderSelectedNationalRoster()}
-function wire111(){document.querySelectorAll('[data-national-section]').forEach(b=>b.onclick=()=>setNationalSection(b.dataset.nationalSection));const conf=$111('nationalConferenceFilter');if(conf&&!conf.dataset.ready){[...new Set(schools.map(s=>program111(s).conference))].sort().forEach(c=>conf.insertAdjacentHTML('beforeend',`<option>${c}</option>`));conf.dataset.ready='1'}const pos=$111('nationalRosterPosition');if(pos&&!pos.dataset.ready){POSITIONS.forEach(p=>pos.insertAdjacentHTML('beforeend',`<option>${p}</option>`));pos.dataset.ready='1'}if($111('nationalTeamSearch'))$111('nationalTeamSearch').oninput=e=>{rosterUi.query=e.target.value;rosterUi.page=1;renderNationalTeamGrid()};if(conf)conf.onchange=e=>{rosterUi.conference=e.target.value;rosterUi.page=1;renderNationalTeamGrid()};if(pos)pos.onchange=e=>{rosterUi.position=e.target.value;renderSelectedNationalRoster()}}
+function wire111(){document.querySelectorAll('[data-national-section]').forEach(b=>b.onclick=()=>setNationalSection(b.dataset.nationalSection));const conf=$111('nationalConferenceFilter');if(conf&&!conf.dataset.ready){[...new Set(schools.map(s=>program111(s).conference))].sort().forEach(c=>conf.insertAdjacentHTML('beforeend',`<option>${c}</option>`));conf.dataset.ready='1'}const pos=$111('nationalRosterPosition');if(pos&&!pos.dataset.ready){POSITIONS.forEach(p=>pos.insertAdjacentHTML('beforeend',`<option>${p}</option>`));pos.dataset.ready='1'}if($111('nationalTeamSearch'))$111('nationalTeamSearch').oninput=e=>{rosterUi.query=e.target.value;rosterUi.page=1;renderNationalTeamGrid()};if(conf)conf.onchange=e=>{rosterUi.conference=e.target.value;rosterUi.page=1;renderNationalTeamGrid()};if(pos)pos.onchange=e=>{rosterUi.position=e.target.value;renderSelectedNationalRoster()};const sort=$111('nationalTeamSort');if(sort){sort.value=rosterUi.sort;sort.onchange=e=>{rosterUi.sort=e.target.value;rosterUi.page=1;renderNationalTeamGrid()}}}
 const priorShowTab=window.showTab;window.showTab=function(name){let out=priorShowTab.apply(this,arguments);if(name==='rankings'){setNationalSection(rosterUi.section);renderNationalRosterBrowser()}return out};
 const priorRenderAll=window.renderAll;window.renderAll=function(...args){let out=priorRenderAll.apply(this,args);if(state.school){ensureFixedRecruitClass();ensureAiRosters();if(!$111('rankingsTab')?.classList.contains('hidden'))renderNationalRosterBrowser()}return out};
 wire111();if(state.school){ensureFixedRecruitClass();ensureAiRosters()}
@@ -3406,7 +3415,7 @@ window.renderClassRankings=function(){const host=$13('classRankingGrid');if(!hos
 function stableOpponent(g){if(!g)return null;if(g.scoutingProfile?.playbookVersion===212)return g.scoutingProfile;const school=schools.find(x=>Number(x.id)===Number(g.oppId)),scheme=aiSchemeFor(school),weaknesses=['Pass protection','Run defense','Secondary depth','Turnover margin','Red-zone offense','Special teams'],stars=['Quarterback','Running back','Edge rusher','Cornerback','Wide receiver'];g.scoutingProfile={playbookVersion:212,offense:scheme.offense,tendency:OFFENSE_TENDENCY[scheme.offense]||'Balanced',defense:scheme.defense,weakness:weaknesses[hash13(`${state.year}-${g.oppId}-w`)%weaknesses.length],star:stars[hash13(`${state.year}-${g.oppId}-s`)%stars.length],form:['Hot','Steady','Inconsistent','Slumping'][hash13(`${state.year}-${g.oppId}-f`)%4]};return g.scoutingProfile}
 function planEffects(g){
  const baseProfile=OFFENSE_PROFILES[state.offense]||OFFENSE_PROFILES['Pro Style'],opp=stableOpponent(g),runPass=Number(state.gamePlan.runPass??50),tempo=Number(state.gamePlan.tempo??50),agg=Number(state.gamePlan.offenseAggression??50),blitz=Number(state.gamePlan.blitz??35),zone=Number(state.gamePlan.manZone??50),fourth=Number(state.gamePlan.fourthDown??35),passRate=clamp(baseProfile.pass+(runPass-50)*.5,18,84),poss=clamp(Math.round(baseProfile.poss+(tempo-50)/15),9,18);
- const qb=roleParticipants(['QB1'])[0]?.p||state.roster.filter(p=>p.pos==='QB'&&!p.redshirt&&(!p.injury&&window.SDF_DISCIPLINE?.available?.(p)!==false)).sort((a,b)=>b.ovr-a.ovr)[0],backs=roleParticipants(['RB1','RB2']),targets=roleParticipants(['WR1','WR2','SLOT','TE1']),line=roleParticipants(['LT','RT','LG','RG','C']);
+ const qb=roleParticipants(['QB1'])[0]?.p||state.roster.filter(p=>p.pos==='QB'&&!p.redshirt&&(!p.injury&&window.SDF_DISCIPLINE?.available?.(p)!==false)).sort((a,b)=>b.ovr-a.ovr)[0]||emergencyQb317(),backs=roleParticipants(['RB1','RB2']),targets=roleParticipants(['WR1','WR2','SLOT','TE1']),line=roleParticipants(['LT','RT','LG','RG','C']);
  const qbGrade=playerSkill13(qb,['accuracy','decision','throwPower']),qbDecision=playerSkill13(qb,['decision','awareness','accuracy']),rbGrade=backs.length?avg(backs.map(x=>playerSkill13(x.p,['vision','elusiveness','power','speed']))):70,targetGrade=targets.length?avg(targets.map(x=>playerSkill13(x.p,['catch','route','speed']))):70,lineGrade=line.length?avg(line.map(x=>playerSkill13(x.p,['strength','awareness','skill']))):70;
  const passPersonnel=clamp(1+(qbGrade-72)/150+(targetGrade-72)/330+(lineGrade-72)/420,.78,1.27),runPersonnel=clamp(1+(rbGrade-72)/185+(lineGrade-72)/310,.78,1.25),op={...baseProfile,passEff:Number(baseProfile.passEff||1)*passPersonnel,runEff:Number(baseProfile.runEff||1)*runPersonnel};
  const turnoverRisk=clamp(7+baseProfile.turnover*100+(agg-50)*.055+Math.max(0,tempo-55)*.045+(72-qbDecision)*.078-(state.weeklyPractice==='Turnover Prevention'?2.5:0),2.2,18),explosive=clamp(10+baseProfile.explosive*100+(agg-50)*.09+(qbGrade-72)*.035+(targetGrade-72)*.02,4,27),pressure=clamp((DEFENSE_PROFILES[state.defense]?.pressure||1)+(blitz-35)/14,0,8),bigRisk=clamp((DEFENSE_PROFILES[state.defense]?.bigRisk||0)+(blitz-35)/20+Math.abs(zone-50)/35,0,9);return{op,opp,passRate,poss,turnoverRisk,explosive,pressure,bigRisk,fourth,tempo,agg,blitz,zone,qbGrade,qbDecision,rbGrade,targetGrade,lineGrade}
@@ -3421,7 +3430,11 @@ function driveSim(off,def,opt){const pass=opt.passRate/100,edge=clamp(off-def+ra
 function mergeStats(a,d){for(const k of ['plays','yards','passYds','rushYds','turnovers','sacks','thirdAtt','thirdConv','fourthAtt','fourthConv','redAtt','redConv','touchdowns','fieldGoals','punts'])a[k]=(a[k]||0)+(d[k]||0)}
 function roleParticipants(keys){window.SDF_V11_TEST?.ensureRealDepth?.();const map=new Map();for(const key of keys){const role=window.SDF_V11_TEST?.ROLE_DEFS?.find(r=>r.key===key),slots=state.realDepthChart?.[key]?.slots||[];for(const slot of slots){const p=state.roster.find(x=>x.id===slot.playerId);if(!p||p.redshirt||p.injury)continue;const w=(Number(slot.snapShare||0)/100)*(role?.weight||1);map.set(p.id,{p,weight:(map.get(p.id)?.weight||0)+w})}}return[...map.values()].filter(x=>x.weight>0)}
 function distribute(total,list,key){if(!list.length)return;const sum=list.reduce((n,x)=>n+x.weight,0)||1,vals=list.map(x=>Math.floor(total*x.weight/sum)),used=vals.reduce((a,b)=>a+b,0);for(let i=0;i<total-used;i++)vals[i%vals.length]++;list.forEach((x,i)=>x.p.seasonStats[key]+=vals[i]||0)}
-function playerSkill13(p,keys){return clamp(Number(window.SDF_V144?.grade?.(p,keys)||p?.ovr||65),45,99)}
+function playerSkill13(p,keys){if(!p)return 45;const g=clamp(Number(window.SDF_V144?.grade?.(p,keys)||p?.ovr||65),45,99);return p.emergencyQb317?Math.min(g,52):g}
+// Build 318: if every quarterback is injured or suspended, the game still gets played. The Build 258 emergency
+// lineup picks the healthy athlete who takes the snaps (graded at an emergency-QB level here). Before this,
+// simGame threw on the missing QB, so the week could never advance and the injuries could never heal.
+function emergencyQb317(){const roster=state.roster||[],p=window.SDF_V11_TEST?.emergencyCandidate?.({pos:'QB'})||roster.find(x=>!x.injury)||roster[0];return p?{...p,emergencyQb317:true}:null}
 function mergeParticipants13(...groups){const map=new Map();for(const group of groups.flat()){if(!group?.p)continue;const old=map.get(group.p.id);map.set(group.p.id,{p:group.p,weight:(old?.weight||0)+Number(group.weight||0)})}return[...map.values()].filter(x=>x.weight>0)}
 function allocate13(total,list,weightFn){total=Math.max(0,Math.round(Number(total)||0));const out=new Map();if(!list.length||!total)return out;const rows=list.map((x,i)=>{const w=Math.max(.001,Number(weightFn?.(x,i)??x.weight??1));return{x,i,w,raw:0,value:0}}),sum=rows.reduce((n,r)=>n+r.w,0)||1;let used=0;for(const r of rows){r.raw=total*r.w/sum;r.value=Math.floor(r.raw);used+=r.value}rows.sort((a,b)=>(b.raw-b.value)-(a.raw-a.value)||b.w-a.w);for(let i=0;i<total-used;i++)rows[i%rows.length].value++;for(const r of rows)out.set(r.x.p.id,r.value);return out}
 function scoreBreakdown13(points){points=Math.max(0,Math.round(Number(points)||0));let best={td:0,fg:0,error:999,penalty:999};for(let td=0;td<=10;td++)for(let fg=0;fg<=10;fg++){const error=Math.abs(points-(td*7+fg*3)),penalty=error*100+Math.abs(td-points/7)+fg*.08;if(penalty<best.penalty)best={td,fg,error,penalty}}return best}
@@ -4917,7 +4930,7 @@ function buildAttrs(pos,ovr,seed=(window.SDF_SEEDS?.random()??Math.random())){
 function ensureAttrs(p){if(!p)return{};const generated=buildAttrs(p.pos,p.trueOvr||p.ovr||65,p.id||p.name||(window.SDF_SEEDS?.random()??Math.random()));p.attrs??={};for(const [k,v] of Object.entries(generated))if(p.attrs[k]==null)p.attrs[k]=v;return p.attrs}
 window.attrsFor=(pos,ovr)=>buildAttrs(pos,ovr,`${pos}-${ovr}-${(window.SDF_SEEDS?.random()??Math.random())}`);
 function avg(values){const a=values.filter(Number.isFinite);return a.length?a.reduce((n,v)=>n+v,0)/a.length:65}
-function grade(p,keys){const a=ensureAttrs(p);return avg(keys.map(k=>Number(a[k]??p.ovr??65)))}
+function grade(p,keys){if(!p)return 45;const a=ensureAttrs(p);return avg(keys.map(k=>Number(a[k]??p.ovr??65)))}
 function best(pos,count=1){return(state.roster||[]).filter(p=>p.pos===pos&&(!p.injury&&window.SDF_DISCIPLINE?.available?.(p)!==false)&&!p.redshirt).sort((a,b)=>b.ovr-a.ovr).slice(0,count)}
 function rolePlayers(keys,pos,count=keys.length){const found=[],seen=new Set();for(const key of keys){const slots=state.realDepthChart?.[key]?.slots||[];for(const slot of slots.slice().sort((a,b)=>Number(b.snapShare||0)-Number(a.snapShare||0))){const p=(state.roster||[]).find(x=>x.id===slot.playerId&&(!x.injury&&window.SDF_DISCIPLINE?.available?.(x)!==false)&&!x.redshirt);if(p&&(!pos||p.pos===pos)&&!seen.has(p.id)){found.push(p);seen.add(p.id);break}}}for(const p of best(pos,count)){if(!seen.has(p.id)){found.push(p);seen.add(p.id)}if(found.length>=count)break}return found.slice(0,count)}
 function opponentGrade(g,unit,offset=0){return c(Number(g?.oppPower||65)+jitter(`${state.year}-${g?.oppId}-${unit}`,7)+offset)}
@@ -6007,7 +6020,7 @@ function filteredPlayerRows(){const d=PLAYER_CATEGORIES[ui.category]||PLAYER_CAT
 function teamRows(){const rows=(schools||[]).map(s=>{const x=teamSeason(s.id),g=Math.max(1,n(x.games));return{teamId:Number(s.id),team:s.name,conference:conferenceOf(s.id),games:n(x.games),record:Number(s.id)===userId()?`${n(state.record?.w)}-${n(state.record?.l)}`:`${n(worldById(s.id)?.record?.w)}-${n(worldById(s.id)?.record?.l)}`,ppg:n(x.pointsFor)/g,paPg:n(x.pointsAgainst)/g,offYpg:n(x.totalYds)/g,defYpg:n(x.yardsAllowed)/g,passYpg:n(x.passYds)/g,rushYpg:n(x.rushYds)/g,passDefYpg:n(x.passYdsAllowed)/g,rushDefYpg:n(x.rushYdsAllowed)/g,sacks:n(x.sacks),takeaways:n(x.takeaways),turnovers:n(x.turnovers),turnoverMargin:n(x.takeaways)-n(x.turnovers)}});return rows}
 function filteredTeamRows(){const d=TEAM_CATEGORIES[ui.category]||TEAM_CATEGORIES.PPG;let rows=teamRows().filter(x=>x.games>0);if(ui.conference!=='ALL')rows=rows.filter(x=>x.conference===ui.conference);if(ui.team!=='ALL')rows=rows.filter(x=>Number(x.teamId)===Number(ui.team));return rows.sort((a,b)=>d.ascending?n(a[d.field])-n(b[d.field]):n(b[d.field])-n(a[d.field])||a.team.localeCompare(b.team))}
 function fmtPlayer(row,key){const v=playerValue(row,key);if(['PUNT_AVG','PASS_EFF','PASS_YPG','RUSH_YPG','REC_YPG','RUSH_AVG','REC_AVG'].includes(key))return v.toFixed(1);if(['PASS_PCT','FG_PCT'].includes(key))return `${v.toFixed(1)}%`;return Math.round(v).toLocaleString()}
-function renderControls(){const categoryDefs=ui.view==='PLAYERS'?PLAYER_CATEGORIES:TEAM_CATEGORIES;if(!categoryDefs[ui.category])ui.category=ui.view==='PLAYERS'?'PASS_YDS':'PPG';const confs=[...new Set((schools||[]).map(s=>conferenceOf(s.id)))].sort(),teams=(schools||[]).slice().sort((a,b)=>a.name.localeCompare(b.name));return`<div class="national-stats-controls"><div class="toolbar compact"><select id="nationalStatsView"><option value="PLAYERS" ${ui.view==='PLAYERS'?'selected':''}>Player Leaders</option><option value="TEAMS" ${ui.view==='TEAMS'?'selected':''}>Team Rankings</option></select><select id="nationalStatsCategory">${Object.entries(categoryDefs).map(([k,d])=>`<option value="${k}" ${ui.category===k?'selected':''}>${esc(d.label)}</option>`).join('')}</select><select id="nationalStatsConference"><option value="ALL">All Conferences</option>${confs.map(x=>`<option ${ui.conference===x?'selected':''}>${esc(x)}</option>`).join('')}</select><select id="nationalStatsTeam"><option value="ALL">All Teams</option>${teams.map(s=>`<option value="${s.id}" ${String(ui.team)===String(s.id)?'selected':''}>${esc(s.name)}</option>`).join('')}</select></div><p class="muted">These are live dynasty statistics from the actual persistent rosters. AI games now create real player lines and team totals instead of placeholder national leaders.</p></div>`}
+function renderControls(){const categoryDefs=ui.view==='PLAYERS'?PLAYER_CATEGORIES:TEAM_CATEGORIES;if(!categoryDefs[ui.category])ui.category=ui.view==='PLAYERS'?'PASS_YDS':'PPG';const confs=[...new Set((schools||[]).map(s=>conferenceOf(s.id)))].sort(),teams=(schools||[]).slice().sort((a,b)=>a.name.localeCompare(b.name));return`<div class="national-stats-controls"><div class="toolbar compact"><select id="nationalStatsView"><option value="PLAYERS" ${ui.view==='PLAYERS'?'selected':''}>Players</option><option value="TEAMS" ${ui.view==='TEAMS'?'selected':''}>Teams</option></select><select id="nationalStatsCategory">${Object.entries(categoryDefs).map(([k,d])=>`<option value="${k}" ${ui.category===k?'selected':''}>${esc(d.label)}</option>`).join('')}</select><select id="nationalStatsConference" aria-label="Conference"><option value="ALL">All Confs</option>${confs.map(x=>`<option ${ui.conference===x?'selected':''}>${esc(x)}</option>`).join('')}</select><select id="nationalStatsTeam"><option value="ALL">All Teams</option>${teams.map(s=>`<option value="${s.id}" ${String(ui.team)===String(s.id)?'selected':''}>${esc(s.name)}</option>`).join('')}</select></div><p class="muted">These are live dynasty statistics from the actual persistent rosters. AI games now create real player lines and team totals instead of placeholder national leaders.</p></div>`}
 function renderPlayerNational(){const rows=filteredPlayerRows(),d=PLAYER_CATEGORIES[ui.category]||PLAYER_CATEGORIES.PASS_YDS,top=rows.slice(0,ui.limit);return`${renderControls()}<div class="metric-grid">${typeof metric==='function'?metric('Tracked Players',allPlayers().length)+metric('Teams with Stats',teamRows().filter(x=>x.games>0).length)+metric('Leader',top[0]?`${top[0].p.name} · ${fmtPlayer(top[0],ui.category)}`:'—')+metric('Scope',ui.team!=='ALL'?teamName(ui.team):ui.conference!=='ALL'?ui.conference:'National') :''}</div><div class="table-wrap"><table><thead><tr><th>Rank</th><th>Player</th><th>Team</th><th>Pos</th><th>G</th><th>${esc(d.label)}</th></tr></thead><tbody>${top.map((x,i)=>`<tr><td>${i+1}</td><td><button class="link-button" onclick="openNationalPlayerStats175(${x.teamId},'${String(x.p.id).replaceAll("'","\\'")}')">${esc(x.p.name)}</button></td><td>${esc(x.team)}</td><td>${x.p.pos}</td><td>${n(x.s.games)}</td><td><b>${fmtPlayer(x,ui.category)}</b></td></tr>`).join('')||'<tr><td colspan="6">No statistics recorded in this scope yet.</td></tr>'}</tbody></table></div>`}
 function renderTeamNational(){const rows=filteredTeamRows(),d=TEAM_CATEGORIES[ui.category]||TEAM_CATEGORIES.PPG,top=rows.slice(0,ui.limit),decimals=['PPG','OFF_YPG','PASS_YPG','RUSH_YPG','SCORING_DEF','YARDS_DEF','PASS_DEF','RUSH_DEF'].includes(ui.category);return`${renderControls()}<div class="table-wrap"><table><thead><tr><th>Rank</th><th>Team</th><th>Conference</th><th>Record</th><th>G</th><th>${esc(d.label)}</th></tr></thead><tbody>${top.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.team)}</td><td>${esc(x.conference)}</td><td>${x.record}</td><td>${x.games}</td><td><b>${decimals?n(x[d.field]).toFixed(1):Math.round(n(x[d.field]))}</b></td></tr>`).join('')||'<tr><td colspan="6">No team statistics recorded yet.</td></tr>'}</tbody></table></div>`}
 function wireNationalControls(){const view=document.getElementById('nationalStatsView'),cat=document.getElementById('nationalStatsCategory'),conf=document.getElementById('nationalStatsConference'),team=document.getElementById('nationalStatsTeam');if(view)view.onchange=e=>{ui.view=e.target.value;ui.category=ui.view==='PLAYERS'?'PASS_YDS':'PPG';renderNationalStats()};if(cat)cat.onchange=e=>{ui.category=e.target.value;renderNationalStats()};if(conf)conf.onchange=e=>{ui.conference=e.target.value;renderNationalStats()};if(team)team.onchange=e=>{ui.team=e.target.value;renderNationalStats()}}
@@ -6043,20 +6056,24 @@ function awardCandidates(def,limit=5){return allPlayers().filter(x=>n(x.s.games)
 function xName(x){return String(x?.p?.name||'')}
 function nationalAwardBoard(limit=5){return NATIONAL_AWARDS.map(def=>({def,candidates:awardCandidates(def,limit)}))}
 function seasonAwardsNational(){const board=nationalAwardBoard(5),awards=board.filter(x=>x.candidates[0]).map(x=>{const w=x.candidates[0];return{key:x.def.key,title:x.def.title,subtitle:x.def.subtitle,player:w.p.name,pos:w.p.pos,team:w.team,teamId:Number(w.teamId),detail:statSummary(w.p),score:Math.round(w.awardScore*10)/10}});state.nationalAwardHistory??=[];const alreadyAwarded=state.nationalAwardHistory.some(x=>Number(x.year)===Number(state.year));if(!alreadyAwarded){state.nationalAwardHistory.push({year:Number(state.year),awards:awards.map(a=>({...a}))})}const userAwards=awards.filter(a=>Number(a.teamId)===userId());state.achievementStats??={};if(!alreadyAwarded)state.achievementStats.awardWinners=n(state.achievementStats.awardWinners)+userAwards.length;const userCandidates=allPlayers().filter(x=>Number(x.teamId)===userId()).sort((a,b)=>awardPositionScore(b,'OVERALL')-awardPositionScore(a,'OVERALL')),allAmerican=userCandidates.slice(0,4).filter(x=>n(x.p.ovr)>=82).map(x=>x.p);state.allAmericans??=[];let newAllAmericans=0;for(const p of allAmerican)if(!state.allAmericans.some(x=>Number(x.year)===Number(state.year)&&x.player===p.name)){state.allAmericans.push({year:state.year,player:p.name,pos:p.pos});newAllAmericans++}state.achievementStats.allAmericans=n(state.achievementStats.allAmericans)+newAllAmericans;return{awards,allAmerican,nationalAwardsVersion:181}}
-function renderAwardWatchNational(){const host=document.getElementById('awardWatchGrid');if(!host)return;const board=nationalAwardBoard(3);host.innerHTML=board.map(({def,candidates})=>{const leader=candidates[0],next=candidates.slice(1);if(!leader)return`<div class="award-watch-card"><span class="eyebrow">${esc(def.title)}</span><h4>No leader yet</h4><span class="sub">${esc(def.subtitle)} · Games must be played before a race appears.</span></div>`;return`<div class="award-watch-card"><span class="eyebrow">${esc(def.title)}</span><h4>${esc(leader.p.name)}</h4><b>${leader.p.pos} · ${esc(leader.team)} · ${esc(def.subtitle)}</b><span class="sub">${esc(statSummary(leader.p))}</span>${next.length?`<small>Next: ${next.map((x,i)=>`#${i+2} ${esc(x.p.name)} (${esc(x.team)})`).join(' · ')}</small>`:''}</div>`}).join('')}
+// Build 316: a real national race. Top five for every national award from every roster, scored exactly like the
+// end-of-season awards (seasonAwardsNational uses the same board), with the player's own players highlighted.
+function renderAwardWatchNational(){const host=document.getElementById('awardWatchGrid');if(!host)return;const board=nationalAwardBoard(5),me=userId();host.innerHTML=board.map(({def,candidates})=>{if(!candidates[0])return`<div class="award-watch-card award-race316"><span class="eyebrow">${esc(def.title)}</span><h4>No leader yet</h4><span class="sub">${esc(def.subtitle)} · Games must be played before a race appears.</span></div>`;return`<div class="award-watch-card award-race316"><span class="eyebrow">${esc(def.title)}</span><span class="sub award-sub316">${esc(def.subtitle)}</span><ol class="award-list316">${candidates.map((x,i)=>{const mine=Number(x.teamId)===me;return`<li class="${i===0?'leader':''}${mine?' mine':''}"><span class="rank">${i+1}</span><span class="who"><button type="button" class="link-button" onclick="openNationalPlayerProfile(${Number(x.teamId)},'${String(x.p.id).replaceAll("'","\'")}')">${esc(x.p.name)}</button><small>${esc(x.p.pos)} · ${esc(x.team)} · ${n(x.p.ovr)} OVR${mine?' · <em>Your player</em>':''}</small><small class="line">${esc(statSummary(x.p))}</small></span></li>`}).join('')}</ol></div>`}).join('')}
 function statSummary(p){const s=ensureStats(p);if(p.pos==='QB')return`${s.passComp}/${s.passAtt}, ${s.passYds} pass yds, ${s.passTD} TD, ${s.passINT} INT`;if(['RB','FB'].includes(p.pos))return`${s.rushAtt} car, ${s.rushYds} rush yds, ${s.rushTD} TD`;if(['WR','TE'].includes(p.pos))return`${s.rec} rec, ${s.recYds} yds, ${s.recTD} TD`;if(['EDGE','DL','LB','CB','S'].includes(p.pos))return`${s.tackles} tackles, ${s.tfl} TFL, ${s.sacks} sacks, ${s.defINT} INT`;if(p.pos==='K')return`${s.fgm}/${s.fga} FG, ${s.xpm}/${s.xpa} XP, ${s.points} pts`;if(p.pos==='P')return`${s.punts} punts, ${s.punts?(s.puntYds/s.punts).toFixed(1):'0.0'} avg`;return`${s.games} games`}
 function seasonLine175(pos,h){if(pos==='QB')return`${n(h.passComp)}/${n(h.passAtt)}, ${n(h.passYds)} pass yds, ${n(h.passTD)} TD, ${n(h.passINT)} INT`;if(['RB','FB'].includes(pos))return`${n(h.rushAtt)} car, ${n(h.rushYds)} rush yds, ${n(h.rushTD)} TD · ${n(h.recYds)} rec yds`;if(['WR','TE'].includes(pos))return`${n(h.rec)} rec, ${n(h.recYds)} yds, ${n(h.recTD)} TD`;if(['EDGE','DL','LB','CB','S'].includes(pos))return`${n(h.tackles)} tackles, ${n(h.tfl)} TFL, ${n(h.sacks)} sacks, ${n(h.defINT)} INT`;if(pos==='K')return`${n(h.fgm)}/${n(h.fga)} FG, ${n(h.xpm)}/${n(h.xpa)} XP, ${n(h.points)} pts`;if(pos==='P')return`${n(h.punts)} punts, ${n(h.punts)?(n(h.puntYds)/n(h.punts)).toFixed(1):'0.0'} avg, ${n(h.inside20)} inside 20`;return`${n(h.games)} games`}
 function historyClass175(p,h,index,history){if(h?.classLabel)return h.classLabel;if(Number(h?.classYear)>=1&&Number(h.classYear)<=4)return['Freshman','Sophomore','Junior','Senior'][Number(h.classYear)-1];const inferred=Math.max(1,Math.min(4,Number(p.year||1)-(history.length-index)));return['Freshman','Sophomore','Junior','Senior'][inferred-1]||`Year ${inferred}`}
-window.openNationalPlayerStats175=function(teamId,playerId){const school=teamById(teamId),p=teamRoster(teamId).find(x=>String(x.id)===String(playerId));if(!school||!p)return;const s=ensureStats(p),history=(p.statHistory||[]).slice(-4),currentClass=typeof window.classLabel==='function'?window.classLabel(p):(['Freshman','Sophomore','Junior','Senior'][Math.max(0,Math.min(3,Number(p.year||1)-1))]||`Year ${p.year}`),seasons=history.map((h,i)=>({...h,classLabel:historyClass175(p,h,i,history)}));seasons.push({year:Number(state.year),team:school.name,ovr:n(p.ovr),classLabel:currentClass,...s});const body=document.getElementById('modalBody');if(!body)return;body.innerHTML=`<span class="eyebrow">NATIONAL PLAYER PROFILE</span><h2>${esc(p.name)}</h2><p class="muted">${esc(school.name)} · ${p.pos} · ${esc(currentClass)} · ${p.ovr} OVR</p><div class="metric-grid">${typeof metric==='function'?metric('Games',s.games)+metric('Season',statSummary(p))+metric('OVR',p.ovr)+metric('Potential',p.pot):''}</div><h3>Weekly Game Log — Current Season</h3><div class="game-log-grid">${(p.gameLog||[]).slice().reverse().map(g=>`<div class="game-log-card"><b>${esc(g.phase==='REGULAR'?`Week ${g.week}`:(window.sdfPhaseLabel||String)(g.phase))} vs ${esc(g.opponent)}</b><span class="sub">${esc(g.result)} · ${Object.entries(g).filter(([k,v])=>!['year','week','opponent','result','phase'].includes(k)&&n(v)!==0).map(([k,v])=>`${k}: ${v}`).join(' · ')}</span></div>`).join('')||'<p class="muted">No games recorded yet.</p>'}</div><h3>Year-by-Year Career Statistics</h3><div class="stat-archive-grid">${seasons.map(h=>`<div class="stat-archive-card"><h4>${esc(h.classLabel||'Season')} · Dynasty Year ${h.year}</h4><b>${esc(h.team||school.name)} · ${h.games||0} games · ${h.ovr||'—'} OVR</b><span class="sub">${esc(seasonLine175(p.pos,h))}</span></div>`).join('')||'<p class="muted">Career history appears after games are played.</p>'}</div>`;document.getElementById('modal')?.classList.remove('hidden')}
+window.openNationalPlayerStats175=function(teamId,playerId){const school=teamById(teamId),p=teamRoster(teamId).find(x=>String(x.id)===String(playerId));if(!school||!p)return;const s=ensureStats(p),history=(p.statHistory||[]).slice(-4),currentClass=typeof window.classLabel==='function'?window.classLabel(p):(['Freshman','Sophomore','Junior','Senior'][Math.max(0,Math.min(3,Number(p.year||1)-1))]||`Year ${p.year}`),seasons=history.map((h,i)=>({...h,classLabel:historyClass175(p,h,i,history)}));seasons.push({year:Number(state.year),team:school.name,ovr:n(p.ovr),classLabel:currentClass,...s});const body=document.getElementById('modalBody');if(!body)return;body.innerHTML=`<span class="eyebrow">NATIONAL PLAYER PROFILE</span><h2>${esc(p.name)}</h2><p class="muted">${esc(school.name)} · ${p.pos} · ${esc(currentClass)} · ${p.ovr} OVR</p><div class="metric-grid">${typeof metric==='function'?metric('Games',s.games)+metric('Season',statSummary(p))+metric('OVR',p.ovr)+metric('Potential',p.pot):''}</div><h3>Weekly Game Log — Current Season</h3><div class="game-log-grid">${(p.gameLog||[]).slice().reverse().map(g=>`<div class="game-log-card"><span class="game-when316">${esc(window.SDF_STATLINE316?window.SDF_STATLINE316.when(g):`${g.phase&&g.phase!=='REGULAR'?(window.sdfPhaseLabel||String)(g.phase):`Week ${g.week}`} vs ${g.opponent}`)}</span><b class="game-line316">${esc(window.SDF_STATLINE316?window.SDF_STATLINE316.line(g,p.pos):'')}</b></div>`).join('')||'<p class="muted">No games recorded yet.</p>'}</div><h3>Year-by-Year Career Statistics</h3><div class="stat-archive-grid">${seasons.map(h=>`<div class="stat-archive-card"><h4>${esc(h.classLabel||'Season')} · Dynasty Year ${h.year}</h4><b>${esc(h.team||school.name)} · ${h.games||0} games · ${h.ovr||'—'} OVR</b><span class="sub">${esc(seasonLine175(p.pos,h))}</span></div>`).join('')||'<p class="muted">Career history appears after games are played.</p>'}</div>`;document.getElementById('modal')?.classList.remove('hidden')}
 function ensureNationalState(){if(!state.school)return;state.nationalGameResults??=[];state.nationalWorldWeeks??=[];state.teamSeasonStats??={};window.SDF_AI_ROSTERS?.ensureAll?.();let missing=false;for(const roster of Object.values(state.aiRosters||{})){if((roster||[]).some(p=>!p.seasonStats)){missing=true;break}}if(missing&&state.nationalGameResults.length&&Number(state.seasonStatStorageVersion||0)<181)rebuildCurrentSeason();else for(const roster of Object.values(state.aiRosters||{}))for(const p of roster||[])ensureStats(p);refreshUserTeamFromRoster()}
 function rehydrate(){if(!state.school)return;window.SDF_AI_ROSTERS?.ensureAll?.();const persisted=Number(state.seasonStatStorageVersion||0)>=181;if(persisted){state.teamSeasonStats??={};for(const roster of Object.values(state.aiRosters||{}))for(const p of roster||[])ensureStats(p);refreshUserTeamFromRoster()}else{state.teamSeasonStats={};if((state.nationalGameResults||[]).length)rebuildCurrentSeason();else{for(const roster of Object.values(state.aiRosters||{}))for(const p of roster||[])ensureStats(p);backfillLegacySeason();if((state.nationalGameResults||[]).length)rebuildCurrentSeason()}}renderNationalStats()}
 const priorBeginYear=window.beginYear;window.beginYear=function(...args){const out=priorBeginYear?.apply(this,args);if(state.school){state.nationalGameResults=[];state.nationalWorldWeeks=[];state.teamSeasonStats={};zeroCurrentAiStats();for(const roster of Object.values(state.aiRosters||{}))for(const p of roster||[])ensureStats(p);state.seasonStatStorageVersion=181}return out};
 const priorNeutral=window.simulateNeutralGame;if(typeof priorNeutral==='function')window.simulateNeutralGame=function(a,b,label,...args){const result=priorNeutral.call(this,a,b,label,...args);try{if(result&&Number(a?.id)!==userId()&&Number(b?.id)!==userId())recordGame({year:state.year,week:state.week,phase:'POSTSEASON',label,aId:a.id,bId:b.id,aScore:result.aScore,bScore:result.bScore,conference:a.conference===b.conference})}catch(err){console.warn('National postseason stats recovery',err)}return result};
 // National leaders and award races only change when games are played, so skip the rebuild on ordinary
 // screen renders (every tab switch) unless the season data, the filters or the host elements changed.
-let lastNational311='',lastHosts311=[];
+let lastNational311='',lastHosts311=[],lastHtml316=[];
 function nationalKey311(){const played=(state.schedule||[]).reduce((a,g)=>a+(g?.result?1:0),0);return[state.year,state.week,state.phase,played,(state.nationalGameResults||[]).length,(state.headToHeadResults||[]).length,(state.roster||[]).length,Object.keys(state.aiRosters||{}).length,ui.view,ui.category,ui.conference,ui.team,ui.limit].join('|')}
-function afterRender(){if(!state.school)return;const hosts=[document.getElementById('nationalLeaderGrid'),document.getElementById('awardWatchGrid')],key=nationalKey311();if(key===lastNational311&&hosts.every((h,i)=>h===lastHosts311[i]&&(!h||h.childElementCount)))return;ensureNationalState();renderNationalStats();renderAwardWatchNational();lastNational311=key;lastHosts311=hosts}
+function afterRender(){if(!state.school)return;const hosts=[document.getElementById('nationalLeaderGrid'),document.getElementById('awardWatchGrid')],key=nationalKey311();// Skip only if both hosts still hold exactly what this module drew; the older team-only renderers can
+// overwrite them on any render (Build 316 fix: the Awards tab showed the old team ballot).
+if(key===lastNational311&&hosts.every((h,i)=>h===lastHosts311[i]&&(!h||h.innerHTML===lastHtml316[i])))return;ensureNationalState();renderNationalStats();renderAwardWatchNational();lastNational311=key;lastHosts311=hosts;lastHtml316=hosts.map(h=>h?h.innerHTML:'')}
 window.renderNationalLeaders=renderNationalStats;
 window.openNationalPlayerProfile=function(teamId,playerId){if(Number(teamId)===userId())return window.openPlayerProfile?.(playerId);return window.openNationalPlayerStats175?.(teamId,playerId)};
 window.SDF_V175={version:VERSION,STAT_FIELDS,PLAYER_CATEGORIES,TEAM_CATEGORIES,NATIONAL_AWARDS,ensure:ensureNationalState,rehydrate,rebuildCurrentSeason,backfillLegacySeason,recordGame,recordLiveGame,afterQuickSim,archiveAiPlayerSeason,simulateWorldWeek:simulateWorldWeek175,renderNationalStats,afterRender,allPlayers,teamRows,statSummary,nationalAwardBoard,seasonAwards:seasonAwardsNational};
@@ -8093,7 +8110,7 @@ function applyDashboardPanels(){
  stack.querySelectorAll('#dashboardSectionNavV219 .ui-section-chip').forEach(b=>b.classList.toggle('active',b.dataset.uiDashboardKey===dashboardState.active));
 }
 const NAV_TABS=['rosterTab','gameplanTab','gamedayTab','coachTab','statsTab','teamTab','seasonTab','programTab','rankingsTab','dynastyTab','historyTab'];
-const SHORT_LABELS={'Starters & Rotation':'Depth Chart','Injury Report':'Injuries','Full Roster':'Players','Opponent Scouting':'Opponent','Weekly Focus':'Practice','Tendencies & Matchups':'Tendencies','Game-Day Injury Watch':'Injuries','True Live Simulation':'Live Sim','Coach Tree V2':'Skill Tree','Coordinators & Staff Management':'Staff','Captains, Discipline & Academics':'Leadership','Season Statistics':'Team Stats','Player Game Logs':'Game Logs','National Awards Race':'Awards','Season Stat Leaders':'Leaders','Countrywide Statistics':'National Stats','National Records':'Records','National Class Rankings':'Class Rankings','Schemes & Philosophy':'Schemes','Team Ratings':'Ratings','Season Leaders':'Leaders','Standings':'Standings','Season Results':'Schedule','Final Decisions':'Signing Day','Conference Championships':'Conference','Bowls & College Football Playoff':'Bowls / CFP','Season Honors':'Awards','Season Review':'Season Review','Build Next Year\'s Program':'Offseason','Transfer Portal':'Transfer Portal','Program Management':'Overview','Who You Answer To':'Administration','Upgrade the Program':'Facilities','Staff Management':'Staff','Player & Recruit Promises':'Promises','Top 25 Rankings':'Top 25','Playoff Projection':'Playoff','Conference Alignment':'Conferences','National Team & Roster Browser':'Team Rosters','Achievements':'Achievements','Coach Profile & Contracts':'Career & Saves','Sponsor Center':'Sponsor Rewards','Rivalry History':'Rivalries','Draft History':'Draft','Dynasty History':'Seasons','Awards & Championships':'Trophies','Program Records':'Records'};
+const SHORT_LABELS={'Starters & Rotation':'Depth Chart','Injury Report':'Injuries','Full Roster':'Players','Opponent Scouting':'Opponent','Weekly Focus':'Practice','Tendencies & Matchups':'Tendencies','Game-Day Injury Watch':'Injuries','True Live Simulation':'Live Sim','Coach Tree V2':'Skill Tree','Coordinators & Staff Management':'Staff','Captains, Discipline & Academics':'Leadership','Season Statistics':'Team Stats','Player Game Logs':'Game Logs','National Awards Race':'Awards','Season Stat Leaders':'Leaders','Countrywide Statistics':'National Stats','National Records':'Records','National Class Rankings':'Class Rankings','Schemes & Philosophy':'Schemes','Team Ratings':'Ratings','Season Leaders':'Leaders','Standings':'Standings','Season Results':'Schedule','Final Decisions':'Signing Day','Conference Championships':'Conference','Bowls & College Football Playoff':'Bowls / CFP','Season Honors':'Awards','Season Review':'Season Review','Build Next Year\'s Program':'Offseason','Transfer Portal':'Transfer Portal','Program Management':'Overview','Who You Answer To':'Administration','Upgrade the Program':'Facilities','Staff Management':'Staff','Player & Recruit Promises':'Promises','Top 25 Rankings':'Top 25','Playoff Projection':'Playoff','Conference Alignment':'Conferences','National Team & Roster Browser':'Team Rosters','All Teams':'All Teams','Achievements':'Achievements','Coach Profile & Contracts':'Career & Saves','Sponsor Center':'Sponsor Rewards','Rivalry History':'Rivalries','Draft History':'Draft','Dynasty History':'Seasons','Awards & Championships':'Trophies','Program Records':'Records'};
 function directSections(tab){return [...tab.children].filter(x=>x.matches?.('section.surface'))}
 function navLabel(section,index){
  if(section.classList.contains('culture-surface-v188'))return 'Culture';
@@ -17128,6 +17145,738 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 window.SDF_INSTALL309={offer,close,native,installed,ios,get pending(){return!!deferred}};
 })();
 
+// Build 315: All Teams team view shows everything the dynasty already tracks about a program: this season's
+// schedule and results, its recruiting class, transfers in and out, a team news feed and season history.
+// It only reads; the existing roster lookup may fill in a computer roster the first time, as All Teams already does.
+(function(){
+'use strict';
+const num=v=>Number(v)||0;
+const esc315=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const schoolList=()=>typeof schools!=='undefined'&&Array.isArray(schools)?schools:[];
+const userId315=()=>num(state?.school?.id);
+function teamName315(id){id=num(id);if(id===userId315())return state.school?.name||'Your team';return schoolList().find(s=>num(s.id)===id)?.name||(state.world||[]).find(t=>num(t.id)===id)?.name||'Unknown'}
+function starText(n){n=Math.max(0,Math.min(5,Math.round(num(n))));return n?'★'.repeat(n):'—'}
+function classOf(p){try{return typeof window.classLabel==='function'?window.classLabel(p):(['','Freshman','Sophomore','Junior','Senior'][num(p.year)]||'')}catch{return''}}
+function rosterOf(id){if(num(id)===userId315())return state.roster||[];try{return window.SDF_AI_ROSTERS?.get?.(id)||state.aiRosters?.[id]||[]}catch{return[]}}
+
+// This season's games, newest last. The player's own team uses its full schedule (played and upcoming).
+function schedule315(id){
+ id=num(id);const year=num(state.year),uid=userId315();
+ if(id===uid)return(state.schedule||[]).map((g,i)=>({week:num(g.week)||i+1,oppId:num(g.oppId),opponent:g.opponent||teamName315(g.oppId),home:!!g.home,bye:!!g.bye,played:!!g.result,result:g.result||null,score:g.score||null,label:g.rivalry?'Rivalry':(g.conference?'Conference':'')}));
+ const rows=[];
+ for(const g of state.nationalGameResults||[]){if(num(g.year)!==year)continue;const a=num(g.aId),b=num(g.bId);if(a!==id&&b!==id)continue;const us=a===id?num(g.aScore):num(g.bScore),them=a===id?num(g.bScore):num(g.aScore),opp=a===id?b:a;rows.push({week:num(g.week),oppId:opp,opponent:teamName315(opp),played:true,result:us>them?'W':'L',score:`${us}-${them}`,label:g.phase&&g.phase!=='REGULAR'?(g.label||'Postseason'):(g.conference?'Conference':'')})}
+ // Games against the player's team are kept on the player's schedule.
+ for(const g of state.schedule||[]){if(num(g.oppId)!==id||g.bye)continue;const w=num(g.week);if(rows.some(r=>r.week===w&&r.oppId===uid))continue;let result=null,score=null;if(g.result){result=g.result==='W'?'L':'W';const [us,them]=String(g.score||'').split('-');score=them!=null?`${them}-${us}`:null}rows.push({week:w,oppId:uid,opponent:state.school?.name||'Your team',home:!g.home,played:!!g.result,result,score,label:g.rivalry?'Rivalry vs you':'vs you'})}
+ return rows.sort((x,y)=>x.week-y.week)
+}
+
+// Commitments in the current cycle plus the newest signing class already on the roster.
+function recruiting315(id){
+ id=num(id);
+ const commits=(state.recruits||[]).filter(r=>r&&r.committedTo!=null&&num(r.committedTo)===id).map(r=>({name:r.name,pos:r.pos,stars:num(r.stars),ovr:num(r.ovr),home:r.hometown||r.home||'',rank:num(r.recruitRank||r.rank||r.nationalRank)})).sort((a,b)=>b.stars-a.stars||(a.rank||9999)-(b.rank||9999));
+ const roster=rosterOf(id),newest=Math.max(0,...roster.filter(p=>!p.walkOn&&!p.transferOrigin&&!/transfer/i.test(String(p.rosterOrigin||''))).map(p=>num(p.signedYear)));
+ const signed=newest?roster.filter(p=>num(p.signedYear)===newest&&!p.walkOn&&!p.transferOrigin&&!/transfer/i.test(String(p.rosterOrigin||''))).map(p=>({id:p.id,name:p.name,pos:p.pos,stars:num(p.stars),ovr:num(p.ovr),pot:num(p.pot)})).sort((a,b)=>b.stars-a.stars||b.ovr-a.ovr):[];
+ const world=(state.world||[]).find(t=>num(t.id)===id);
+ return{commits,signed,signedYear:newest,classRank:id===userId315()?num(state.classRank||state.recruitingClassRank):num(world?.classRank)}
+}
+
+// Transfers from the most recent portal window.
+function transfers315(id){
+ id=num(id);const pm=state.portalMarketV198||{},resolved=Array.isArray(pm.resolved)?pm.resolved:[],name=teamName315(id);
+ const dest=new Map(resolved.map(r=>[String(r.playerId),r]));
+ const out=(pm.aiEntries||[]).filter(p=>num(p.sourceTeamId)===id).map(p=>{const r=dest.get(String(p.id));return{id:p.id,name:p.name,pos:p.pos,ovr:num(p.ovr),to:r?.to||(p.taken?'Signed elsewhere':'Unsigned'),toId:num(r?.toId)}});
+ if(id===userId315())for(const d of state.portalDepartures||[]){const p=d.player||d;if(!out.some(x=>String(x.id)===String(p.id)))out.push({id:p.id,name:p.name,pos:p.pos,ovr:num(p.ovr),to:d.to||d.destination||'Transfer portal'})}
+ const inbound=resolved.filter(r=>num(r.toId)===id||(!r.toId&&r.to===name)).map(r=>{const p=(pm.aiEntries||[]).find(x=>String(x.id)===String(r.playerId));return{id:r.playerId,name:r.player,pos:p?.pos||'',ovr:num(p?.ovr),from:r.from||p?.sourceTeamName||''}});
+ return{year:num(pm.year),out:out.sort((a,b)=>b.ovr-a.ovr),in:inbound.sort((a,b)=>b.ovr-a.ovr)}
+}
+
+// Team news built from events the dynasty already records, newest first.
+function news315(id){
+ id=num(id);const name=teamName315(id),year=num(state.year),items=[];
+ const push=(y,w,order,icon,text)=>items.push({y:num(y),w:num(w),order,icon,text});
+ for(const g of schedule315(id))if(g.played){const rk=(state.rankings||[]).find(t=>num(t.id)===g.oppId)?.rank;push(year,g.week,3,g.result==='W'?'🏈':'📉',`${g.result==='W'?'Beat':'Lost to'} ${rk&&rk<=25?`No. ${rk} `:''}${g.opponent} ${g.score} (Week ${g.week})`)}
+ // National News stories that feature this team (upsets, big performances, poll moves, commitments, carousel).
+ for(const x of state.nationalNews315?.stories||[]){if(!(x?.ids||[]).map(num).includes(id)||['SCORES','POLL','CONF','UNBEATEN'].includes(x.t))continue;const w=x.w==='POST'?16:x.w==='OFF'?19:num(x.w);push(x.y,w,7,'📰',x.h)}
+ if(!state.nationalNews315?.stories?.length)for(const r of state.lastWorldResults||[]){if(!r.upset)continue;if(num(r.winnerId)===id)push(year,num(state.week)-1,4,'⚡',`Upset win over ${r.loser}, ${r.score}`);else if(num(r.loserId)===id)push(year,num(state.week)-1,4,'😬',`Upset loss to ${r.winner}, ${r.score}`)}
+ for(const c of state.recruits||[]){if(c?.committedTo==null||num(c.committedTo)!==id||num(c.stars)<3)continue;push(year,num(c.committedWeek)||num(state.week),2,'✍️',`${starText(c.stars)} ${c.pos} ${c.name} committed`)}
+ for(const h of state.aiCoachWorldV201?.history||[]){if(num(h.teamId)!==id)continue;const why={POACHED:'hired away from another program',FIRED:'fired',RETIRED:'retired',PROMOTED:'promoted'}[h.reason]||String(h.reason||'').toLowerCase();push(h.year,20,5,'🧢',h.type==='HIRE'?`Hired head coach ${h.coach}${h.reason==='POACHED'?' (lured from another program)':''}`:`Head coach ${h.coach} ${why||'left'}`)}
+ for(const m of state.conferenceMoveHistory||[]){if(num(m.teamId)!==id)continue;push(m.year,21,5,'🗺️',`${m.type==='promotion'?'Promoted':m.type==='demotion'?'Moved down':'Moved'} from the ${m.from} to the ${m.to}`)}
+ for(const r of state.nationalRecordHistory||[]){if(num(r.teamId)!==id)continue;push(r.year,r.week,6,'🏆',`${r.player} (${r.pos}) set a ${r.level==='GAME'?'single-game':r.level==='SEASON'?'season':''} record: ${r.value} ${String(r.label||'').toLowerCase()}`)}
+ for(const d of state.aiDraftSummaries||[]){if(num(d.schoolId)!==id||!num(d.drafted))continue;push(d.year,22,5,'🎓',`${d.drafted} player${d.drafted===1?'':'s'} drafted${num(d.firstRounders)?`, ${d.firstRounders} in the first round`:''}`)}
+ if(id===userId315())for(const d of state.draftHistory||[])push(d.year,22,5,'🎓',`${d.player} (${d.pos}) drafted in round ${d.round}`);
+ const t=transfers315(id);for(const p of t.in.slice(0,4))push(t.year,23,4,'🔁',`Added transfer ${p.pos} ${p.name}${p.from?` from ${p.from}`:''}`);for(const p of t.out.slice(0,4))push(t.year,23,4,'🚪',`Lost ${p.pos} ${p.name} to the portal${p.to&&p.to!=='Unsigned'?` (${p.to})`:''}`);
+ return items.sort((a,b)=>b.y-a.y||b.w-a.w||b.order-a.order).slice(0,14)
+}
+
+function history315(id){
+ id=num(id);
+ if(id===userId315())return(state.history||[]).filter(h=>h&&h.year!=null).slice(-6).reverse().map(h=>({year:num(h.year),w:num(h.wins),l:num(h.losses),note:h.post&&h.post!=='None'?h.post:''}));
+ return(state.aiProgramHistoryV197?.[id]||[]).slice(-6).reverse().map(h=>({year:num(h.year),w:num(h.wins),l:num(h.losses),note:h.wonTitle?'National champions':h.wonConference?'Conference champions':(num(h.classRank)?`Class rank ${h.classRank}`:'')}))
+}
+
+function section(title,body,open=false){return`<details class="team-detail315"${open?' open':''}><summary>${esc315(title)}</summary><div class="team-detail-body315">${body}</div></details>`}
+function render(id){
+ const host=document.getElementById('nationalTeamExtras');if(!host||!state?.school)return;id=num(id);
+ let html='';
+ try{
+  const games=schedule315(id),played=games.filter(g=>g.played);
+  const sched=games.length?`<div class="team-games315">${games.map(g=>g.bye?`<div class="team-game315 bye"><span class="wk">W${g.week}</span><span>Bye week</span></div>`:`<div class="team-game315 ${g.played?(g.result==='W'?'win':'loss'):'next'}"><span class="wk">W${g.week}</span><span class="opp">${g.home===false?'at ':g.home?'vs ':'vs '}${esc315(g.opponent)}${g.label?` <small>${esc315(g.label)}</small>`:''}</span><b>${g.played?`${g.result} ${esc315(g.score||'')}`:'Upcoming'}</b></div>`).join('')}</div>${id!==userId315()?'<p class="sub">Matchups between computer teams are set each week, so only games already played (and games against you) are listed.</p>':''}`:'<p class="muted">No games played yet this season.</p>';
+  html+=section(`Schedule & Results${played.length?` · ${played.filter(g=>g.result==='W').length}-${played.filter(g=>g.result==='L').length}`:''}`,sched,true);
+  const rec=recruiting315(id);
+  const commitsHtml=rec.commits.length?`<div class="team-list315">${rec.commits.map(r=>`<div><span class="stars315">${starText(r.stars)}</span> <b>${esc315(r.name)}</b> <span class="sub">${esc315(r.pos)}${r.home?` · ${esc315(r.home)}`:''}</span></div>`).join('')}</div>`:'<p class="muted">No commitments yet this cycle.</p>';
+  const signedHtml=rec.signed.length?`<div class="team-list315">${rec.signed.map(p=>`<div><span class="stars315">${starText(p.stars)}</span> <b>${esc315(p.name)}</b> <span class="sub">${esc315(p.pos)} · ${p.ovr} OVR${p.pot?` · ${p.pot} POT`:''}</span></div>`).join('')}</div>`:'<p class="muted">No signees on the roster yet.</p>';
+  html+=section(`Recruiting${rec.classRank?` · Class rank ${rec.classRank}`:''}`,`<h4>Committed this cycle (${rec.commits.length})</h4>${commitsHtml}<h4>Newest signing class${rec.signedYear?` (Year ${rec.signedYear})`:''} · ${rec.signed.length} players</h4>${signedHtml}`);
+  const tr=transfers315(id);
+  const inHtml=tr.in.length?`<div class="team-list315">${tr.in.map(p=>`<div><b>${esc315(p.name)}</b> <span class="sub">${esc315(p.pos)}${p.ovr?` · ${p.ovr} OVR`:''}${p.from?` · from ${esc315(p.from)}`:''}</span></div>`).join('')}</div>`:'<p class="muted">No incoming transfers.</p>';
+  const outHtml=tr.out.length?`<div class="team-list315">${tr.out.map(p=>`<div><b>${esc315(p.name)}</b> <span class="sub">${esc315(p.pos)}${p.ovr?` · ${p.ovr} OVR`:''} · ${esc315(p.to)}</span></div>`).join('')}</div>`:'<p class="muted">No players left through the portal.</p>';
+  html+=section(`Transfers${tr.year?` · ${tr.year} portal`:''} · ${tr.in.length} in, ${tr.out.length} out`,`<h4>Transferred in</h4>${inHtml}<h4>Transferred out</h4>${outHtml}`);
+  const news=news315(id);
+  html+=section('Team News',news.length?`<div class="team-news315">${news.map(n=>`<div><span class="icon">${n.icon}</span><span>${esc315(n.text)}</span><small>Year ${n.y}</small></div>`).join('')}</div>`:'<p class="muted">Nothing newsworthy yet.</p>',true);
+  const hist=history315(id);
+  if(hist.length)html+=section('Season History',`<div class="team-list315">${hist.map(h=>`<div><b>Year ${h.year}</b> <span>${h.w}-${h.l}</span>${h.note?` <span class="sub">${esc315(h.note)}</span>`:''}</div>`).join('')}</div>`);
+ }catch(err){console.warn('All Teams details unavailable',err);html='<p class="muted">Team details are unavailable right now.</p>'}
+ host.innerHTML=html;
+}
+window.SDF_TEAM_DETAIL315={render,schedule:schedule315,recruiting:recruiting315,transfers:transfers315,news:news315,history:history315};
+})();
+
+(()=>{
+'use strict';
+// Build 315: National News.
+// A league-wide news desk built from what the sim already records: every game in nationalGameResults, the per-game
+// lines on every roster's gameLog, the Top 25, conference records, recruit commitments, the Dynasty Trophy race,
+// the AI coaching carousel, the transfer portal digests and the postseason. After each simulated week the desk
+// writes stories (upsets, Top 25 clashes, the scoreboard, star performances, the poll, unbeaten and conference
+// races, commitments) into nationalNews315; the postseason, signing day, carousel and portal add stories as they
+// happen. Stories are short text only (no references into other systems), capped, and kept for this season and
+// the last one. Shown on a full-screen page (Home card, More menu, League tab) with category filters.
+const VERSION=1,MAX_STORIES=170,KEEP_PRIOR=36;
+const $=id=>document.getElementById(id);
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num=(v,d=0)=>v!==null&&v!==''&&Number.isFinite(Number(v))?Number(v):d;
+const S=()=>{try{return typeof state!=='undefined'?state:window.state}catch{return window.state}};
+const SCHOOLS=()=>{try{return typeof schools!=='undefined'?schools:(window.schools||[])}catch{return window.schools||[]}};
+const uid=s=>num(s?.school?.id,-1);
+const safe=(fn,fallback=null)=>{try{return fn()}catch(error){window.SDF_RUNTIME_ERRORS?.capture?.(error,{operation:'v315-national-news'});return fallback}};
+const fmt=v=>Math.round(num(v)).toLocaleString('en-US');
+const hash=str=>{let h=2166136261;for(const c of String(str)){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0};
+const pickT=(key,list)=>list[hash(key)%list.length];
+const POS_NAME={QB:'quarterback',RB:'running back',FB:'fullback',WR:'receiver',TE:'tight end',OT:'tackle',IOL:'lineman',EDGE:'edge rusher',DL:'defensive lineman',LB:'linebacker',CB:'cornerback',S:'safety',K:'kicker',P:'punter'};
+const CLASS=['freshman','sophomore','junior','senior'];
+
+// ---------------------------------------------------------------- World lookups
+const school=id=>SCHOOLS().find?.(x=>num(x.id)===num(id))||null;
+const teamName=(id,s=S())=>num(id)===uid(s)?s.school.name:(school(id)?.name||(s?.world||[]).find?.(t=>num(t.id)===num(id))?.name||'Unknown');
+const worldTeam=(id,s=S())=>(s?.world||[]).find?.(t=>num(t.id)===num(id))||null;
+function record(id,s=S()){const r=num(id)===uid(s)?s.record:worldTeam(id,s)?.record;return{w:num(r?.w),l:num(r?.l)}}
+const recText=r=>`${r.w}–${r.l}`;
+const poss=name=>/s$/i.test(String(name))?`${name}’`:`${name}’s`;
+function confOf(id,s=S()){if(num(id)===uid(s))return s.school.conference||'';return worldTeam(id,s)?.conference||school(id)?.conference||''}
+function confRecord(id,s=S()){const c=s?.conferenceRecords?.[id];return{w:num(c?.w),l:num(c?.l)}}
+function powerOf(id,s=S()){if(num(id)===uid(s)){try{return num(window.teamRatings?.().overall,70)}catch{return 70}}return num(worldTeam(id,s)?.rosterPower,num(school(id)?.prestige,60))}
+function currentPoll(s=S()){const out={};for(const t of s?.rankings||[])if(num(t.rank)>=1&&num(t.rank)<=25)out[num(t.id)]=num(t.rank);return out}
+const rk=(poll,id)=>{const r=num(poll?.[id],0);return r>=1&&r<=25?r:0};
+const withRank=(poll,id,s)=>{const r=rk(poll,id);return`${r?`No. ${r} `:''}${teamName(id,s)}`};
+const logo=id=>{try{return(typeof TEAM_BRANDING!=='undefined'?TEAM_BRANDING:window.TEAM_BRANDING)?.[id]?.logo||''}catch{return''}};
+
+// ---------------------------------------------------------------- State
+function root(s=S()){
+ let r=s.nationalNews315;
+ if(!r||typeof r!=='object'||Array.isArray(r))r=s.nationalNews315={};
+ r.v=VERSION;r.year=num(r.year,num(s.year,1));r.seq=num(r.seq,0);r.readSeq=num(r.readSeq,0);
+ for(const k of ['done','commits','post','portal','stories','coachYears'])if(!Array.isArray(r[k]))r[k]=[];
+ if(!r.poll||typeof r.poll!=='object')r.poll=null;
+ return r
+}
+function rollYear(s,r){
+ if(num(r.year)===num(s.year))return;
+ // Keep the best stories from last season so the page is never empty in the offseason; reset the per-year trackers.
+ const last=r.stories.filter(x=>num(x.y)===num(r.year)),finale=last.filter(x=>x.w==='POST'||x.w==='OFF'),rest=last.filter(x=>x.w!=='POST'&&x.w!=='OFF').sort((a,b)=>num(b.p)-num(a.p)||num(b.n)-num(a.n)).slice(0,Math.max(0,KEEP_PRIOR-finale.length)),prior=finale.slice(-KEEP_PRIOR).concat(rest);
+ r.stories=prior.sort((a,b)=>num(a.n)-num(b.n));r.year=num(s.year);r.done=[];r.post=[];r.portal=[];r.poll=currentPoll(s);
+}
+function add(r,story){
+ if(!story?.h)return null;
+ if(story.k&&r.stories.some(x=>x.k===story.k))return null;
+ r.seq++;const s=S();
+ const row={n:r.seq,k:story.k||`n${r.seq}`,y:num(story.y,num(s.year)),w:story.w??num(s.week),t:story.t,c:story.c||catOf(story.t),h:String(story.h),b:story.b?String(story.b):'',p:num(story.p,1)};
+ if(story.l?.length)row.l=story.l.slice(0,25).map(String);
+ if(story.ids?.length)row.ids=[...new Set(story.ids.map(Number))].slice(0,4);
+ if(story.mine)row.m=1;
+ r.stories.push(row);
+ if(r.stories.length>MAX_STORIES){const keep=r.stories.slice().sort((a,b)=>num(b.y)-num(a.y)||num(b.p)-num(a.p)||num(b.n)-num(a.n)).slice(0,MAX_STORIES);const ks=new Set(keep.map(x=>x.n));r.stories=r.stories.filter(x=>ks.has(x.n))}
+ return row
+}
+const CATS={UPSET:'games',CLASH:'games',SCORES:'games',UNBEATEN:'games',CONF:'games',BOWL:'games',PLAYOFF:'games',CONFCHAMP:'games',CHAMP:'games',POTW:'players',PERF:'players',TROPHY:'players',COMMIT:'recruiting',RECRUITS:'recruiting',CLASS:'recruiting',POLL:'rankings',NO1:'rankings',COACH:'coaching',HOTSEAT:'coaching',PORTAL:'coaching'};
+const catOf=t=>CATS[t]||'games';
+const TAGS={UPSET:'Upset',CLASH:'Top 25 Clash',SCORES:'Scoreboard',UNBEATEN:'Unbeaten Watch',CONF:'Conference Race',BOWL:'Bowl Season',PLAYOFF:'Playoff',CONFCHAMP:'Conference Title',CHAMP:'National Champion',POTW:'Player of the Week',PERF:'Big Performance',TROPHY:'Dynasty Trophy Watch',COMMIT:'Commitment',RECRUITS:'Recruiting',CLASS:'Signing Day',POLL:'Top 25',NO1:'New No. 1',COACH:'Coaching Carousel',HOTSEAT:'Hot Seat',PORTAL:'Transfer Portal'};
+
+// ---------------------------------------------------------------- Weekly games
+function gamesFor(s,week,phase='REGULAR'){return(s.nationalGameResults||[]).filter(g=>num(g.year)===num(s.year)&&num(g.week)===num(week)&&String(g.phase||'REGULAR')===phase&&num(g.aScore)!==num(g.bScore))}
+function shape(g){const aWon=num(g.aScore)>num(g.bScore);return{g,win:aWon?num(g.aId):num(g.bId),lose:aWon?num(g.bId):num(g.aId),ws:Math.max(num(g.aScore),num(g.bScore)),ls:Math.min(num(g.aScore),num(g.bScore))}}
+const score=x=>`${x.ws}–${x.ls}`;
+function gameStories(s,r,week,poll,{backfill=false}={}){
+ const me=uid(s),games=gamesFor(s,week).map(shape),out=[];
+ // Upsets: an unranked team (or one ranked far lower) beats a ranked team; otherwise a big roster-power gap.
+ const upsets=[];
+ for(const x of games){const wr=rk(poll,x.win),lr=rk(poll,x.lose),gap=powerOf(x.lose,s)-powerOf(x.win,s);let sev=0;
+  if(!backfill&&lr&&(!wr||wr-lr>=8))sev=(wr||32)-lr+(lr<=5?8:lr<=10?4:0);else if(gap>=9&&(backfill||!wr))sev=gap*.8;
+  if(sev>0)upsets.push({...x,sev,wr,lr,gap})}
+ upsets.sort((a,b)=>b.sev-a.sev);
+ for(const x of upsets.slice(0,2)){
+  const W=teamName(x.win,s),L=withRank(poll,x.lose,s),wRec=record(x.win,s),lRec=record(x.lose,s),key=`up-${s.year}-${week}-${x.win}-${x.lose}`,perfectEnd=lRec.l===1&&lRec.w>=4;
+  const h=pickT(key,[`${W} stuns ${L}`,`Shock in Week ${week}: ${W} topples ${L}`,`${W} takes down ${L}`,`Upset alert: ${L} falls to ${W}`]);
+  const b=`${W} (${recText(wRec)}) beat ${L} ${score(x)}${x.lr?'':`, a team with a ${Math.round(x.gap)}-point roster edge`}.${perfectEnd?` The loss ends ${poss(teamName(x.lose,s))} perfect start.`:` ${teamName(x.lose,s)} falls to ${recText(lRec)}.`}`;
+  out.push({k:key,t:'UPSET',w:week,h,b,ids:[x.win,x.lose],p:7+Math.min(4,x.sev/6),mine:x.win===me||x.lose===me})}
+ const upKeys=new Set(upsets.slice(0,2).map(x=>x.g.key));
+ // Ranked vs ranked.
+ if(!backfill){const clashes=games.filter(x=>rk(poll,x.win)&&rk(poll,x.lose)&&!upKeys.has(x.g.key)).sort((a,b)=>(rk(poll,a.win)+rk(poll,a.lose))-(rk(poll,b.win)+rk(poll,b.lose)));
+  for(const x of clashes.slice(0,3)){const key=`cl-${s.year}-${week}-${x.win}-${x.lose}`,close=x.ws-x.ls<=7,W=withRank(poll,x.win,s),L=withRank(poll,x.lose,s);
+   const h=close?pickT(key,[`${W} holds off ${L}, ${score(x)}`,`${W} survives ${L} in a thriller`,`${W} edges ${L}`]):pickT(key,[`${W} rolls past ${L}, ${score(x)}`,`${W} makes a statement against ${L}`,`${W} handles ${L}`]);
+   const top=Math.min(rk(poll,x.win),rk(poll,x.lose));
+   out.push({k:key,t:'CLASH',w:week,h,b:`${teamName(x.win,s)} moves to ${recText(record(x.win,s))}; ${teamName(x.lose,s)} drops to ${recText(record(x.lose,s))}.${x.g.conference?' The win counts in the conference race.':''}`,ids:[x.win,x.lose],p:top<=5?7:5.5,mine:x.win===me||x.lose===me})}}
+ // Top 25 scoreboard.
+ const ranked=games.filter(x=>rk(poll,x.win)||rk(poll,x.lose)).sort((a,b)=>Math.min(rk(poll,a.win)||99,rk(poll,a.lose)||99)-Math.min(rk(poll,b.win)||99,rk(poll,b.lose)||99));
+ if(ranked.length&&!backfill)out.push({k:`sc-${s.year}-${week}`,t:'SCORES',w:week,h:`Week ${week} Top 25 scoreboard`,b:`How the ranked teams fared this week.`,l:ranked.slice(0,25).map(x=>`${withRank(poll,x.win,s)} ${x.ws}, ${withRank(poll,x.lose,s)} ${x.ls}`),p:3});
+ return out
+}
+
+// ---------------------------------------------------------------- Player performances
+const CATEGORY_LINES={
+ pass:{test:g=>num(g.passYds)>=240||num(g.passTD)>=3,score:g=>num(g.passYds)/25+num(g.passTD)*3.5-num(g.passINT)*3,line:g=>`${fmt(g.passYds)} yards${num(g.passTD)?` and ${g.passTD} TD${g.passTD>1?'s':''}`:''}`,verb:['throws for','passes for','carves up the defense for']},
+ rush:{test:g=>num(g.rushYds)>=115||num(g.rushTD)>=2,score:g=>num(g.rushYds)/8+num(g.rushTD)*5,line:g=>`${fmt(g.rushYds)} yards${num(g.rushTD)?` and ${g.rushTD} TD${g.rushTD>1?'s':''}`:''}`,verb:['runs for','rushes for','gashes the defense for']},
+ rec:{test:g=>num(g.recYds)>=85||num(g.recTD)>=2,score:g=>num(g.recYds)/6.5+num(g.recTD)*5,line:g=>`${num(g.rec)?`${g.rec} catches for `:''}${fmt(g.recYds)} yards${num(g.recTD)?` and ${g.recTD} TD${g.recTD>1?'s':''}`:''}`,verb:['hauls in','reels in','racks up']},
+ def:{test:g=>num(g.sacks)>=2||num(g.defINT)>=2||num(g.tackles)>=10||(num(g.defINT)>=1&&num(g.tackles)>=6)||(num(g.sacks)>=1&&num(g.ff)>=1),score:g=>num(g.sacks)*5+num(g.defINT)*7+num(g.tackles)*.8+num(g.ff)*4+num(g.tfl)*1.5,line:g=>[num(g.tackles)?`${g.tackles} tackles`:'',num(g.sacks)?`${g.sacks} sack${g.sacks>1?'s':''}`:'',num(g.defINT)?`${g.defINT} INT${g.defINT>1?'s':''}`:'',num(g.ff)?`${g.ff} forced fumble${g.ff>1?'s':''}`:''].filter(Boolean).join(', '),verb:['wrecks the game with','dominates with','posts']}
+};
+function playerRows(s){
+ const rows=[];
+ try{const all=window.SDF_V175?.allPlayers?.();if(Array.isArray(all)&&all.length){for(const x of all)rows.push({teamId:num(x.teamId),p:x.p});return rows}}catch{}
+ for(const p of s.roster||[])rows.push({teamId:uid(s),p});
+ for(const [id,list] of Object.entries(s.aiRosters||{}))for(const p of list||[])rows.push({teamId:num(id),p});
+ return rows
+}
+function performanceStories(s,week,poll){
+ const me=uid(s),cands=[];
+ for(const {teamId,p} of playerRows(s)){const log=p?.gameLog;if(!Array.isArray(log)||!log.length)continue;
+  let g=null;for(let i=log.length-1;i>=0&&i>=log.length-4;i--){const e=log[i];if(num(e?.year)===num(s.year)&&num(e?.week)===num(week)&&String(e?.phase||'REGULAR')==='REGULAR'){g=e;break}}
+  if(!g)continue;
+  for(const [cat,d] of Object.entries(CATEGORY_LINES))if(d.test(g))cands.push({cat,d,g,p,teamId,score:d.score(g)})}
+ cands.sort((a,b)=>b.score-a.score);
+ const picked=[],perCat={},seen=new Set();
+ let mineN=0;
+ for(const c of cands){if(picked.length>=4)break;if(seen.has(c.p.id)||num(perCat[c.cat])>=2||(c.teamId===me&&mineN>=1))continue;if(c.teamId===me)mineN++;seen.add(c.p.id);perCat[c.cat]=num(perCat[c.cat])+1;picked.push(c)}
+ return picked.map((c,i)=>{
+  const team=teamName(c.teamId,s),game=gamesFor(s,week).map(shape).find(x=>x.win===c.teamId||x.lose===c.teamId),won=game?.win===c.teamId,opp=game?(won?game.lose:game.win):null;
+  const key=`pf-${s.year}-${week}-${c.p.id}`,cls=CLASS[Math.max(0,Math.min(3,num(c.p.year,1)-1))]||'',posName=POS_NAME[c.p.pos]||c.p.pos;
+  const h=`${c.p.name} ${pickT(key,c.d.verb)} ${c.d.line(c.g)}`;
+  const res=game?`${won?'in a':'despite a'} ${score(game)} ${won?'win over':'loss to'} ${withRank(poll,opp,s)}`:'';
+  const season=safe(()=>window.SDF_V175?.statSummary?.(c.p),'')||'';
+  const b=`The ${team} ${cls} ${posName}${res?` delivered ${res}`:' delivered'}.${season?` Season: ${season}.`:''}`;
+  return{k:key,t:i===0?'POTW':'PERF',w:week,h,b,ids:[c.teamId],p:i===0?7.5:5,mine:c.teamId===me}})
+}
+
+// ---------------------------------------------------------------- Poll, races, trophy
+function pollStories(s,r,week,before,after){
+ if(!before||!Object.keys(before).length)return[];
+ const out=[],me=uid(s),moves=[];
+ for(const [id,to] of Object.entries(after)){const from=rk(before,id);moves.push({id:num(id),from,to,change:from?from-to:26-to})}
+ const newOne=Object.entries(after).find(([,v])=>v===1)?.[0],oldOne=Object.entries(before).find(([,v])=>v===1)?.[0];
+ if(newOne&&oldOne&&num(newOne)!==num(oldOne)){const key=`no1-${s.year}-${week}-${newOne}`;out.push({k:key,t:'NO1',w:week,h:pickT(key,[`${teamName(newOne,s)} takes over No. 1`,`New No. 1: ${teamName(newOne,s)} climbs to the top`,`${teamName(newOne,s)} is the new No. 1`]),b:`${teamName(newOne,s)} (${recText(record(newOne,s))}) moves up from No. ${rk(before,newOne)||'unranked'}. ${teamName(oldOne,s)} (${recText(record(oldOne,s))}) is now ${rk(after,oldOne)?`No. ${rk(after,oldOne)}`:'out of the Top 25'}.`,ids:[num(newOne),num(oldOne)],p:8,mine:num(newOne)===me||num(oldOne)===me})}
+ const risers=moves.filter(m=>m.from&&m.change>=3).sort((a,b)=>b.change-a.change),fallers=Object.keys(before).map(id=>({id:num(id),from:rk(before,id),to:rk(after,id)})).filter(m=>m.to&&m.to-m.from>=3).sort((a,b)=>(b.to-b.from)-(a.to-a.from)),newcomers=moves.filter(m=>!m.from),dropped=Object.keys(before).map(Number).filter(id=>!rk(after,id));
+ const l=[];
+ if(risers[0])l.push(`Biggest climb: ${teamName(risers[0].id,s)} ${risers[0].from} → ${risers[0].to}`);
+ if(fallers[0])l.push(`Biggest drop: ${teamName(fallers[0].id,s)} ${fallers[0].from} → ${fallers[0].to}`);
+ if(newcomers.length)l.push(`New to the poll: ${newcomers.sort((a,b)=>a.to-b.to).map(m=>`${teamName(m.id,s)} (${m.to})`).join(', ')}`);
+ if(dropped.length)l.push(`Dropped out: ${dropped.map(id=>teamName(id,s)).join(', ')}`);
+ const top5=Object.entries(after).sort((a,b)=>a[1]-b[1]).slice(0,5).map(([id,v])=>`${v}. ${teamName(id,s)} (${recText(record(id,s))})`);
+ const mine=rk(after,me);
+ if(l.length||top5.length)out.push({k:`poll-${s.year}-${week}`,t:'POLL',w:week,h:`Top 25 after Week ${week}: ${teamName(Object.entries(after).find(([,v])=>v===1)?.[0],s)} leads the way`,b:`${mine?`${s.school.name} is No. ${mine}${rk(before,me)&&rk(before,me)!==mine?` (was ${rk(before,me)})`:''}. `:''}Top five: ${top5.join(' · ')}.`,l,ids:[num(Object.entries(after).find(([,v])=>v===1)?.[0])],p:4.5,mine:!!mine});
+ return out
+}
+function unbeatenStory(s,week,poll){
+ if(week<5||week%2)return null;
+ const ids=[uid(s),...(s.world||[]).map(t=>num(t.id))].filter((v,i,a)=>a.indexOf(v)===i),perfect=ids.filter(id=>{const r=record(id,s);return r.l===0&&r.w>=week-2&&r.w>0}).sort((a,b)=>(rk(poll,a)||99)-(rk(poll,b)||99));
+ const key=`ub-${s.year}-${week}`;
+ if(!perfect.length)return{k:key,t:'UNBEATEN',w:week,h:`No unbeatens left after Week ${week}`,b:'Every team in the country has at least one loss. The playoff race is wide open.',p:4};
+ return{k:key,t:'UNBEATEN',w:week,h:perfect.length===1?`${teamName(perfect[0],s)} is the last unbeaten team`:`${perfect.length} teams are still perfect after Week ${week}`,b:perfect.length<=3?`${perfect.map(id=>`${withRank(poll,id,s)} (${recText(record(id,s))})`).join(', ')}.`:'The undefeated club, by ranking:',l:perfect.length>3?perfect.slice(0,12).map(id=>`${withRank(poll,id,s)} (${recText(record(id,s))})`):undefined,ids:perfect.slice(0,2),p:perfect.length<=2?6:4,mine:perfect.includes(uid(s))}
+}
+function conferenceStory(s,week,poll){
+ if(week<7||week%2===0)return null;
+ const ids=[uid(s),...(s.world||[]).map(t=>num(t.id))].filter((v,i,a)=>a.indexOf(v)===i),by={};
+ for(const id of ids){const c=confOf(id,s);if(!c||/independent/i.test(c))continue;(by[c]??=[]).push(id)}
+ const lines=[];
+ for(const [conf,list] of Object.entries(by)){const sorted=list.map(id=>({id,c:confRecord(id,s),r:record(id,s)})).filter(x=>x.c.w+x.c.l>0).sort((a,b)=>(b.c.w-b.c.l)-(a.c.w-a.c.l)||b.r.w-a.r.w||(rk(poll,a.id)||99)-(rk(poll,b.id)||99));if(!sorted.length)continue;const lead=sorted[0],tied=sorted.filter(x=>x.c.w===lead.c.w&&x.c.l===lead.c.l);lines.push({conf,best:rk(poll,lead.id)||99,text:`${conf}: ${tied.slice(0,2).map(x=>withRank(poll,x.id,s)).join(' and ')}${tied.length>2?` +${tied.length-2}`:''} (${lead.c.w}–${lead.c.l} in conference)`})}
+ if(!lines.length)return null;
+ lines.sort((a,b)=>a.best-b.best);
+ const mine=confOf(uid(s),s),myLine=lines.find(x=>x.conf===mine);
+ return{k:`cf-${s.year}-${week}`,t:'CONF',w:week,h:`Conference title races heat up`,b:myLine?`In the ${mine}, ${myLine.text.split(': ')[1].replace(/ \(.*/,'')} ${/ and /.test(myLine.text)?'share':'holds'} the lead.`:'Who leads each conference:',l:lines.slice(0,14).map(x=>x.text),p:4}
+}
+function trophyStory(s,week){
+ if(week<4||(week-4)%3)return null;
+ const board=safe(()=>window.SDF_V175?.nationalAwardBoard?.(5),null),top=board?.find?.(x=>x.def?.key==='DYNASTY')?.candidates||board?.[0]?.candidates;
+ if(!top?.length)return null;
+ const name=x=>x.p?.name||'',lead=top[0],me=uid(s);
+ return{k:`tr-${s.year}-${week}`,t:'TROPHY',w:week,h:`Dynasty Trophy watch: ${name(lead)} leads the race`,b:`The ${lead.team} ${POS_NAME[lead.p?.pos]||lead.p?.pos} is the front-runner for the nation’s top individual award after Week ${week}.`,l:top.slice(0,5).map((x,i)=>`${i+1}. ${name(x)}, ${x.p?.pos} · ${x.team} — ${safe(()=>window.SDF_V175?.statSummary?.(x.p),'')||''}`),ids:[num(lead.teamId)],p:5.5,mine:top.slice(0,5).some(x=>num(x.teamId)===me)}
+}
+function hotSeatStory(s,week){
+ if(week!==8)return null;
+ const w=s.aiCoachWorldV201;if(!w?.coaches||!w?.teamCoach)return null;
+ const rows=[];for(const [team,cid] of Object.entries(w.teamCoach)){const c=w.coaches[cid];if(!c||num(team)===uid(s))continue;const r=record(team,s);if(num(c.jobSecurity,100)<=30&&r.l>=r.w)rows.push({team:num(team),c,r})}
+ rows.sort((a,b)=>num(a.c.jobSecurity)-num(b.c.jobSecurity));
+ if(!rows.length)return null;
+ return{k:`hs-${s.year}-${week}`,t:'HOTSEAT',w:week,h:`Hot seat: ${rows.length===1?`${rows[0].c.name} under fire at ${teamName(rows[0].team,s)}`:`${rows.length} head coaches feeling the heat`}`,b:'Boosters are restless at these programs heading into the stretch run.',l:rows.slice(0,8).map(x=>`${x.c.name}, ${teamName(x.team,s)} (${recText(x.r)})`),ids:[rows[0].team],p:4.5}
+}
+
+// ---------------------------------------------------------------- Recruiting
+const rid=x=>String(x?.id??'').slice(0,10);
+function commitStories(s,r){
+ const recs=(s.recruits||[]).filter(x=>x&&x.committedTo!=null&&num(x.stars)>=4),seen=new Set(r.commits),fresh=recs.filter(x=>!seen.has(rid(x)));
+ if(!fresh.length){r.commitsSeeded=1;return[]}
+ for(const x of fresh)r.commits.push(rid(x));
+ if(r.commits.length>1200)r.commits=r.commits.slice(-1200);
+ if(!r.commitsSeeded){r.commitsSeeded=1;return[]}
+ const me=uid(s),wk=s.phase==='REGULAR'?(r.done.length?num(r.done[r.done.length-1]):Math.max(1,num(s.week)-1)):'OFF',out=[];
+ const others=x=>Object.entries(x.interest||{}).filter(([id])=>num(id)!==num(x.committedTo)).sort((a,b)=>num(b[1])-num(a[1])).slice(0,2).map(([id])=>teamName(id,s));
+ const five=fresh.filter(x=>num(x.stars)>=5).sort((a,b)=>num(a.rank,999)-num(b.rank,999));
+ for(const x of five.slice(0,4)){const to=num(x.committedTo),o=others(x),key=`cm-${s.year}-${rid(x)}`;
+  out.push({k:key,t:'COMMIT',w:wk,h:pickT(key,[`Five-star ${x.pos} ${x.name} commits to ${teamName(to,s)}`,`${teamName(to,s)} lands five-star ${x.pos} ${x.name}`,`Big get: five-star ${x.name} picks ${teamName(to,s)}`]),b:`${x.rank?`The No. ${x.rank} prospect in the country`:'The five-star prospect'}${x.city?`, from ${x.city}${x.home?`, ${x.home}`:''},`:''} chose ${teamName(to,s)}${o.length?` over ${o.join(' and ')}`:''}.`,ids:[to],p:to===me?8:6,mine:to===me})}
+ const four=fresh.filter(x=>num(x.stars)===4).concat(five.slice(4)).sort((a,b)=>num(a.rank,999)-num(b.rank,999));
+ if(four.length){const by={};for(const x of four)by[num(x.committedTo)]=(by[num(x.committedTo)]||0)+1;const hot=Object.entries(by).sort((a,b)=>b[1]-a[1])[0],key=`rr-${s.year}-${wk}-${rid(four[0])}`;
+  out.push({k:key,t:'RECRUITS',w:wk,h:four.length===1?`Four-star ${four[0].pos} ${four[0].name} commits to ${teamName(four[0].committedTo,s)}`:four.length>20?`Signing frenzy: ${four.length} four-star prospects pick their schools`:`Recruiting roundup: ${four.length} four-star commitments`,b:four.length>1&&hot&&hot[1]>1?`${teamName(hot[0],s)} had the biggest haul with ${hot[1]}.`:four.length===1?`${four[0].city?`The ${four[0].city}${four[0].home?`, ${four[0].home}`:''} native`:'He'} is ranked No. ${four[0].rank||'—'} nationally.`:'The latest blue-chip pledges around the country:',l:four.length>1?four.slice(0,14).map(x=>`${x.name} (${x.pos}${x.home?`, ${x.home}`:''}) → ${teamName(x.committedTo,s)}`):undefined,ids:four.length===1?[num(four[0].committedTo)]:hot?[num(hot[0])]:[],p:4,mine:four.some(x=>num(x.committedTo)===me)})}
+ return out
+}
+function signingStory(s,r){
+ const over=s.phase!=='REGULAR'||!!s.seasonDone||num(s.week)>(s.schedule||[]).length;if(r.signing===num(s.year)||!over||!s.signingDayResolved)return null;
+ if(!(s.nationalGameResults||[]).some(g=>num(g.year)===num(s.year)))return null; // year already rolled over, class belongs to last season
+ const recs=(s.recruits||[]).filter(x=>x&&x.committedTo!=null);if(recs.length<20)return null;
+ r.signing=num(s.year);
+ const pts={5:10,4:5,3:2},by={};
+ for(const x of recs){const id=num(x.committedTo),b=by[id]??={id,pts:0,n:0,five:0,four:0};b.pts+=pts[num(x.stars)]||1;b.n++;if(num(x.stars)>=5)b.five++;else if(num(x.stars)===4)b.four++}
+ const list=Object.values(by).sort((a,b)=>b.pts-a.pts||b.five-a.five),me=uid(s),myRank=list.findIndex(x=>x.id===me)+1;
+ if(!list.length)return null;const top=list[0];
+ return{k:`sd-${s.year}`,t:'CLASS',w:'OFF',h:`${teamName(top.id,s)} signs the nation’s No. 1 recruiting class`,b:`${top.n} signees, including ${top.five} five-star and ${top.four} four-star prospects.${myRank?` ${poss(s.school.name)} class ranks No. ${myRank}.`:''}`,l:list.slice(0,10).map((x,i)=>`${i+1}. ${teamName(x.id,s)} — ${x.n} signees (${x.five}★5, ${x.four}★4)`),ids:[top.id],p:7,mine:myRank>0&&myRank<=10}
+}
+
+// ---------------------------------------------------------------- Postseason, carousel, portal
+function postseasonStories(s,r){
+ const out=[],me=uid(s),seen=new Set(r.post),poll=r.poll||currentPoll(s);
+ const games=(s.nationalGameResults||[]).filter(g=>num(g.year)===num(s.year)&&String(g.phase)==='POSTSEASON'&&!seen.has(g.key)&&num(g.aScore)!==num(g.bScore));
+ const bowls=[];
+ const champ=s.postseasonData?.nationalChampion,cid=num(champ?.id??champ,0);let title=null;
+ for(const g of games){r.post.push(g.key);const x=shape(g),label=String(g.label||'Bowl Game');
+  // The title game is reported once, with the champion story (a bracket can be simulated more than once).
+  if(/national championship|national title/i.test(label)){if(cid&&x.win===cid)title={x,label};else r.post.pop();continue}
+  const playoff=/playoff|semifinal|quarterfinal|first round|second round|round of/i.test(label),confTitle=!playoff&&/championship|title game/i.test(label);
+  if(playoff)out.push({k:`ps-${g.key}`,t:'PLAYOFF',w:'POST',h:`${label}: ${withRank(poll,x.win,s)} beats ${withRank(poll,x.lose,s)}, ${score(x)}`,b:`${teamName(x.win,s)} advances. ${poss(teamName(x.lose,s))} season ends after a ${recText(record(x.lose,s))} regular season.`,ids:[x.win,x.lose],p:7,mine:x.win===me||x.lose===me});
+  else if(confTitle)out.push({k:`ct-${g.key}`,t:'CONFCHAMP',w:'POST',h:`${teamName(x.win,s)} win the ${label.replace(/ Championship$/i,'')} title`,b:`${withRank(poll,x.win,s)} beat ${withRank(poll,x.lose,s)} ${score(x)} in the ${label}.`,ids:[x.win,x.lose],p:6,mine:x.win===me||x.lose===me});
+  else bowls.push({x,label})}
+ if(bowls.length)out.push({k:`bw-${s.year}-${r.post.length}`,t:'BOWL',w:'POST',h:bowls.length===1?`${bowls[0].label}: ${teamName(bowls[0].x.win,s)} beats ${teamName(bowls[0].x.lose,s)}, ${score(bowls[0].x)}`:`Bowl roundup: ${bowls.length} games in the books`,b:bowls.length===1?'':'Results from around the bowl slate:',l:bowls.length>1?bowls.slice(0,20).map(({x,label})=>`${label}: ${teamName(x.win,s)} ${x.ws}, ${teamName(x.lose,s)} ${x.ls}`):undefined,ids:bowls.length===1?[bowls[0].x.win,bowls[0].x.lose]:[],p:5,mine:bowls.some(({x})=>x.win===me||x.lose===me)});
+ const playedPost=(s.nationalGameResults||[]).some(g=>num(g.year)===num(s.year)&&String(g.phase)==='POSTSEASON');
+ if(cid&&playedPost&&r.champ!==num(s.year)){r.champ=num(s.year);const rec=record(cid,s);out.push({k:`ch-${s.year}`,t:'CHAMP',w:'POST',h:cid===me?`${s.school.name} wins the national championship!`:`${teamName(cid,s)} are national champions`,b:`${title?`${teamName(cid,s)} beat ${withRank(poll,title.x.lose,s)} ${score(title.x)} in the ${title.label}. `:''}${teamName(cid,s)} went ${recText(rec)} in the regular season and claim the Year ${s.year} title.`,ids:[cid],p:10,mine:cid===me})}
+ if(r.post.length>400)r.post=r.post.slice(-400);
+ return out
+}
+function carouselStory(s,r,year=null){
+ // The carousel runs while finishing the offseason, just before the new year starts, so check last year too.
+ for(const y of year!=null?[num(year)]:[num(s.year)-1,num(s.year)]){
+  if(r.coachYears.includes(y))continue;const hist=(s.aiCoachWorldV201?.history||[]).filter(x=>num(x?.year)===y);if(!hist.length)continue;
+  r.coachYears.push(y);if(r.coachYears.length>6)r.coachYears=r.coachYears.slice(-6);
+  const st=carouselFor(s,hist,y);if(st)return st}
+ return null
+}
+function carouselFor(s,hist,y){
+ const fired=hist.filter(x=>x.type==='FIRED'),retired=hist.filter(x=>x.type==='RETIRE'),hires=hist.filter(x=>x.type==='HIRE');
+ if(!fired.length&&!retired.length&&!hires.length)return null;
+ const prestige=id=>num(worldTeam(id,s)?.prestige,num(school(id)?.prestige,50)),big=hires.slice().sort((a,b)=>prestige(b.teamId)-prestige(a.teamId))[0];
+ const l=[...fired.map(x=>`Fired: ${x.coach}, ${x.team}${x.record?` (${x.record.replace('-','–')})`:''}`),...retired.map(x=>`Retired: ${x.coach}, ${x.team}`),...hires.map(x=>`Hired: ${x.coach} → ${x.team}${x.reason==='POACHED'?' (poached)':''}`)];
+ return{k:`cc-${y}`,t:'COACH',y,w:'OFF',h:big?`Coaching carousel: ${teamName(big.teamId,s)} hires ${big.coach}`:`Coaching carousel: ${fired.length} firings, ${retired.length} retirements`,b:`${fired.length} head coach${fired.length===1?'':'es'} fired, ${retired.length} retired and ${hires.length} hired around the country.`,l:l.slice(0,18),ids:big?[num(big.teamId)]:[],p:6}
+}
+function portalStories(s,r){
+ const race=s.portalRace299;if(!race||num(race.year)!==num(s.year)||!Array.isArray(race.digests))return[];
+ const out=[],seen=new Set(r.portal);
+ for(const d of race.digests){const key=`${s.year}-${num(d?.week)}`;if(!d||seen.has(key)||!Array.isArray(d.ai)||!d.ai.length)continue;r.portal.push(key);
+  const top=d.ai.slice().sort((a,b)=>num(b.ovr)-num(a.ovr));
+  out.push({k:`pt-${key}`,t:'PORTAL',w:'OFF',h:`Transfer portal: ${top[0].name} (${top[0].pos}, ${top[0].ovr} OVR) lands at ${top[0].to}`,b:`${num(d.aiCount,d.ai.length)} transfers found new homes in portal week ${num(d.week)}${d.final?', the final window':''}.`,l:top.slice(0,8).map(x=>`${x.name}, ${x.pos} ${x.ovr} OVR${x.from?` (from ${x.from})`:''} → ${x.to}`),p:5})}
+ return out
+}
+
+// ---------------------------------------------------------------- Harvest
+function weekKeys(s){return(s.nationalWorldWeeks||[]).filter(k=>String(k).startsWith(`${s.year}-`)).map(k=>num(String(k).split('-')[1])).filter(w=>w>0).sort((a,b)=>a-b)}
+let lastSig='';
+function harvest(force=false){
+ const s=S();if(!s?.school||!Array.isArray(s.world))return 0;
+ const r=root(s);rollYear(s,r);
+ const weeks=weekKeys(s),done=new Set(r.done.map(Number)),todo=weeks.filter(w=>!done.has(w));
+ const commitN=(s.recruits||[]).reduce((n,x)=>n+(x&&x.committedTo!=null&&num(x.stars)>=4?1:0),0);
+ const sig=[s.year,s.week,s.phase,weeks.length,commitN,(s.nationalGameResults||[]).length,(s.aiCoachWorldV201?.history||[]).length,(s.portalRace299?.digests||[]).length,!!s.postseasonData?.nationalChampion,!!s.signingDayResolved].join('|');
+ if(!force&&sig===lastSig&&!todo.length)return 0;lastSig=sig;
+ const before=r.stories.length;
+ if(!r.seeded){
+  // First look at this save: report the weeks already played (games and players only, since there is no poll from
+  // before those games) and quietly mark existing commitments as known.
+  r.seeded=1;r.commitsSeeded=0;commitStories(s,r);
+  for(const w of todo){for(const x of gameStories(s,r,w,{},{backfill:true}))add(r,x);for(const x of performanceStories(s,w,{}))add(r,x);r.done.push(w)}
+  r.poll=currentPoll(s);if(r.done.length){const w=r.done[r.done.length-1];for(const x of [trophyStory(s,w)].filter(Boolean))add(r,{...x,k:`tr-${s.year}-seed`})}
+  return r.stories.length-before
+ }
+ const before25=r.poll&&Object.keys(r.poll).length?r.poll:null;
+ for(const w of todo){const poll=before25||{};
+  for(const x of gameStories(s,r,w,poll,{backfill:!before25}))add(r,x);
+  for(const x of performanceStories(s,w,poll))add(r,x);
+  r.done.push(w)}
+ if(todo.length){const w=todo[todo.length-1],after=currentPoll(s);
+  for(const x of pollStories(s,r,w,before25,after))add(r,x);
+  for(const x of [unbeatenStory(s,w,after),conferenceStory(s,w,after),trophyStory(s,w),hotSeatStory(s,w)].filter(Boolean))add(r,x);
+  r.poll=after}
+ for(const x of commitStories(s,r))add(r,x);
+ for(const x of postseasonStories(s,r))add(r,x);
+ for(const x of [signingStory(s,r),carouselStory(s,r)].filter(Boolean))add(r,x);
+ for(const x of portalStories(s,r))add(r,x);
+ if(r.done.length>30)r.done=r.done.slice(-30);
+ return r.stories.length-before
+}
+
+// ---------------------------------------------------------------- Page
+const FILTERS=[['all','All'],['games','Games'],['players','Players'],['rankings','Top 25'],['recruiting','Recruiting'],['coaching','Coaches & Portal']];
+let filter='all',lastFocus=null;
+const weekLabel=(y,w)=>w==='POST'?`Year ${y} · Postseason`:w==='OFF'?`Year ${y} · Offseason`:`Year ${y} · Week ${w}`;
+const order=w=>w==='POST'?100:w==='OFF'?200:num(w);
+function grouped(r){
+ const list=r.stories.filter(x=>filter==='all'||x.c===filter),groups=new Map();
+ for(const x of list){const k=`${x.y}|${x.w}`;if(!groups.has(k))groups.set(k,{y:num(x.y),w:x.w,items:[]});groups.get(k).items.push(x)}
+ return[...groups.values()].sort((a,b)=>b.y-a.y||order(b.w)-order(a.w)).map(g=>({...g,items:g.items.sort((a,b)=>num(b.p)-num(a.p)||num(b.n)-num(a.n))}))
+}
+function cardHtml(x,readSeq){
+ const ids=(x.ids||[]).filter(id=>logo(id)).slice(0,2);
+ return`<article class="nn315-card nn315-${esc(x.c)}${x.m?' mine':''}${num(x.n)>readSeq?' fresh':''}">
+ <div class="nn315-tags"><span class="nn315-tag">${esc(TAGS[x.t]||x.t)}</span>${x.m?'<span class="nn315-mine">Your team</span>':''}${num(x.n)>readSeq?'<span class="nn315-new">New</span>':''}</div>
+ <div class="nn315-main">${ids.length?`<div class="nn315-logos">${ids.map(id=>`<img src="${esc(logo(id))}" alt="" loading="lazy">`).join('')}</div>`:''}<div class="nn315-text"><h3>${esc(x.h)}</h3>${x.b?`<p>${esc(x.b)}</p>`:''}</div></div>
+ ${x.l?.length?`<ul class="nn315-lines">${x.l.map(t=>`<li>${esc(t)}</li>`).join('')}</ul>`:''}
+ </article>`
+}
+function render(){
+ const page=$('nn315'),s=S();if(!page||page.hidden||!s?.school)return;
+ const r=root(s),groups=grouped(r),readSeq=num(page.dataset.readSeq,r.readSeq);
+ for(const b of page.querySelectorAll('[data-nn315-filter]')){const on=b.dataset.nn315Filter===filter;b.classList.toggle('active',on);b.setAttribute('aria-pressed',on?'true':'false')}
+ const body=page.querySelector('.nn315-body');
+ body.innerHTML=groups.length?groups.map(g=>`<section class="nn315-week"><h4>${esc(weekLabel(g.y,g.w))}</h4>${g.items.map(x=>cardHtml(x,readSeq)).join('')}</section>`).join(''):`<div class="nn315-empty"><div aria-hidden="true">📰</div><b>${filter==='all'?'No national news yet':'Nothing here yet'}</b><p>${filter==='all'?'Play your first week and the news desk will cover games, players, the Top 25 and recruiting from around the country.':'Check back after a few more weeks of the season.'}</p></div>`;
+}
+function open(){
+ const s=S();if(!s?.school)return false;safe(()=>harvest(true));ensureStyle();
+ let page=$('nn315');
+ if(!page){page=document.createElement('div');page.id='nn315';page.className='nn315';page.setAttribute('role','dialog');page.setAttribute('aria-modal','true');page.setAttribute('aria-labelledby','nn315Title');
+  page.innerHTML=`<div class="nn315-box"><header class="nn315-head"><button type="button" class="nn315-back" data-nn315-close aria-label="Close National News">‹ Back</button><div><span class="eyebrow">AROUND THE COUNTRY</span><h2 id="nn315Title">National News</h2></div></header><div class="nn315-filters" role="toolbar" aria-label="Filter news">${FILTERS.map(([k,l])=>`<button type="button" data-nn315-filter="${k}">${l}</button>`).join('')}</div><div class="nn315-body"></div></div>`;
+  document.body.append(page);
+  page.addEventListener('click',e=>{const f=e.target.closest?.('[data-nn315-filter]');if(f){filter=f.dataset.nn315Filter;render();page.querySelector('.nn315-body').scrollTop=0;return}if(e.target.closest?.('[data-nn315-close]'))close()})}
+ const r=root(s);page.dataset.readSeq=String(r.readSeq);lastFocus=document.activeElement;page.hidden=false;render();page.querySelector('.nn315-body').scrollTop=0;page.querySelector('[data-nn315-close]')?.focus?.();
+ if(r.readSeq!==r.seq){r.readSeq=r.seq;window.SDF_RELEASE_TEST?.scheduleSave?.('National news read',800,false)}
+ return true
+}
+function close(){const page=$('nn315');if(!page||page.hidden)return;page.hidden=true;lastFocus?.focus?.();homeCard()}
+document.addEventListener('keydown',e=>{const page=$('nn315');if(!page||page.hidden||document.querySelector('dialog[open]'))return;if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();close()}},true);
+
+// ---------------------------------------------------------------- Entry points: Home, More menu, League
+function headlines(r,n=3){
+ if(!r.stories.length)return[];
+ const latest=r.stories.reduce((a,x)=>num(x.y)>num(a.y)||(num(x.y)===num(a.y)&&order(x.w)>order(a.w))?x:a,r.stories[0]);
+ return r.stories.filter(x=>num(x.y)===num(latest.y)&&x.w===latest.w).sort((a,b)=>num(b.p)-num(a.p)||num(b.n)-num(a.n)).slice(0,n)
+}
+function homeCard(){
+ const s=S(),content=document.querySelector('#homeDetailsCard .home-details-content'),cc=$('gameCommandCenterV219');if(!s?.school||(!content&&!cc?.parentElement))return;
+ const r=root(s),top=headlines(r,3),unread=r.stories.filter(x=>num(x.n)>r.readSeq).length;
+ let card=$('nnHome315');if(!card){card=document.createElement('div');card.id='nnHome315';card.className='nn315-home';card.setAttribute('role','button');card.tabIndex=0;card.setAttribute('aria-label','Open National News');card.onclick=()=>open();card.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open()}}}
+ const hof=$('hofHome305');
+ if(content){if(hof&&hof.parentElement===content){if(card.nextElementSibling!==hof)hof.before(card)}else if(card.parentElement!==content)content.append(card)}
+ else if(cc.nextElementSibling!==card)cc.after(card); // desktop Home has no collapsible details card
+ const label=top[0]?weekLabel(top[0].y,top[0].w).replace(/^Year \d+ · /,''):'';
+ const html=`<span class="nn315-home-head"><small>📰 AROUND THE NATION${label?` · ${esc(label.toUpperCase())}`:''}</small>${unread?`<em>${unread>99?'99+':unread} new</em>`:''}</span>${top.length?`<span class="nn315-home-list">${top.map(x=>`<span><i>${esc(TAGS[x.t]||x.t)}</i>${esc(x.h)}</span>`).join('')}</span>`:'<span class="nn315-home-list"><span>Upsets, star performances, the Top 25 and recruiting from around the country, after every week.</span></span>'}<span class="nn315-home-more">All national news ›</span>`;
+ if(card.dataset.html!==html){card.dataset.html=html;card.innerHTML=html}
+}
+function menuButton(){
+ const mm=$('mobileMoreMenu'),closeBtn=$('mobileMoreClose');
+ if(mm&&closeBtn&&!$('nnMenu315')){const b=document.createElement('button');b.id='nnMenu315';b.type='button';b.textContent='📰 National News';b.onclick=()=>{mm.classList.add('hidden');open()};const hof=$('hofMenu305');(hof||closeBtn).before(b)}
+ const tab=$('seasonTab')||$('rankingsTab');
+ // Added last so it becomes the final League section chip ("National News") and never replaces the default view.
+ if(tab&&!$('nnLeague315')){const sec=document.createElement('section');sec.id='nnLeague315';sec.className='surface nn315-league';sec.innerHTML='<div class="section-head"><div><span class="eyebrow">AROUND THE COUNTRY</span><h2>National News</h2><p class="muted">Upsets, big games, star performances, the Top 25, recruiting and the coaching carousel.</p></div></div><div class="nn315-league-list"></div><button type="button" class="btn primary nn315-league-open">Open National News</button>';sec.querySelector('.nn315-league-open').onclick=()=>open();sec.querySelector('.nn315-league-list').onclick=e=>{if(e.target.closest?.('[data-nn315-item]'))open()};tab.append(sec)}
+ leagueList()
+}
+
+function leagueList(){
+ const box=document.querySelector('#nnLeague315 .nn315-league-list'),s=S();if(!box||!s?.school)return;
+ const top=headlines(root(s),5),html=top.length?`<h3>${esc(weekLabel(top[0].y,top[0].w))}</h3>${top.map(x=>`<button type="button" class="nn315-league-item" data-nn315-item><i>${esc(TAGS[x.t]||x.t)}</i><b>${esc(x.h)}</b></button>`).join('')}`:'<p class="muted">The news desk starts after your first week.</p>';
+ if(box.dataset.html!==html){box.dataset.html=html;box.innerHTML=html}
+}
+const STYLE=`
+#nn315{position:fixed;inset:0;z-index:24000;display:flex;align-items:stretch;justify-content:center;background:#020a12e6}#nn315[hidden]{display:none!important}
+.nn315-box{display:flex;flex-direction:column;width:min(760px,100%);height:100%;min-height:0;background:#0a1b27;color:#eff7fa;box-shadow:0 20px 70px #000b}
+.nn315-head{display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top,0px)) 16px 10px;border-bottom:1px solid #2b4554;flex-shrink:0;background:linear-gradient(180deg,#12364d66,transparent)}
+.nn315-head h2{margin:2px 0 0;font-size:1.2rem;line-height:1.2}.nn315-head .eyebrow{color:#7fd3f7}
+.nn315-back{min-height:44px;padding:0 12px;border:1px solid #3c5968;border-radius:10px;background:#102632;color:#e8f2f7;font:inherit;font-weight:750;cursor:pointer;flex-shrink:0}
+.nn315-filters{display:flex;gap:6px;padding:10px 16px;overflow-x:auto;flex-shrink:0;scrollbar-width:none;-webkit-overflow-scrolling:touch}.nn315-filters::-webkit-scrollbar{display:none}
+.nn315-filters button{flex:0 0 auto;min-height:38px;padding:0 13px;border:1px solid #2f5163;border-radius:999px;background:#0c1f2b;color:#cfe0ea;font:inherit;font-size:.82rem;font-weight:800;cursor:pointer;white-space:nowrap}.nn315-filters button.active{border-color:#3fb6e8;background:#123a52;color:#fff}
+.nn315-body{flex:1;min-height:0;overflow:auto;padding:0 16px calc(24px + env(safe-area-inset-bottom,0px));-webkit-overflow-scrolling:touch}
+.nn315-week h4{position:sticky;top:0;z-index:1;margin:0 -16px;padding:10px 16px 6px;background:#0a1b27f2;font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:#9fc3d6}
+.nn315-card{margin:0 0 10px;padding:12px;border:1px solid #284456;border-left:4px solid #3fb6e8;border-radius:12px;background:#0c1f2b;min-width:0}
+.nn315-card.nn315-players{border-left-color:#f3b33d}.nn315-card.nn315-recruiting{border-left-color:#4ed08a}.nn315-card.nn315-rankings{border-left-color:#b48cff}.nn315-card.nn315-coaching{border-left-color:#ff7a59}
+.nn315-card.mine{background:linear-gradient(160deg,#173247,#0c1f2b 70%)}
+.nn315-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px}.nn315-tags span{padding:3px 8px;border-radius:999px;font-size:.66rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+.nn315-tag{background:#ffffff14;color:#cfe8f5}.nn315-mine{background:#3fb6e833;color:#9be0ff}.nn315-new{background:#f3d58533;color:#f3d585}
+.nn315-main{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:start}.nn315-main:not(:has(.nn315-logos)){grid-template-columns:minmax(0,1fr)}
+.nn315-logos{display:flex;flex-direction:column;gap:4px}.nn315-logos img{width:34px;height:34px;object-fit:contain;border-radius:8px;background:#ffffff0d;padding:2px}
+.nn315-text{min-width:0}.nn315-text h3{margin:0;font-size:1rem;line-height:1.3;overflow-wrap:anywhere}.nn315-text p{margin:5px 0 0;font-size:.84rem;line-height:1.45;color:#b7cad6;overflow-wrap:anywhere}
+.nn315-lines{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:4px}.nn315-lines li{padding:6px 9px;border-radius:8px;background:#ffffff08;font-size:.8rem;line-height:1.35;color:#dbe9f1;overflow-wrap:anywhere}
+.nn315-empty{text-align:center;padding:36px 12px;color:#cfe0ea}.nn315-empty div{font-size:3rem}.nn315-empty b{display:block;margin-top:8px;font-size:1.05rem}.nn315-empty p{font-size:.84rem;line-height:1.5;color:#a9bfcc;max-width:34ch;margin:8px auto 0}
+.nn315-home{display:grid;gap:6px;box-sizing:border-box;width:100%;white-space:normal;margin:12px 0 0;padding:11px 12px;border:1px solid #2c5a73;border-radius:12px;background:linear-gradient(160deg,#10324a,#0b1c28 70%);color:#eef6fa;text-align:left;font:inherit;cursor:pointer}
+.nn315-home-head{display:flex;justify-content:space-between;align-items:center;gap:8px}.nn315-home-head small{font-size:.66rem;letter-spacing:.08em;color:#7fd3f7;font-weight:800}.nn315-home-head em{font-style:normal;flex-shrink:0;padding:2px 8px;border-radius:999px;background:#f3d58533;color:#f3d585;font-size:.68rem;font-weight:800}
+.nn315-home-list{display:grid;gap:5px}.nn315-home-list>span{display:block;font-size:.86rem;font-weight:650;line-height:1.3;overflow-wrap:anywhere}.nn315-home-list i{display:inline-block;margin-right:6px;padding:1px 6px;border-radius:6px;background:#ffffff14;color:#9fd6ef;font-style:normal;font-size:.62rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;vertical-align:1px}
+.nn315-home-more{font-size:.78rem;font-weight:800;color:#7fd3f7}
+.nn315-league h2{margin:2px 0 4px}.nn315-league-list{display:grid;gap:6px;margin:10px 0 12px}.nn315-league-list h3{margin:0 0 2px;font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:#9fc3d6}
+.nn315-league-item{display:block;width:100%;text-align:left;padding:9px 11px;border:1px solid #284456;border-radius:10px;background:#0c1f2b;color:#eef6fa;font:inherit;cursor:pointer}.nn315-league-item i{display:block;font-style:normal;font-size:.64rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#7fd3f7;margin-bottom:2px}.nn315-league-item b{display:block;font-size:.9rem;line-height:1.3;overflow-wrap:anywhere}.nn315-league-open{width:100%;min-height:44px}
+#nnMenu315{color:#7fd3f7}
+@media (min-width:900px){.nn315-body{padding:0 22px 28px}.nn315-week h4{margin:0 -22px;padding:12px 22px 6px}}`;
+function ensureStyle(){if(!document.head||$('nn315Style'))return;const st=document.createElement('style');st.id='nn315Style';st.textContent=STYLE;document.head.append(st)}
+
+// ---------------------------------------------------------------- Hooks
+const baseWorld=window.simulateWorldWeek;
+if(typeof baseWorld==='function')window.simulateWorldWeek=function(...a){const out=baseWorld.apply(this,a);safe(()=>harvest());return out};
+const V201=window.SDF_V201;
+if(V201&&typeof V201.processAiCoachSeason==='function'){const baseCoach=V201.processAiCoachSeason;V201.processAiCoachSeason=function(...a){const out=baseCoach.apply(this,a);safe(()=>{const s=S();if(!s?.school)return;const r=root(s),st=carouselStory(s,r,num(s.year));if(st)add(r,st)});return out}}
+const baseRender=window.renderAll;
+if(typeof baseRender==='function')window.renderAll=function(...a){const out=baseRender.apply(this,a);safe(()=>{if(!S()?.school)return;harvest();ensureStyle();menuButton();homeCard();if($('nn315')&&!$('nn315').hidden)render()});return out};
+const baseShowTab=window.showTab;
+if(typeof baseShowTab==='function')window.showTab=function(...a){const out=baseShowTab.apply(this,a);safe(()=>{if(S()?.school){menuButton();homeCard()}});return out};
+
+window.SDF_NEWS315={version:VERSION,harvest,open,close,root,headlines,_test:{gameStories,performanceStories,pollStories,unbeatenStory,conferenceStory,trophyStory,hotSeatStory,commitStories,signingStory,postseasonStories,carouselStory,portalStories,currentPoll}};
+})();
+
+// Build 316: readable game-log stat lines. Game logs used to print every raw stat key with zeros
+// ("passAtt: 0 · passComp: 0 · ..."). This turns one game's numbers into a short line with real labels,
+// listing only what the player recorded, with his position's main stats first.
+(function(){
+'use strict';
+const n=v=>Number(v)||0;
+const plural=(v,one,many)=>`${v} ${v===1?one:(many||one+'s')}`;
+const GROUPS={
+ pass:g=>n(g.passAtt)?[`${n(g.passComp)}/${n(g.passAtt)}`,`${n(g.passYds)} pass yds`,`${n(g.passTD)} TD`,n(g.passINT)?`${n(g.passINT)} INT`:''].filter(Boolean).join(' · '):'',
+ rush:g=>n(g.rushAtt)?[plural(n(g.rushAtt),'carry','carries'),`${n(g.rushYds)} rush yds`,n(g.rushTD)?`${n(g.rushTD)} TD`:''].filter(Boolean).join(' · '):'',
+ rec:g=>n(g.rec)||n(g.recYds)?[`${n(g.rec)} rec`,`${n(g.recYds)} yds`,n(g.recTD)?`${n(g.recTD)} TD`:''].filter(Boolean).join(' · '):'',
+ def:g=>[n(g.tackles)?plural(n(g.tackles),'tackle'):'',n(g.tfl)?`${n(g.tfl)} TFL`:'',n(g.sacks)?plural(n(g.sacks),'sack'):'',n(g.defINT)?`${n(g.defINT)} INT`:'',n(g.ff)?`${n(g.ff)} FF`:''].filter(Boolean).join(' · '),
+ kick:g=>n(g.fga)||n(g.xpa)?[n(g.fga)?`${n(g.fgm)}/${n(g.fga)} FG`:'',n(g.xpa)?`${n(g.xpm)}/${n(g.xpa)} XP`:'',n(g.points)?`${n(g.points)} pts`:''].filter(Boolean).join(' · '):'',
+ punt:g=>n(g.punts)?[plural(n(g.punts),'punt'),`${(n(g.puntYds)/n(g.punts)).toFixed(1)} avg`,n(g.puntLong)?`long ${n(g.puntLong)}`:'',n(g.inside20)?`${n(g.inside20)} inside 20`:''].filter(Boolean).join(' · '):''
+};
+const ORDER={QB:['pass','rush','rec'],RB:['rush','rec','pass'],FB:['rush','rec'],WR:['rec','rush','pass'],TE:['rec','rush'],K:['kick','punt'],P:['punt','kick'],EDGE:['def'],DL:['def'],LB:['def'],CB:['def'],S:['def']};
+const ALL=['pass','rush','rec','def','kick','punt'];
+// One game's stat line, e.g. "10 rec · 145 yds" or "6 tackles · 1 TFL · 2 sacks".
+function line(g,pos){
+ if(!g)return'';
+ const order=(ORDER[String(pos||g.pos||'').toUpperCase()]||[]).concat(ALL).filter((k,i,a)=>a.indexOf(k)===i);
+ const parts=order.map(k=>GROUPS[k](g)).filter(Boolean);
+ return parts.join(' · ')||'No stats recorded'
+}
+// "Wk 2 vs Maryland Terrapins · W 31-17" (result only when the log has one).
+function when(g){
+ if(!g)return'';
+ const phase=g.phase&&g.phase!=='REGULAR'?(typeof window.sdfPhaseLabel==='function'?window.sdfPhaseLabel(g.phase):String(g.phase)):`Wk ${n(g.week)}`;
+ const res=g.result?String(g.result):'';
+ return`${phase}${g.opponent?` vs ${g.opponent}`:''}${res?` · ${res}`:''}`
+}
+window.SDF_STATLINE316={line,when};
+})();
+
+(()=>{
+'use strict';
+// Build 317: one section picker everywhere. Every chip/tab row that switches a screen's sections (or filters a list)
+// becomes a full-width select-style button that shows the current section with a chevron; tapping it opens a list of
+// sections with a radio mark on the active one. The original row stays in the page (hidden and inert) and still owns
+// all state: picking an entry clicks the matching original button, so every existing handler keeps working.
+// Rows with only two entries stay as they are (a two-way switch is clearer than a menu).
+const VERSION='27.8.0',BUILD=317,MIN_ITEMS=3;
+const $=id=>document.getElementById(id);
+const ROWS=[
+ {sel:'.ui-section-nav-v219',name:'Sections'},             // every tab's section chips, Home sections, Recruiting Board/Commits/Portal
+ {sel:'.roster-command-nav-v224',name:'Roster areas'},      // Depth Chart / Injuries / All Players / Roles & Risk
+ {sel:'.roster-quick-filters-v224',name:'Roster filter',caption:'Show'},
+ {sel:'.recruit-quick-filters-v223',name:'Prospect shortcuts',caption:'Show'},
+ {sel:'.coach-branch-tabs',name:'Skill tree branch',caption:'Branch'},
+ {sel:'.nn315-filters',name:'Filter news',caption:'Show'},  // National News page
+ {sel:'.player-profile-tabs-v225',name:'Player profile sections'},
+ {sel:'.recruit-profile-tabs-v226',name:'Recruit profile sections'},
+ {sel:'nav[aria-label="Dynasty story sections"]',name:'Dynasty story sections'},
+ {sel:'nav[aria-label="League sources"]',name:'League sources'},
+];
+const SELECTOR=ROWS.map(r=>r.sel).join(',');
+const recs=new Map();let uid=0,queued=false,openRec=null;
+
+const clean=t=>String(t||'').replace(/\s+/g,' ').trim();
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const usable=b=>!b.hidden&&!b.classList.contains('hidden')&&!b.dataset.areaHidden296&&!b.classList.contains('section-more296');
+const isActive=b=>b.classList.contains('active')||b.classList.contains('selected')||b.getAttribute('aria-selected')==='true'||b.getAttribute('aria-pressed')==='true';
+function labelOf(b){
+ // "<span>🧲</span><b>Recruiter</b><small>0/5</small>" reads "🧲 Recruiter" with "0/5" on the right.
+ let main=[],meta='';
+ for(const n of b.childNodes){const t=clean(n.textContent);if(!t)continue;if(n.nodeType===1&&n.tagName==='SMALL'&&!meta)meta=t;else main.push(t)}
+ return{text:clean(main.join(' '))||clean(b.getAttribute('aria-label'))||'Section',meta}
+}
+const itemsOf=row=>[...row.children].filter(n=>n.tagName==='BUTTON'&&usable(n));
+// The dropdown is shown when the original row would be shown. On phones the long section rows are already replaced by the
+// Build 296 "Navigation" select (row hidden by CSS), which this picker takes over, so that row counts as shown.
+function rowShown(row){
+ if(row.hidden||row.classList.contains('hidden'))return false;
+ if(row.classList.contains('phone-select-nav296'))return!!row.parentElement?.getClientRects().length;
+ return row.getClientRects().length>0
+}
+function labelFor(row){
+ if(!row.classList.contains('ui-section-nav-v219'))return null;
+ if(row.id==='dashboardSectionNavV219')return row.closest('#homeDetailsCard')?.querySelector(':scope>.section-view-label296')||null;
+ const next=row.nextElementSibling;return next?.classList.contains('section-view-label296')?next:null
+}
+function place(rec){
+ const {row,dd}=rec;
+ if(row.id==='dashboardSectionNavV219'){const label=labelFor(row);if(label){if(label.nextElementSibling!==dd)label.after(dd);return}}
+ if(row.previousElementSibling!==dd)row.before(dd)
+}
+function create(row,conf){
+ const id=++uid,dd=document.createElement('div');
+ dd.className='dd317';dd.dataset.dd317=String(id);
+ dd.innerHTML=`<button type="button" class="dd317-btn" id="dd317b${id}" aria-haspopup="listbox" aria-expanded="false" aria-controls="dd317l${id}">${conf.caption?`<span class="dd317-cap">${esc(conf.caption)}</span>`:''}<span class="dd317-val"></span><svg class="dd317-chev" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="dd317-list" id="dd317l${id}" role="listbox" tabindex="-1" hidden></div>`;
+ const rec={id,row,dd,conf,btn:dd.firstElementChild,list:dd.lastElementChild,items:[],sig:'',on:false};
+ rec.list.setAttribute('aria-label',clean(row.getAttribute('aria-label'))||conf.name);
+ rec.btn.addEventListener('click',()=>rec.list.hidden?openList(rec):closeList(rec,true));
+ rec.btn.addEventListener('keydown',e=>{if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();openList(rec,e.key==='ArrowUp'?'last':'active')}});
+ rec.list.addEventListener('click',e=>{const o=e.target.closest?.('[data-dd317-i]');if(o&&o.getAttribute('aria-disabled')!=='true')choose(rec,Number(o.dataset.dd317I))});
+ rec.list.addEventListener('keydown',e=>listKey(rec,e));
+ rec.list.addEventListener('focusout',e=>{if(!dd.contains(e.relatedTarget))closeList(rec,false)});
+ // Re-sync when the original row changes (its owner re-renders it, marks another button active, hides an entry).
+ rec.mo=new MutationObserver(schedule);rec.mo.observe(row,{childList:true,subtree:true,attributes:true,attributeFilter:['class','hidden','aria-selected','aria-pressed','disabled']});
+ recs.set(row,rec);return rec
+}
+// Inline !important: the rows carry several layers of !important layout rules from older phone passes.
+const HIDE={position:'absolute',left:'0',top:'0',width:'1px','min-width':'0',height:'1px','min-height':'0','max-height':'1px',margin:'0',padding:'0',border:'0',overflow:'hidden','clip-path':'inset(50%)',opacity:'0','pointer-events':'none'};
+function hideRow(row,on){for(const [k,v] of Object.entries(HIDE)){if(on)row.style.setProperty(k,v,'important');else row.style.removeProperty(k)}}
+function setSource(rec,on){
+ if(rec.on===on)return;rec.on=on;const {row}=rec;
+ row.classList.toggle('dd317-src',on);hideRow(row,on);
+ if(on){row.setAttribute('inert','');row.setAttribute('aria-hidden','true')}else{row.removeAttribute('inert');row.removeAttribute('aria-hidden')}
+ // The Build 296 phone "Navigation" select for the same row is replaced too.
+ const label=on?labelFor(row):rec.label;if(on)rec.label=label;if(label){label.classList.toggle('dd317-hide',on);if(on)label.style.setProperty('display','none','important');else label.style.removeProperty('display')}
+}
+// Desktop section rows are sticky under the header; the picker keeps the row's own stickiness.
+function copySticky(rec){
+ const {row,dd}=rec;const was=row.classList.contains('dd317-src');if(was){row.classList.remove('dd317-src');hideRow(row,false)}
+ const cs=getComputedStyle(row),sticky=cs.position==='sticky',top=cs.top;
+ if(was){row.classList.add('dd317-src');hideRow(row,true)}
+ dd.classList.toggle('dd317-sticky',sticky);if(sticky)dd.style.top=top;else dd.style.removeProperty('top');rec.stickyDone=true
+}
+function sync(rec){
+ const {row,dd}=rec,items=itemsOf(row),shown=rowShown(row);
+ if(items.length<MIN_ITEMS){setSource(rec,false);if(!dd.hidden){closeList(rec,false);dd.hidden=true}return}
+ if(!rec.stickyDone&&shown)copySticky(rec);
+ setSource(rec,true);place(rec);
+ if(dd.hidden===shown){if(!shown)closeList(rec,false);dd.hidden=!shown}
+ rec.items=items;let active=items.findIndex(isActive);
+ const labels=items.map(labelOf),sig=labels.map((l,i)=>`${l.text}|${l.meta}|${items[i].disabled?1:0}`).join('\n')+'#'+active;
+ if(sig===rec.sig)return;rec.sig=sig;
+ const cur=labels[active]||null;
+ rec.btn.querySelector('.dd317-val').textContent=cur?cur.text:'Choose…';
+ rec.btn.setAttribute('aria-label',`${rec.list.getAttribute('aria-label')}: ${cur?cur.text:'none selected'}`);
+ rec.list.innerHTML=labels.map((l,i)=>`<div class="dd317-opt" role="option" id="dd317o${rec.id}_${i}" data-dd317-i="${i}" tabindex="-1" aria-selected="${i===active}"${items[i].disabled?' aria-disabled="true"':''}><span class="dd317-radio" aria-hidden="true"></span><span class="dd317-txt">${esc(l.text)}</span>${l.meta?`<small>${esc(l.meta)}</small>`:''}</div>`).join('');
+}
+function options(rec){return[...rec.list.querySelectorAll('[data-dd317-i]')]}
+function focusOpt(rec,o){if(!o)return;o.focus({preventScroll:true});o.scrollIntoView?.({block:'nearest'});rec.list.setAttribute('aria-activedescendant',o.id)}
+function openList(rec,where='active'){
+ if(openRec&&openRec!==rec)closeList(openRec,false);
+ sync(rec);const {list,btn,dd}=rec;list.hidden=false;btn.setAttribute('aria-expanded','true');dd.classList.add('open');openRec=rec;
+ // Open upward when the bottom of the screen (bottom nav) leaves too little room below.
+ dd.classList.remove('up');list.style.maxHeight='';
+ const r=btn.getBoundingClientRect(),below=innerHeight-r.bottom-84,above=r.top-12,need=Math.min(list.scrollHeight,360);
+ const up=below<need&&above>below;dd.classList.toggle('up',up);list.style.maxHeight=Math.max(160,Math.min(420,up?above:below))+'px';
+ const opts=options(rec),on=opts.find(o=>o.getAttribute('aria-selected')==='true');
+ focusOpt(rec,where==='last'?opts[opts.length-1]:on||opts[0]);
+}
+function closeList(rec,focusButton){
+ if(!rec||rec.list.hidden)return;rec.list.hidden=true;rec.btn.setAttribute('aria-expanded','false');rec.dd.classList.remove('open','up');rec.list.removeAttribute('aria-activedescendant');
+ if(openRec===rec)openRec=null;if(focusButton)rec.btn.focus({preventScroll:true})
+}
+function choose(rec,i){
+ const b=rec.items[i];closeList(rec,true);
+ if(!b||b.disabled||!b.isConnected)return;
+ if(!isActive(b))b.click();schedule()
+}
+function listKey(rec,e){
+ const opts=options(rec),at=opts.indexOf(document.activeElement);let next=null;
+ switch(e.key){
+  case'ArrowDown':next=opts[Math.min(opts.length-1,at+1)];break;
+  case'ArrowUp':next=opts[Math.max(0,at-1)];break;
+  case'Home':next=opts[0];break;
+  case'End':next=opts[opts.length-1];break;
+  case'Enter':case' ':e.preventDefault();if(at>=0&&opts[at].getAttribute('aria-disabled')!=='true')choose(rec,Number(opts[at].dataset.dd317I));return;
+  case'Tab':closeList(rec,false);return;
+  default:{if(e.key.length===1&&/\S/.test(e.key)){const k=e.key.toLowerCase(),list=[...opts.slice(at+1),...opts.slice(0,at+1)];next=list.find(o=>o.textContent.trim().toLowerCase().startsWith(k))}}
+ }
+ if(next){e.preventDefault();focusOpt(rec,next)}
+}
+// Escape closes the open list before any page-level Escape handler (National News, dialogs) sees it.
+addEventListener('keydown',e=>{if(e.key==='Escape'&&openRec){e.preventDefault();e.stopImmediatePropagation();closeList(openRec,true)}},true);
+addEventListener('pointerdown',e=>{if(openRec&&!openRec.dd.contains(e.target))closeList(openRec,false)},true);
+
+function scan(){
+ queued=false;
+ for(const [row,rec] of recs){if(!row.isConnected){rec.mo.disconnect();if(openRec===rec)openRec=null;if(rec.label){rec.label.classList.remove('dd317-hide');rec.label.style.removeProperty('display')}rec.dd.remove();recs.delete(row)}}
+ // A picker left behind by a removed row (its owner rebuilt the markup around it).
+ for(const dd of document.querySelectorAll('.dd317')){if(![...recs.values()].some(r=>r.dd===dd))dd.remove()}
+ for(const row of document.querySelectorAll(SELECTOR)){
+  if(row.closest('.dd317'))continue;
+  let rec=recs.get(row);
+  if(!rec){if(!rowShown(row)||itemsOf(row).length<MIN_ITEMS)continue;rec=create(row,ROWS.find(r=>row.matches(r.sel)))}
+  sync(rec)
+ }
+}
+function schedule(){if(queued)return;queued=true;requestAnimationFrame(scan)}
+function relayout(){for(const rec of recs.values()){rec.stickyDone=false;closeList(rec,false)}schedule()}
+
+const STYLE=`
+.dd317[hidden],.dd317-list[hidden]{display:none!important}
+html .dd317-src.dd317-src.dd317-src.dd317-src.dd317-src.dd317-src{position:absolute!important;width:1px!important;height:1px!important;min-height:0!important;max-height:1px!important;margin:0!important;padding:0!important;border:0!important;overflow:hidden!important;clip-path:inset(50%)!important;opacity:0!important;pointer-events:none!important}
+html .dd317-hide.dd317-hide{display:none!important}
+.dd317{position:relative;box-sizing:border-box;width:100%;min-width:0;flex:1 1 100%;grid-column:1/-1;align-self:stretch;margin:4px 0 10px;padding:4px;border:1px solid #315268;border-radius:12px;background:#081a27;z-index:30}
+.dd317.open{z-index:60}
+.dd317.dd317-sticky{position:sticky;z-index:22}.dd317.dd317-sticky.open{z-index:60}
+.dd317-btn{display:flex;align-items:center;gap:8px;box-sizing:border-box;width:100%;min-width:0;min-height:44px;margin:0;padding:8px 12px;border:1px solid #8e743a;border-radius:9px;background:#10232f;color:#fff;font:inherit;font-size:15px;font-weight:750;line-height:1.2;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.dd317-btn:hover{background:#142c3b}.dd317-btn:focus-visible{outline:2px solid #e3b95a;outline-offset:2px}
+.dd317-cap{flex:0 0 auto;color:#9fb8c7;font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
+.dd317-val{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dd317-chev{flex:0 0 auto;width:18px;height:18px;color:#e3b95a;transition:transform .15s}
+.dd317.open .dd317-chev{transform:rotate(180deg)}
+.dd317-list{position:absolute;left:4px;right:4px;top:calc(100% + 4px);box-sizing:border-box;max-height:360px;overflow:auto;overscroll-behavior:contain;padding:6px;border:1px solid #2f5163;border-radius:12px;background:#0c1f2b;box-shadow:0 18px 44px #000c;-webkit-overflow-scrolling:touch}
+.dd317.up .dd317-list{top:auto;bottom:calc(100% + 4px)}
+.dd317-opt{display:flex;align-items:center;gap:12px;min-height:46px;padding:8px 10px;border-radius:9px;color:#dbe9f1;font-size:15px;font-weight:700;line-height:1.25;cursor:pointer;outline:none;-webkit-tap-highlight-color:transparent}
+.dd317-opt+.dd317-opt{margin-top:2px}
+.dd317-opt:hover,.dd317-opt:focus{background:#16303f}
+.dd317-opt:focus-visible{box-shadow:inset 0 0 0 2px #e3b95a}
+.dd317-opt[aria-selected="true"]{background:#123a52;color:#fff}
+.dd317-opt[aria-disabled="true"]{opacity:.45;cursor:default}
+.dd317-radio{flex:0 0 auto;box-sizing:border-box;width:20px;height:20px;border:2px solid #5d7b8c;border-radius:50%;display:inline-flex;align-items:center;justify-content:center}
+.dd317-opt[aria-selected="true"] .dd317-radio{border-color:#e3b95a}
+.dd317-opt[aria-selected="true"] .dd317-radio::after{content:"";width:10px;height:10px;border-radius:50%;background:#e3b95a}
+.dd317-txt{flex:1;min-width:0;overflow-wrap:anywhere}
+.dd317-opt small{flex:0 0 auto;color:#9fb8c7;font-size:12px;font-weight:800}
+html.sdf299-layout #homeDetailsCard.sdf299-home>.dd317{margin:4px 96px 8px 0!important;width:auto}
+.nn315-box>.dd317{flex-shrink:0;width:auto;margin:10px 16px 8px}
+@media (max-width:760px){.roster-tools-v224:has(>.dd317){grid-template-columns:minmax(0,1fr)}}
+@media (min-width:900px){.dd317{max-width:520px}.nn315-box>.dd317{margin:10px 22px 8px}}
+`;
+function ensureStyle(){if(!document.head||$('dd317Style'))return;const st=document.createElement('style');st.id='dd317Style';st.textContent=STYLE;document.head.append(st)}
+
+for(const name of ['renderAll','showTab','setSubview']){const base=window[name];if(typeof base==='function')window[name]=function(...a){const out=base.apply(this,a);schedule();return out}}
+document.addEventListener('click',e=>{if(!e.target.closest?.('.dd317'))schedule()},true);
+let rt=0;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(relayout,120)},{passive:true});
+// New rows appear inside overlays and re-rendered screens; one scan per frame at most.
+const bodyObserver=new MutationObserver(list=>{for(const m of list){if(!(m.target.closest?.('.dd317'))){schedule();return}}});
+function boot(){ensureStyle();if(document.body&&!document.body.dataset.dd317){document.body.dataset.dd317='1';bodyObserver.observe(document.body,{childList:true,subtree:true})}schedule()}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+
+window.SDF_DROPDOWN317={version:VERSION,build:BUILD,refresh:scan,rows:ROWS.map(r=>r.sel),minItems:MIN_ITEMS,_test:{labelOf,itemsOf,isActive,usable}};
+})();
+
 // Build 299 module: layout. Slim phone chrome, one primary "play this week" action per screen, a cleaner Home,
 // compact recruit cards and a team list that opens on teams. Everything is moved, grouped or restyled; nothing is removed.
 (()=>{
@@ -17236,7 +17985,7 @@ function navRows(){
  const tab=document.querySelector('#gameScreen .tab-page:not(.hidden)');if(!tab)return;
  const row=tab.querySelector(':scope>.page-utilities296'),current=tab.querySelector(':scope>.sdf299-has-help');
  const only=!!row&&row.children.length===1&&!!row.firstElementChild?.classList.contains('sdf-page-help');
- const target=row&&phone()&&only?[...tab.querySelectorAll(':scope>.area-navigation296,:scope>.ui-section-nav-v219,:scope>.section-view-label296,:scope>#recruitingModeNav')].find(n=>!n.hidden&&n.getClientRects().length):null;
+ const target=row&&phone()&&only?[...tab.querySelectorAll(':scope>.area-navigation296,:scope>.dd317,:scope>.ui-section-nav-v219,:scope>.section-view-label296,:scope>#recruitingModeNav')].find(n=>!n.hidden&&n.getClientRects().length):null;
  if(current&&current!==target)current.classList.remove('sdf299-has-help');
  if(!row)return;
  if(row.classList.contains('sdf299-floating')!==!!target)row.classList.toggle('sdf299-floating',!!target);
